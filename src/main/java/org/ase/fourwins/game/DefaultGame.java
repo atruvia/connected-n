@@ -1,0 +1,97 @@
+package org.ase.fourwins.game;
+
+import static java.util.Arrays.asList;
+import static org.ase.fourwins.board.Board.Score.IN_GAME;
+import static org.ase.fourwins.board.Move.moveToColumn;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+
+import org.ase.fourwins.board.Board;
+import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.BoardInfo;
+
+public class DefaultGame implements Game {
+
+	private final static class InfiniteIterator<T> implements Iterator<T> {
+
+		private Iterable<T> elements;
+		private Iterator<T> iterator;
+
+		private InfiniteIterator(Iterable<T> elements) {
+			this.iterator = (this.elements = elements).iterator();
+		}
+
+		@Override
+		public T next() {
+			if (!iterator.hasNext()) {
+				iterator = elements.iterator();
+			}
+			return iterator.next();
+		}
+
+		@Override
+		public boolean hasNext() {
+			return true;
+		}
+	}
+
+	private final List<Player> players;
+	private final Iterator<Player> nextPlayer;
+	private Board board;
+	private int moves;
+
+	public DefaultGame(Player player1, Player player2, Board board) {
+		validateTokens(player1, player2);
+
+		informPlayer(player1, player2, board.boardInfo());
+		informPlayer(player2, player1, board.boardInfo());
+
+		this.board = board;
+		this.players = asList(player1, player2);
+		this.nextPlayer = new InfiniteIterator<Player>(players);
+	}
+
+	private boolean informPlayer(Player player1, Player player2, BoardInfo boardInfo) {
+		return player1.joinGame(player2.getToken(), boardInfo);
+	}
+
+	protected void validateTokens(Player player1, Player player2) {
+		String token1 = player1.getToken();
+		String token2 = player2.getToken();
+		if (Objects.equals(token1, token2)) {
+			throw new RuntimeException("Players (" + player1 + ", " + player2 + ") with same token " + token1);
+		}
+	}
+
+	@Override
+	public DefaultGame runGame() {
+		while (gameState().getScore() == IN_GAME) {
+			moves++;
+			Player player = nextPlayer.next();
+			int column = player.nextColumn();
+			String token = player.getToken();
+			// TODO log
+			board = board.insertToken(moveToColumn(column), token);
+			this.players.stream().forEach(p -> p.tokenWasInserted(token, column));
+		}
+		return this;
+	}
+
+	@Override
+	public GameState gameState() {
+		return board.gameState();
+	}
+
+	public int getMoves() {
+		return moves;
+	}
+
+	public String getStateString() {
+		return gameState().getScore() + " " + gameState().getToken() + " (moves " + getMoves()
+				+ ", winning combination: " + board.gameState().getWinningCombinations() + ")";
+
+	}
+
+}
