@@ -1,5 +1,6 @@
 package org.ase.fourwins.tournament;
 
+import static java.lang.String.format;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
@@ -8,9 +9,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -18,7 +20,6 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.board.mockplayers.RandomMockPlayer;
-import org.ase.fourwins.game.Player;
 
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
@@ -30,101 +31,89 @@ import net.jqwik.api.constraints.IntRange;
 
 public class RealTournamentIT {
 
+	static final int MAX_SEASONS = 50;
+
+	static final Predicate<GameState> isCoffeeBreak = s -> "coffee break".equals(s.getReason());
+
 	@Example
 	void amountOfGames_2Players() {
-		// TODO remove comment when fixed! Is actual 2
-		playOneSeason(createPlayers(2, RandomMockPlayer::new));
+		List<PlayerMock> players = createPlayers(2, RandomMockPlayer::new);
+		int seasons = 1;
+		playSeasons(players, seasons);
+		verifyPlayers(players, seasons);
 	}
 
 	@Example
 	void amountOfGames_3Players() {
-		// TODO remove comment when fixed! Is actual 4
-		playOneSeason(createPlayers(3, RandomMockPlayer::new));
+		List<PlayerMock> players = createPlayers(3, RandomMockPlayer::new);
+		int seasons = 1;
+		playSeasons(players, seasons);
+		verifyPlayers(players, seasons);
 	}
 
 	@Example
 	void amountOfGames_4Players() {
-		// TODO remove comment when fixed! Is actual 6
-		playOneSeason(createPlayers(4, RandomMockPlayer::new));
+		List<PlayerMock> players = createPlayers(4, RandomMockPlayer::new);
+		int seasons = 1;
+		playSeasons(players, seasons);
+		verifyPlayers(players, seasons);
+	}
+
+	@Property
+	void jqwikCheckTestRandom(@ForAll("playerNames") List<String> playerNames,
+			@ForAll @IntRange(min = 0, max = 50) int seasons) {
+		List<PlayerMock> players = playerNames.stream().map(RandomMockPlayer::new).collect(toList());
+		Tournament tournament = tournamentWithPlayers(seasons, players);
+		playSeasons(seasons, tournament).filter(isCoffeeBreak.negate()).forEach(this::verifyGameState);
+		verifyPlayers(players, seasons);
 	}
 
 	List<PlayerMock> createPlayers(int players, Function<String, PlayerMock> function) {
 		return IntStream.range(0, players).mapToObj(String::valueOf).map("P"::concat).map(function).collect(toList());
 	}
 
-	void playOneSeason(List<PlayerMock> players) {
-		int numberOfSeasons = 1;
+	void playSeasons(List<PlayerMock> players, int numberOfSeasons) {
 		Tournament tournament = tournamentWithPlayers(numberOfSeasons, players);
-		playSeasons(numberOfSeasons, tournament).flatMap(identity()).filter(this::isNoCoffeeBreak)
-				.forEach(this::verifyGameState);
-		verifyPlayers(numberOfSeasons, players);
+		playSeasons(numberOfSeasons, tournament).filter(isCoffeeBreak.negate()).forEach(this::verifyGameState);
 	}
 
-	@Property
-	void jqwikCheckTestRandom(@ForAll("playerNames") List<String> playerNames,
-			@ForAll @IntRange(min = 0, max = 5) int numberOfSeasons) {
-		List<PlayerMock> players = playerNames.stream().map(RandomMockPlayer::new).collect(toList());
-		Tournament tournament = tournamentWithPlayers(numberOfSeasons, players);
-		playSeasons(numberOfSeasons, tournament).flatMap(identity()).filter(this::isNoCoffeeBreak)
-				.forEach(this::verifyGameState);
-		verifyPlayers(numberOfSeasons, players);
+	Stream<GameState> playSeasons(int seasons, Tournament tournament) {
+		return IntStream.range(0, seasons).mapToObj(i -> tournament.playSeason()).flatMap(identity());
 	}
 
-	protected Stream<Stream<GameState>> playSeasons(int numberOfSeasons, Tournament tournament) {
-		return IntStream.range(0, numberOfSeasons).mapToObj(i -> tournament.playSeason());
-	}
-
-	protected void verifyPlayers(int numberOfSeasons, List<PlayerMock> players) {
-		if (players.size() > 0) {
-			players.forEach(p -> {
-				int matchdays = players.size() - 1;
-				boolean isCoffeeBreak = players.size() % 2 == 0;
-//				if (isCoffeeBreak) {
-//					matchdays++;
-//				}
-				int matchsPerDay = players.size() / 2;
-				int expectedJoinedMatches = matchsPerDay * matchdays * numberOfSeasons;
-				assertThat(p.getOpposites().size(), is(expectedJoinedMatches));
-			});
-		}
-	}
-
-	protected Tournament tournamentWithPlayers(int numberOfSeasons, List<PlayerMock> players) {
+	Tournament tournamentWithPlayers(int numberOfSeasons, Collection<PlayerMock> players) {
 		System.out
-				.println("Starting tournament with " + players.size() + " players and " + numberOfSeasons + " seasons");
+				.println(format("Starting tournament with %s players and %s seasons", players.size(), numberOfSeasons));
 		Tournament tournament = new Tournament();
 		players.forEach(tournament::registerPlayer);
 		return tournament;
 	}
 
-	private void verifyGameState(GameState score) {
-		{
-			if (score.getScore() == WIN) {
-				assertThat(String.valueOf(score), score.getWinningCombinations().size(), is(not(0)));
-			}
-			if (score.getScore() != WIN) {
-				assertThat(String.valueOf(score), score.getWinningCombinations().size(), is(0));
-			}
-			if (score.getScore() == LOSE) {
-				assertThat(String.valueOf(score), score.getReason().isEmpty(), is(false));
-			}
+	void verifyPlayers(Collection<PlayerMock> players, int numberOfSeasons) {
+		players.forEach(p -> {
+			int expectedJoinedMatches = (players.size() - 1) * numberOfSeasons * 2;
+			assertThat(p.getOpposites().size(), is(expectedJoinedMatches));
+		});
+	}
+
+	void verifyGameState(GameState score) {
+		if (score.getScore() == WIN) {
+			assertThat(String.valueOf(score), score.getWinningCombinations().size(), is(not(0)));
+		}
+		if (score.getScore() != WIN) {
+			assertThat(String.valueOf(score), score.getWinningCombinations().size(), is(0));
+		}
+		if (score.getScore() == LOSE) {
+			assertThat(String.valueOf(score), score.getReason().isEmpty(), is(false));
 		}
 	}
 
 	@Property
 	void jqwikCheckTestKeepTrack(@ForAll("playerNames") List<String> playerNames,
-			@ForAll @IntRange(min = 0, max = 100) int numberOfSeasons) {
+			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
 		List<PlayerMock> players = playerNames.stream().map(ColumnTrackingMockPlayer::new).collect(toList());
-		Tournament tournament = tournamentWithPlayers(numberOfSeasons, players);
-
-		for (int i = 0; i < numberOfSeasons; i++) {
-			tournament.playSeason().filter(this::isNoCoffeeBreak)
-					.forEach(s -> assertThat(String.valueOf(s), s.getScore(), is(WIN)));
-		}
-	}
-
-	boolean isNoCoffeeBreak(GameState gameState) {
-		return !"coffee break".equals(gameState.getReason());
+		playSeasons(seasons, tournamentWithPlayers(seasons, players)).filter(isCoffeeBreak.negate())
+				.forEach(s -> assertThat(String.valueOf(s), s.getScore(), is(WIN)));
 	}
 
 	@Provide
