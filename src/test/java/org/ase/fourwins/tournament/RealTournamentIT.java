@@ -20,20 +20,21 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.board.mockplayers.RandomMockPlayer;
+import org.ase.fourwins.tournament.Tournament.CoffeebreakGame;
 
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.Example;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
 import net.jqwik.api.constraints.IntRange;
 
 public class RealTournamentIT {
 
-	static final int MAX_SEASONS = 50;
+	private static final int MAX_PLAYERS = 20;
 
-	static final Predicate<GameState> isCoffeeBreak = s -> "coffee break".equals(s.getReason());
+	static final int MAX_SEASONS = 10;
+
+	static final Predicate<GameState> isCoffeeBreak = s -> CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE
+			.equals(s.getReason());
 
 	@Example
 	void amountOfGames_2Players() {
@@ -60,12 +61,20 @@ public class RealTournamentIT {
 	}
 
 	@Property
-	void jqwikCheckTestRandom(@ForAll("playerNames") List<String> playerNames,
-			@ForAll @IntRange(min = 0, max = 50) int seasons) {
-		List<PlayerMock> players = playerNames.stream().map(RandomMockPlayer::new).collect(toList());
+	void jqwikCheckTestRandom(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
+		List<PlayerMock> players = createPlayers(playerCount, RandomMockPlayer::new);
 		Tournament tournament = tournamentWithPlayers(seasons, players);
 		playSeasons(seasons, tournament).filter(isCoffeeBreak.negate()).forEach(this::verifyGameState);
 		verifyPlayers(players, seasons);
+	}
+
+	@Property
+	void jqwikCheckTestKeepTrack(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
+		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
+		playSeasons(seasons, tournamentWithPlayers(seasons, players)).filter(isCoffeeBreak.negate())
+				.forEach(s -> assertThat(String.valueOf(s), s.getScore(), is(WIN)));
 	}
 
 	List<PlayerMock> createPlayers(int players, Function<String, PlayerMock> function) {
@@ -106,25 +115,6 @@ public class RealTournamentIT {
 		if (score.getScore() == LOSE) {
 			assertThat(String.valueOf(score), score.getReason().isEmpty(), is(false));
 		}
-	}
-
-	@Property
-	void jqwikCheckTestKeepTrack(@ForAll("playerNames") List<String> playerNames,
-			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
-		List<PlayerMock> players = playerNames.stream().map(ColumnTrackingMockPlayer::new).collect(toList());
-		playSeasons(seasons, tournamentWithPlayers(seasons, players)).filter(isCoffeeBreak.negate())
-				.forEach(s -> assertThat(String.valueOf(s), s.getScore(), is(WIN)));
-	}
-
-	@Provide
-	Arbitrary<List<String>> playerNames() {
-		return Arbitraries.integers().between(2, 5).flatMap( //
-				stringSize -> Arbitraries.strings() //
-						.alpha() //
-						.ofMinLength(stringSize) //
-						.ofMaxLength(stringSize) //
-						.unique() //
-						.list().ofMinSize(0).ofMaxSize(20));
 	}
 
 }
