@@ -12,7 +12,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,8 @@ import org.ase.fourwins.board.Move;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.Tournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.Tournament.RegistrationResult;
 import org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Disabled;
@@ -97,7 +97,7 @@ public class TournamentTest {
 		}
 
 		public Tournament build() {
-			Tournament tournament = new Tournament() {
+			Tournament tournament = new DefaultTournament() {
 
 				private final AtomicInteger gamesStarted = new AtomicInteger(0);
 
@@ -116,7 +116,9 @@ public class TournamentTest {
 				}
 
 			};
-			withPlayers.stream().forEach(tournament::registerPlayer);
+			withPlayers.stream().forEach(p -> {
+				tournament.registerPlayer(p);
+			});
 			return tournament;
 		}
 
@@ -126,9 +128,8 @@ public class TournamentTest {
 	void cannotRegisterWithIdenticalName() {
 		String token = "aTokenTakenTwoTimes";
 		Tournament tournament = a(tournament().withPlayers(mock(token)));
-		assertThrows(RuntimeException.class, () -> {
-			tournament.registerPlayer(mock(token));
-		});
+		RegistrationResult registerPlayer = tournament.registerPlayer(mock(token));
+		assertThat(registerPlayer.isOk(), is(false));
 	}
 
 	@Example
@@ -241,7 +242,7 @@ public class TournamentTest {
 
 	@Example
 	void playersCanUseTheCoffeeBreakToken() {
-		PlayerMock p1 = mock(Tournament.coffeeBreakPlayer.getToken());
+		PlayerMock p1 = mock(DefaultTournament.coffeeBreakPlayer.getToken());
 		Tournament tournament = a(tournament().withPlayers(p1));
 		playSeasonOf(tournament);
 		assertOpponentsOf(p1, haveBeen("-- --"));
