@@ -14,7 +14,7 @@ import lombok.ToString;
 public class PlayerMock extends Player {
 
 	private int movesMade;
-	private final List<String> opposites = new ArrayList<>();
+	private final List<String> opponents = new ArrayList<>();
 
 	public PlayerMock(String token) {
 		super(token);
@@ -28,7 +28,7 @@ public class PlayerMock extends Player {
 
 	@Override
 	public boolean joinGame(String opposite, BoardInfo boardInfo) {
-		opposites.add(opposite);
+		opponents.add(opposite);
 		return super.joinGame(opposite, boardInfo);
 	}
 

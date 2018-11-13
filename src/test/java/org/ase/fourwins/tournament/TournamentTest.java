@@ -166,16 +166,16 @@ public class TournamentTest {
 		Tournament tournament = a(tournament().withPlayers(p1, p2).registerAfterwards(p3, p4));
 
 		playSeasonOf(tournament);
-		assertOppositesOf(p1, haveBeen(twoTimes("P2")));
-		assertOppositesOf(p2, haveBeen(twoTimes("P1")));
-		assertOppositesOf(p3, haveBeen(twoTimes("--")));
-		assertOppositesOf(p4, haveBeen(twoTimes("--")));
+		assertOpponentsOf(p1, haveBeen(twoTimes("P2")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P1")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("--")));
+		assertOpponentsOf(p4, haveBeen(twoTimes("--")));
 
 		playSeasonOf(tournament);
-		assertOppositesOf(p1, haveBeen("P2 P2 P4 P2 P3 P4 P2 P3"));
-		assertOppositesOf(p2, haveBeen("P1 P1 P3 P1 P4 P3 P1 P4"));
-		assertOppositesOf(p3, haveBeen("-- -- P2 P4 P1 P2 P4 P1"));
-		assertOppositesOf(p4, haveBeen("-- -- P1 P3 P2 P1 P3 P2"));
+		assertOpponentsOf(p1, haveBeen("P2 P2 P4 P2 P3 P4 P2 P3"));
+		assertOpponentsOf(p2, haveBeen("P1 P1 P3 P1 P4 P3 P1 P4"));
+		assertOpponentsOf(p3, haveBeen("-- -- P2 P4 P1 P2 P4 P1"));
+		assertOpponentsOf(p4, haveBeen("-- -- P1 P3 P2 P1 P3 P2"));
 	}
 
 	@Example
@@ -188,16 +188,16 @@ public class TournamentTest {
 		Tournament tournament = a(tournament().withPlayers(p1, p2, p3, p4).deregisterAfterwards(p1, p4));
 
 		playSeasonOf(tournament);
-		assertOppositesOf(p1, haveBeen(twoTimes("P4 P2 P3")));
-		assertOppositesOf(p2, haveBeen(twoTimes("P3 P1 P4")));
-		assertOppositesOf(p3, haveBeen(twoTimes("P2 P4 P1")));
-		assertOppositesOf(p4, haveBeen(twoTimes("P1 P3 P2")));
+		assertOpponentsOf(p1, haveBeen(twoTimes("P4 P2 P3")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 P4")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("P2 P4 P1")));
+		assertOpponentsOf(p4, haveBeen(twoTimes("P1 P3 P2")));
 
 		playSeasonOf(tournament);
-		assertOppositesOf(p1, haveBeen(twoTimes("P4 P2 P3") + " " + twoTimes("--")));
-		assertOppositesOf(p2, haveBeen(twoTimes("P3 P1 P4") + " " + twoTimes("P3")));
-		assertOppositesOf(p3, haveBeen(twoTimes("P2 P4 P1") + " " + twoTimes("P2")));
-		assertOppositesOf(p4, haveBeen(twoTimes("P1 P3 P2") + " " + twoTimes("--")));
+		assertOpponentsOf(p1, haveBeen(twoTimes("P4 P2 P3") + " " + twoTimes("--")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 P4") + " " + twoTimes("P3")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("P2 P4 P1") + " " + twoTimes("P2")));
+		assertOpponentsOf(p4, haveBeen(twoTimes("P1 P3 P2") + " " + twoTimes("--")));
 	}
 
 	private String twoTimes(String string) {
@@ -212,9 +212,9 @@ public class TournamentTest {
 
 		List<GameState> states = playSeasonOf(a(tournament().withPlayers(p1, p2, p3)));
 
-		assertOppositesOf(p1, haveBeen(twoTimes("-- P2 P3")));
-		assertOppositesOf(p2, haveBeen(twoTimes("P3 P1 --")));
-		assertOppositesOf(p3, haveBeen(twoTimes("P2 -- P1")));
+		assertOpponentsOf(p1, haveBeen(twoTimes("-- P2 P3")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 --")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("P2 -- P1")));
 
 		int i = 0;
 		assertThat(states.size(), is(3 * 2 * 2));
@@ -244,7 +244,7 @@ public class TournamentTest {
 		PlayerMock p1 = mock(Tournament.coffeeBreakPlayer.getToken());
 		Tournament tournament = a(tournament().withPlayers(p1));
 		playSeasonOf(tournament);
-		assertOppositesOf(p1, haveBeen("-- --"));
+		assertOpponentsOf(p1, haveBeen("-- --"));
 	}
 
 	@Example
@@ -282,8 +282,8 @@ public class TournamentTest {
 						.list().ofMinSize(0).ofMaxSize(20));
 	}
 
-	void assertOppositesOf(PlayerMock playerMock, List<String> expectedOpposites) {
-		assertThat(playerMock.getOpposites(), is(expectedOpposites));
+	void assertOpponentsOf(PlayerMock playerMock, List<String> expectedOpponents) {
+		assertThat(playerMock.getOpponents(), is(expectedOpponents));
 	}
 
 	Tournament a(TournamentBuilder builder) {

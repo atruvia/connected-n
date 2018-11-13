@@ -96,7 +96,7 @@ public class RealTournamentIT {
 	void verifyPlayers(Collection<PlayerMock> players, int numberOfSeasons) {
 		players.forEach(p -> {
 			int expectedJoinedMatches = (players.size() - 1) * numberOfSeasons * 2;
-			assertThat(p.getOpposites().size(), is(expectedJoinedMatches));
+			assertThat(p.getOpponents().size(), is(expectedJoinedMatches));
 		});
 	}
 
