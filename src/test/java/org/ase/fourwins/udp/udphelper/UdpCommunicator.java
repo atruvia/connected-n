@@ -1,4 +1,4 @@
-package client.udphelper;
+package org.ase.fourwins.udp.udphelper;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -15,7 +15,7 @@ import java.util.Collection;
 
 public class UdpCommunicator {
 
-	private static final Charset utf8 = Charset.forName("utf-8");
+	private static final Charset utf8 = Charset.forName("UTF-8");
 
 	private final String remoteHost;
 	private final int remotePort;

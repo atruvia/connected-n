@@ -1,14 +1,14 @@
-package org.ase.fourwins.udp;
+package org.ase.fourwins.udp.client;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
-import org.ase.fourwins.udp.UdpClientTest.FourWinsBot;
+import org.ase.fourwins.udp.client.UdpClientTest.FourWinsBot;
+import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import client.udphelper.UdpCommunicator;
 import lombok.RequiredArgsConstructor;
 
 public class UdpClientTest {

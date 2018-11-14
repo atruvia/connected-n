@@ -1,4 +1,4 @@
-package client.udphelper;
+package org.ase.fourwins.udp.udphelper;
 
 public interface MessageListener {
 
