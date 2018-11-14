@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.TimeUnit;
 
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
@@ -41,36 +42,40 @@ public class UdpServerTestRealTournament {
 	@Test
 	void canPlay() throws IOException, InterruptedException {
 		assertTimeout(ofSeconds(10), () -> {
-			DummyClient client1 = new DummyClient("1", "localhost", serverPort) {
-				@Override
-				protected void messageReceived(String received) {
-					super.messageReceived(received);
-					if (received.startsWith("YOURTURN;")) {
-						trySend("0;" + received.split(";")[1]);
-					}
-				}
-			};
+			DummyClient client1 = playingClient("1", 0);
+			DummyClient client2 = playingClient("2", 1);
 
-			DummyClient client2 = new DummyClient("2", "localhost", serverPort) {
-				@Override
-				protected void messageReceived(String received) {
-					super.messageReceived(received);
-					if (received.startsWith("YOURTURN;")) {
-						trySend("1;" + received.split(";")[1]);
-					}
-				}
-			};
-			
-			// directly after client2 is instantiated the tournament will start 
+			// directly after client2 is instantiated the tournament will start
 
 			System.out.println(client1.waitUntilReceived(1 + 4));
 			System.out.println(client2.waitUntilReceived(1 + 3));
+
+			/// ...let it run for a while
+			TimeUnit.SECONDS.sleep(5);
 
 			fail("add more assertions");
 
 			client1.unregister();
 			client2.unregister();
 		});
+	}
+	
+	// TODO MISSING! message of inserted token (own and other)
+	
+	// TODO what about moves <non-integer>;<token>
+	// TODO Test timeout
+
+
+	private DummyClient playingClient(String name, int row) throws IOException {
+		return new DummyClient(name, "localhost", serverPort) {
+			@Override
+			protected void messageReceived(String received) {
+				super.messageReceived(received);
+				if (received.startsWith("YOURTURN;")) {
+					trySend(row + ";" + received.split(";")[1]);
+				}
+			}
+		};
 	}
 
 	private static int freePort() {

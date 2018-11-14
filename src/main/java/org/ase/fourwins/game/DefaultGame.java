@@ -3,6 +3,7 @@ package org.ase.fourwins.game;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
+import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Move.moveToColumn;
 
 import java.util.ArrayList;
@@ -17,6 +18,33 @@ import org.ase.fourwins.board.BoardInfo;
 import lombok.Getter;
 
 public class DefaultGame implements Game {
+
+	private static class GameLostDueToException implements Game {
+
+		private final GameState state;
+		private final List<Player> players;
+
+		public GameLostDueToException(Player lostBy, String reason, List<Player> players) {
+			this.players = players;
+			this.state = GameState.builder().score(LOSE).token(lostBy.getToken()).reason(reason).build();
+		}
+
+		@Override
+		public Game runGame() {
+			return this;
+		}
+
+		@Override
+		public GameState gameState() {
+			return state;
+		}
+
+		@Override
+		public List<Player> getPlayers() {
+			return players;
+		}
+
+	}
 
 	private final static class InfiniteIterator<T> implements Iterator<T> {
 
@@ -75,17 +103,24 @@ public class DefaultGame implements Game {
 		while (gameState().getScore() == IN_GAME) {
 			moves++;
 			Player player = nextPlayer.next();
-			
-			// TODO what todo if one of these methods will throw RTE? (player should lose?)
-			int column = player.nextColumn();
-			String token = player.getToken();
-			// TODO log
-			board = board.insertToken(moveToColumn(column), token);
-			this.players.stream().forEach(p -> p.tokenWasInserted(token, column));
+			try {
+				makeMove(player);
+			} catch (Exception e) {
+				return new GameLostDueToException(player, e.getMessage(), players);
+			}
 		}
 		return this;
 	}
-	
+
+	private void makeMove(Player player) {
+		// TODO what todo if one of these methods will throw RTE? (player should lose?)
+		int column = player.nextColumn();
+		String token = player.getToken();
+		// TODO log
+		board = board.insertToken(moveToColumn(column), token);
+		this.players.stream().forEach(p -> p.tokenWasInserted(token, column));
+	}
+
 	@Override
 	public GameState gameState() {
 		return board.gameState();

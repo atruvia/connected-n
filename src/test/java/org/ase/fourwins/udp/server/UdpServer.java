@@ -17,9 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Stream;
 
-import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
@@ -43,6 +41,49 @@ public class UdpServer {
 
 	private final Lock lock = new ReentrantLock();
 	private final Condition playerRegistered = lock.newCondition();
+
+	private final class UdpPlayer extends Player {
+
+		private final UdpPlayerInfo playerInfo;
+
+		private UdpPlayer(String token, UdpPlayerInfo playerInfo) {
+			super(token);
+			this.playerInfo = playerInfo;
+		}
+
+		@Override
+		protected int nextColumn() {
+			String uuid = uuid();
+			try {
+				send("YOURTURN;" + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
+				String raw = receiverQueues.get(playerInfo).poll(SOCKET_TIMEOUT, MILLISECONDS);
+				String[] response = raw.split(";");
+				if (response.length == 2 && response[1].equals(uuid)) {
+					return Integer.parseInt(response[0]);
+				} else {
+					throw new IllegalArgumentException("Cannot handle/parse " + raw);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			} catch (InterruptedException e) {
+				throw new IllegalStateException("TIMEOUT");
+			}
+		}
+
+		private String uuid() {
+			String uuid = UUID.randomUUID().toString();
+			int pos = uuid.indexOf("-");
+			return pos < 0 ? uuid : uuid.substring(0, pos);
+		}
+
+		@Override
+		public boolean joinGame(final String opposite, final BoardInfo boardInfo) {
+			// sendAndReceive("JOIN", playerInfo);
+			// JOIN Game (not season)
+			// TODO send JOIN to the client an wait for JOINING
+			return super.joinGame(opposite, boardInfo);
+		}
+	}
 
 	@Value
 	private static class UdpPlayerInfo {
@@ -116,13 +157,7 @@ public class UdpServer {
 		if (received.startsWith("REGISTER;")) {
 			handleRegisterCommand(playerInfo, received);
 		} else if ("UNREGISTER".equals(received)) {
-			synchronized (players) {
-				Player removed = players.remove(playerInfo);
-				receiverQueues.remove(playerInfo);
-				send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
-				System.out.println(
-						"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
-			}
+			handleUnRegisterCommand(playerInfo);
 		} else {
 			receiverQueues.get(playerInfo).offer(received);
 		}
@@ -141,44 +176,7 @@ public class UdpServer {
 			return;
 		}
 
-		Player player = new Player(playerName) {
-			@Override
-			protected int nextColumn() {
-				String uuid = uuid();
-				try {
-					send("YOURTURN;" + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
-					try {
-						String[] response = receiverQueues.get(playerInfo).poll(SOCKET_TIMEOUT, MILLISECONDS)
-								.split(";");
-						if (response.length == 2 && response[1].equals(uuid)) {
-							return Integer.parseInt(response[0]);
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-						return -1;
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				// TODO where and who should handle how?
-				return Integer.MIN_VALUE;
-			}
-
-			private String uuid() {
-				String uuid = UUID.randomUUID().toString();
-				int pos = uuid.indexOf("-");
-				return pos < 0 ? uuid : uuid.substring(0, pos);
-			}
-
-			@Override
-			public boolean joinGame(final String opposite, final BoardInfo boardInfo) {
-				// sendAndReceive("JOIN", playerInfo);
-				// JOIN Game (not season)
-				// TODO send JOIN to the client an wait for JOINING
-				return super.joinGame(opposite, boardInfo);
-			}
-		};
-
+		Player player = newPlayer(playerInfo, playerName);
 		synchronized (players) {
 			if (!tournament.registerPlayer(player).isOk()) {
 				send("NAME_ALREADY_TAKEN", playerInfo.getAdressInfo(), playerInfo.getPort());
@@ -198,6 +196,20 @@ public class UdpServer {
 		}
 
 //		sendMessageToPlayer(registerResult.fold(ErrorMessage::toString, identity()), playerInfo);
+	}
+
+	private Player newPlayer(final UdpPlayerInfo playerInfo, String playerName) {
+		return new UdpPlayer(playerName, playerInfo);
+	}
+
+	private void handleUnRegisterCommand(final UdpPlayerInfo playerInfo) throws SocketException, IOException {
+		synchronized (players) {
+			Player removed = players.remove(playerInfo);
+			receiverQueues.remove(playerInfo);
+			send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
+			System.out.println(
+					"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
+		}
 	}
 
 	private String sendAndReceive(String message, InetAddress clientIp, int clientPort)
