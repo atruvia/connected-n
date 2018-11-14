@@ -7,6 +7,7 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
+import org.ase.fourwins.influxdb.InfluxDBListener;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;

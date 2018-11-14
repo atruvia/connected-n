@@ -48,7 +48,8 @@ public class TournamentTest {
 
 			public static final String LOSE_MESSAGE = "dummy board lose message";
 			private int moves;
-			private GameState gameState = GameState.builder().score(IN_GAME).build();
+			private GameState gameState = GameState.builder().score(IN_GAME)
+					.build();
 
 			@Override
 			public GameState gameState() {
@@ -80,19 +81,21 @@ public class TournamentTest {
 		private final List<Player> withPlayers = new ArrayList<>();
 		private final List<Player> registerAfterwards = new ArrayList<>();
 		private final List<Player> deregisterAfterwards = new ArrayList<>();
-		private final List<TournamentListener> listeners = new ArrayList<>();
+		private final List<TournamentListener> tournamentListenerList = new ArrayList<>();
 
 		public TournamentBuilder withPlayers(Player... withPlayers) {
 			addAll(this.withPlayers, withPlayers);
 			return this;
 		}
 
-		public TournamentBuilder registerAfterwards(Player... registerAfterwards) {
+		public TournamentBuilder registerAfterwards(
+				Player... registerAfterwards) {
 			addAll(this.registerAfterwards, registerAfterwards);
 			return this;
 		}
 
-		public TournamentBuilder deregisterAfterwards(Player... deregisterAfterwards) {
+		public TournamentBuilder deregisterAfterwards(
+				Player... deregisterAfterwards) {
 			addAll(this.deregisterAfterwards, deregisterAfterwards);
 			return this;
 		}
@@ -111,8 +114,10 @@ public class TournamentTest {
 				protected void gameEnded(Game game) {
 					super.gameEnded(game);
 					if (gamesStarted.incrementAndGet() == 1) {
-						registerAfterwards.stream().forEach(this::registerPlayer);
-						deregisterAfterwards.stream().forEach(this::deregisterPlayer);
+						registerAfterwards.stream()
+								.forEach(this::registerPlayer);
+						deregisterAfterwards.stream()
+								.forEach(this::deregisterPlayer);
 					}
 				}
 
@@ -120,12 +125,12 @@ public class TournamentTest {
 			withPlayers.stream().forEach(p -> {
 				tournament.registerPlayer(p);
 			});
-			listeners.stream().forEach(tournament::addTournamentListener);
+			tournamentListenerList.forEach(tournament::addTournamentListener);
 			return tournament;
 		}
 
 		public TournamentBuilder registerListener(TournamentListener listener) {
-			listeners.add(listener);
+			tournamentListenerList.add(listener);
 			return this;
 		}
 
@@ -135,7 +140,8 @@ public class TournamentTest {
 	void cannotRegisterWithIdenticalName() {
 		String token = "aTokenTakenTwoTimes";
 		Tournament tournament = a(tournament().withPlayers(mock(token)));
-		RegistrationResult registerPlayer = tournament.registerPlayer(mock(token));
+		RegistrationResult registerPlayer = tournament
+				.registerPlayer(mock(token));
 		assertThat(registerPlayer.isOk(), is(false));
 	}
 
@@ -144,14 +150,17 @@ public class TournamentTest {
 		PlayerMock p1 = mock("P1");
 		PlayerMock p2 = mock("P2");
 
-		List<GameState> states = playSeasonOf(a(tournament().withPlayers(p1, p2)));
+		List<GameState> states = playSeasonOf(
+				a(tournament().withPlayers(p1, p2)));
 		assertThat(states.size(), is(2));
 
 		assertThat(p1.getMovesMade(), is(7));
 		assertThat(p2.getMovesMade(), is(7));
 
-		assertThat(states.get(0), isGameError(DummyBoard.LOSE_MESSAGE).withToken("P1"));
-		assertThat(states.get(1), isGameError(DummyBoard.LOSE_MESSAGE).withToken("P2"));
+		assertThat(states.get(0),
+				isGameError(DummyBoard.LOSE_MESSAGE).withToken("P1"));
+		assertThat(states.get(1),
+				isGameError(DummyBoard.LOSE_MESSAGE).withToken("P2"));
 	}
 
 	@Example
@@ -171,7 +180,8 @@ public class TournamentTest {
 		PlayerMock p3 = mock("P3");
 		PlayerMock p4 = mock("P4");
 
-		Tournament tournament = a(tournament().withPlayers(p1, p2).registerAfterwards(p3, p4));
+		Tournament tournament = a(
+				tournament().withPlayers(p1, p2).registerAfterwards(p3, p4));
 
 		playSeasonOf(tournament);
 		assertOpponentsOf(p1, haveBeen(twoTimes("P2")));
@@ -193,7 +203,8 @@ public class TournamentTest {
 		PlayerMock p3 = mock("P3");
 		PlayerMock p4 = mock("P4");
 
-		Tournament tournament = a(tournament().withPlayers(p1, p2, p3, p4).deregisterAfterwards(p1, p4));
+		Tournament tournament = a(tournament().withPlayers(p1, p2, p3, p4)
+				.deregisterAfterwards(p1, p4));
 
 		playSeasonOf(tournament);
 		assertOpponentsOf(p1, haveBeen(twoTimes("P4 P2 P3")));
@@ -202,10 +213,14 @@ public class TournamentTest {
 		assertOpponentsOf(p4, haveBeen(twoTimes("P1 P3 P2")));
 
 		playSeasonOf(tournament);
-		assertOpponentsOf(p1, haveBeen(twoTimes("P4 P2 P3") + " " + twoTimes("--")));
-		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 P4") + " " + twoTimes("P3")));
-		assertOpponentsOf(p3, haveBeen(twoTimes("P2 P4 P1") + " " + twoTimes("P2")));
-		assertOpponentsOf(p4, haveBeen(twoTimes("P1 P3 P2") + " " + twoTimes("--")));
+		assertOpponentsOf(p1,
+				haveBeen(twoTimes("P4 P2 P3") + " " + twoTimes("--")));
+		assertOpponentsOf(p2,
+				haveBeen(twoTimes("P3 P1 P4") + " " + twoTimes("P3")));
+		assertOpponentsOf(p3,
+				haveBeen(twoTimes("P2 P4 P1") + " " + twoTimes("P2")));
+		assertOpponentsOf(p4,
+				haveBeen(twoTimes("P1 P3 P2") + " " + twoTimes("--")));
 	}
 
 	private String twoTimes(String string) {
@@ -218,7 +233,8 @@ public class TournamentTest {
 		PlayerMock p2 = mock("P2");
 		PlayerMock p3 = mock("P3");
 
-		List<GameState> states = playSeasonOf(a(tournament().withPlayers(p1, p2, p3)));
+		List<GameState> states = playSeasonOf(
+				a(tournament().withPlayers(p1, p2, p3)));
 
 		assertOpponentsOf(p1, haveBeen(twoTimes("-- P2 P3")));
 		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 --")));
@@ -226,13 +242,19 @@ public class TournamentTest {
 
 		int i = 0;
 		assertThat(states.size(), is(3 * 2 * 2));
-		assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P2"))));
-		assertThat(next(states, i += 2), is(asList(lose("P1"), coffeeBreakWin("P3"))));
-		assertThat(next(states, i += 2), is(asList(lose("P1"), coffeeBreakWin("P2"))));
+		assertThat(next(states, i += 2),
+				is(asList(coffeeBreakWin("P1"), lose("P2"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P1"), coffeeBreakWin("P3"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P1"), coffeeBreakWin("P2"))));
 
-		assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P3"))));
-		assertThat(next(states, i += 2), is(asList(lose("P2"), coffeeBreakWin("P3"))));
-		assertThat(next(states, i += 2), is(asList(lose("P3"), coffeeBreakWin("P2"))));
+		assertThat(next(states, i += 2),
+				is(asList(coffeeBreakWin("P1"), lose("P3"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P2"), coffeeBreakWin("P3"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P3"), coffeeBreakWin("P2"))));
 	}
 
 	private List<GameState> next(List<GameState> states, int index) {
@@ -240,11 +262,13 @@ public class TournamentTest {
 	}
 
 	GameState coffeeBreakWin(String token) {
-		return GameState.builder().score(WIN).token(token).reason(CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE).build();
+		return GameState.builder().score(WIN).token(token)
+				.reason(CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE).build();
 	}
 
 	GameState lose(String token) {
-		return GameState.builder().score(LOSE).token(token).reason(DummyBoard.LOSE_MESSAGE).build();
+		return GameState.builder().score(LOSE).token(token)
+				.reason(DummyBoard.LOSE_MESSAGE).build();
 	}
 
 	@Example
@@ -262,15 +286,18 @@ public class TournamentTest {
 	}
 
 	@Property
-	void jqwikCheckTest(@ForAll("players") List<PlayerMock> players, @ForAll("numberOfSeasons") int numberOfSeasons) {
-		Tournament tournament = a(tournament().withPlayers(players.toArray(new Player[0])));
+	void jqwikCheckTest(@ForAll("players") List<PlayerMock> players,
+			@ForAll("numberOfSeasons") int numberOfSeasons) {
+		Tournament tournament = a(
+				tournament().withPlayers(players.toArray(new Player[0])));
 		for (int i = 0; i < numberOfSeasons; i++) {
 			playSeasonOf(tournament);
 		}
 
 		Matcher<Integer> matcher = is(0);
 		boolean negate = numberOfSeasons == 0 || players.size() < 2;
-		players.forEach(p -> assertThat(p.getMovesMade(), negate ? matcher : not(matcher)));
+		players.forEach(p -> assertThat(p.getMovesMade(),
+				negate ? matcher : not(matcher)));
 	}
 
 	@Provide
@@ -290,7 +317,8 @@ public class TournamentTest {
 						.list().ofMinSize(0).ofMaxSize(20));
 	}
 
-	void assertOpponentsOf(PlayerMock playerMock, List<String> expectedOpponents) {
+	void assertOpponentsOf(PlayerMock playerMock,
+			List<String> expectedOpponents) {
 		assertThat(playerMock.getOpponents(), is(expectedOpponents));
 	}
 
@@ -299,7 +327,8 @@ public class TournamentTest {
 	}
 
 	List<String> haveBeen(String games) {
-		return Stream.of(games.split("\\s")).filter(isCoffeeBreak().negate()).collect(toList());
+		return Stream.of(games.split("\\s")).filter(isCoffeeBreak().negate())
+				.collect(toList());
 	}
 
 	Predicate<? super String> isCoffeeBreak() {
