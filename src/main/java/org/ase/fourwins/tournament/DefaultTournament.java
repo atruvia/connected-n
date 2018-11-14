@@ -5,6 +5,7 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
@@ -58,6 +59,7 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private final List<Player> players = new ArrayList<>();
+	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
 
 	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
 		@Override
@@ -135,7 +137,17 @@ public class DefaultTournament implements Tournament {
 	}
 
 	protected void gameEnded(Game game) {
-		// hook method
+		tournamentListenerList.forEach(listener -> listener.gameEnded(game));
+	}
+
+	@Override
+	public void addTournamentListener(TournamentListener listener) {
+		tournamentListenerList.add(listener);
+	}
+
+	@Override
+	public void removeTournamentListener(TournamentListener listener) {
+		tournamentListenerList.remove(listener);
 	}
 
 }

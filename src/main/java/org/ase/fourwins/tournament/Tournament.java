@@ -11,6 +11,10 @@ public interface Tournament {
 		boolean isOk();
 	}
 
+	void addTournamentListener(TournamentListener listener);
+
+	void removeTournamentListener(TournamentListener listener);
+
 	Stream<GameState> playSeason();
 
 	RegistrationResult registerPlayer(Player player);
