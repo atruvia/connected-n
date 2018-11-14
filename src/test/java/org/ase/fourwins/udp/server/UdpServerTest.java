@@ -254,7 +254,22 @@ public class UdpServerTest {
 
 //	TODO joining with long runner
 //	TODO We NEED a message when a NEW game is started!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (so clients can reset states)
-//	TODO when reregistering with same name we should be in game again!!!
+
+	@Test
+	void aReRegisterdClientIsNotANewPlayer() throws IOException {
+		infiniteSeason(tournament);
+		assertTimeout(ofSeconds(10), () -> {
+			String nameToReuse = "1";
+			DummyClient client = new DummyClient(nameToReuse, "localhost", serverPort);
+			client.assertReceived("Welcome 1");
+			DummyClient newClientWithSameTokenFromSameIP = new DummyClient(nameToReuse, "localhost", serverPort);
+			newClientWithSameTokenFromSameIP.assertReceived("Welcome " + nameToReuse);
+
+			verify(tournament, timesWithTimeout(0)).playSeason();
+			client.unregister();
+			newClientWithSameTokenFromSameIP.unregister();
+		});
+	}
 
 	private void infiniteSeason(Tournament mock) {
 		when(mock.playSeason()).then(s -> {
