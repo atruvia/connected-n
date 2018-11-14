@@ -4,6 +4,7 @@ import static java.util.function.Function.identity;
 import static org.ase.fourwins.board.Board.Score.WIN;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
@@ -41,20 +42,25 @@ public class DefaultTournament implements Tournament {
 	static final class CoffeebreakGame implements Game {
 
 		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
-		private final Object other;
+		private final Player other;
 
-		CoffeebreakGame(Object other) {
+		CoffeebreakGame(Player other) {
 			this.other = other;
 		}
 
 		@Override
 		public GameState gameState() {
-			return GameState.builder().score(WIN).token(other).reason(COFFEE_BREAK_WIN_MESSAGE).build();
+			return GameState.builder().score(WIN).token(other.getToken()).reason(COFFEE_BREAK_WIN_MESSAGE).build();
 		}
 
 		@Override
 		public Game runGame() {
 			return this;
+		}
+
+		@Override
+		public List<Player> getPlayers() {
+			return Arrays.asList(other);
 		}
 	}
 
@@ -124,9 +130,9 @@ public class DefaultTournament implements Tournament {
 
 	private Game newGame(Match<Player> match) {
 		if (match.getTeam1() == coffeeBreakPlayer) {
-			return new CoffeebreakGame(match.getTeam2().getToken());
+			return new CoffeebreakGame(match.getTeam2());
 		} else if (match.getTeam2() == coffeeBreakPlayer) {
-			return new CoffeebreakGame(match.getTeam1().getToken());
+			return new CoffeebreakGame(match.getTeam1());
 		}
 		Board board = makeBoard();
 		return new DefaultGame(match.getTeam1(), match.getTeam2(), board);

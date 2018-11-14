@@ -1,9 +1,11 @@
 package org.ase.fourwins.game;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Move.moveToColumn;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +13,8 @@ import java.util.Objects;
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.BoardInfo;
+
+import lombok.Getter;
 
 public class DefaultGame implements Game {
 
@@ -37,6 +41,7 @@ public class DefaultGame implements Game {
 		}
 	}
 
+	@Getter
 	private final List<Player> players;
 	private final Iterator<Player> nextPlayer;
 	private Board board;
@@ -49,7 +54,7 @@ public class DefaultGame implements Game {
 		informPlayer(player2, player1, board.boardInfo());
 
 		this.board = board;
-		this.players = asList(player1, player2);
+		this.players = unmodifiableList(new ArrayList<>(asList(player1, player2)));
 		this.nextPlayer = new InfiniteIterator<Player>(players);
 	}
 
@@ -66,7 +71,7 @@ public class DefaultGame implements Game {
 	}
 
 	@Override
-	public DefaultGame runGame() {
+	public Game runGame() {
 		while (gameState().getScore() == IN_GAME) {
 			moves++;
 			Player player = nextPlayer.next();
@@ -78,7 +83,7 @@ public class DefaultGame implements Game {
 		}
 		return this;
 	}
-
+	
 	@Override
 	public GameState gameState() {
 		return board.gameState();

@@ -1,9 +1,12 @@
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.List;
+
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
+import org.ase.fourwins.game.Player;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
@@ -42,8 +45,13 @@ class InfluxTest {
 
       @Override
       public Game runGame() {
-        return null;
+        throw new UnsupportedOperationException();
       }
+      
+      @Override
+    	public List<Player> getPlayers() {
+    	  throw new UnsupportedOperationException();
+    	}
 
       @Override
       public GameState gameState() {

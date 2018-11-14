@@ -80,6 +80,7 @@ public class TournamentTest {
 		private final List<Player> withPlayers = new ArrayList<>();
 		private final List<Player> registerAfterwards = new ArrayList<>();
 		private final List<Player> deregisterAfterwards = new ArrayList<>();
+		private final List<TournamentListener> listeners = new ArrayList<>();
 
 		public TournamentBuilder withPlayers(Player... withPlayers) {
 			addAll(this.withPlayers, withPlayers);
@@ -119,7 +120,13 @@ public class TournamentTest {
 			withPlayers.stream().forEach(p -> {
 				tournament.registerPlayer(p);
 			});
+			listeners.stream().forEach(tournament::addTournamentListener);
 			return tournament;
+		}
+
+		public TournamentBuilder registerListener(TournamentListener listener) {
+			listeners.add(listener);
+			return this;
 		}
 
 	}
