@@ -261,7 +261,7 @@ public class UdpServerTest {
 		assertTimeout(ofSeconds(10), () -> {
 			String nameToReuse = "1";
 			DummyClient client = new DummyClient(nameToReuse, "localhost", serverPort);
-			client.assertReceived("Welcome 1");
+			client.assertReceived("Welcome " + nameToReuse);
 			DummyClient newClientWithSameTokenFromSameIP = new DummyClient(nameToReuse, "localhost", serverPort);
 			newClientWithSameTokenFromSameIP.assertReceived("Welcome " + nameToReuse);
 

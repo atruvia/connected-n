@@ -180,20 +180,23 @@ public class UdpServer {
 				send("NAME_TOO_LONG", clientIp, clientPort);
 				return;
 			}
-			handleRegisterCommand(findBy(byIpAndName(clientIp, playerName))
-					.orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
+			// Fall 1: Nix da -> Neu anlegen
+			// Fall 2: IP/Name Kombi bereits vorhanden -> ersetzen
+			// Fall 3: Name da aber andere IP -> NIX
+			Optional<UdpPlayerInfo> ex = findBy(ipAddressAndName(clientIp, playerName));
+			handleRegisterCommand(ex.orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
 		} else if ("UNREGISTER".equals(received)) {
-			findBy(byIpAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
 		} else {
-			findBy(byIpAndPort(clientIp, clientPort)).ifPresent(i -> receiverQueues.get(i).offer(received));
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> receiverQueues.get(i).offer(received));
 		}
 	}
 
-	private Predicate<UdpPlayerInfo> byIpAndPort(InetAddress clientIp, int clientPort) {
+	private Predicate<UdpPlayerInfo> ipAndPort(InetAddress clientIp, int clientPort) {
 		return i -> (i.getAdressInfo().equals(clientIp) && i.getPort() == clientPort);
 	}
 
-	private Predicate<UdpPlayerInfo> byIpAndName(InetAddress clientIp, String name) {
+	private Predicate<UdpPlayerInfo> ipAddressAndName(InetAddress clientIp, String name) {
 		return i -> (i.getAdressInfo().equals(clientIp) && i.getName().equals(name));
 	}
 
