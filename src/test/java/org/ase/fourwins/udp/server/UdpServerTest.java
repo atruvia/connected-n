@@ -20,16 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.Tournament.RegistrationResult;
-import org.ase.fourwins.udo.server.UdpServer;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

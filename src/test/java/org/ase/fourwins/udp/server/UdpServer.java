@@ -19,7 +19,6 @@ import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
-import org.ase.fourwins.udo.server.UdpServer;
 
 import lombok.Value;
 

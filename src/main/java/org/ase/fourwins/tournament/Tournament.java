@@ -13,7 +13,7 @@ public interface Tournament {
 
 	Stream<GameState> playSeason();
 
-	RegistrationResult registerPlayer(Player player) ;
+	RegistrationResult registerPlayer(Player player);
 
 	Tournament deregisterPlayer(Player player);
 
