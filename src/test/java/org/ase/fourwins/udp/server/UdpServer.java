@@ -2,12 +2,14 @@ package org.ase.fourwins.udp.server;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
@@ -53,27 +56,13 @@ public class UdpServer {
 
 		@Override
 		protected int nextColumn() {
-			String uuid = uuid();
 			try {
-				send("YOURTURN;" + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
-				String raw = receiverQueues.get(playerInfo).poll(SOCKET_TIMEOUT, MILLISECONDS);
-				String[] response = raw.split(";");
-				if (response.length == 2 && response[1].equals(uuid)) {
-					return Integer.parseInt(response[0]);
-				} else {
-					throw new IllegalArgumentException("Cannot handle/parse " + raw);
-				}
+				return Integer.parseInt(sendAndWait("YOURTURN", playerInfo));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			} catch (InterruptedException e) {
 				throw new IllegalStateException("TIMEOUT");
 			}
-		}
-
-		private String uuid() {
-			String uuid = UUID.randomUUID().toString();
-			int pos = uuid.indexOf("-");
-			return pos < 0 ? uuid : uuid.substring(0, pos);
 		}
 
 		@Override
@@ -83,6 +72,28 @@ public class UdpServer {
 			// TODO send JOIN to the client an wait for JOINING
 			return super.joinGame(opposite, boardInfo);
 		}
+	}
+
+	private String sendAndWait(String command, UdpPlayerInfo playerInfo)
+			throws SocketException, IOException, InterruptedException {
+		String delimiter = ";";
+		String uuid = uuid();
+		send(command + delimiter + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
+		String response = receiverQueues.get(playerInfo).poll(SOCKET_TIMEOUT, MILLISECONDS);
+		String[] splitted = response.split(delimiter);
+		if (splitted.length < 2) {
+			throw new IllegalArgumentException("Cannot handle/parse " + response);
+		} else if (!splitted[splitted.length - 1].equals(uuid)) {
+			throw new IllegalStateException(
+					"UUID mismatch, expected " + uuid + " got " + splitted[splitted.length - 1]);
+		}
+		return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
+	}
+
+	private String uuid() {
+		String uuid = UUID.randomUUID().toString();
+		int pos = uuid.indexOf("-");
+		return pos < 0 ? uuid : uuid.substring(0, pos);
 	}
 
 	@Value
