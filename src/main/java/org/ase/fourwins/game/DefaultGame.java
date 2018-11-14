@@ -75,6 +75,8 @@ public class DefaultGame implements Game {
 		while (gameState().getScore() == IN_GAME) {
 			moves++;
 			Player player = nextPlayer.next();
+			
+			// TODO what todo if one of these methods will throw RTE? (player should lose?)
 			int column = player.nextColumn();
 			String token = player.getToken();
 			// TODO log

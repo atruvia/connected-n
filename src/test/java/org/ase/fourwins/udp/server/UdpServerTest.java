@@ -73,6 +73,30 @@ public class UdpServerTest {
 			this.communicator.getMessageSender().send(message);
 		}
 
+		void trySend(String message) {
+			try {
+				send(message);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		void assertReceived(String... messages) throws InterruptedException {
+			List<String> expected = asList(messages);
+			while (getReceived().size() < expected.size()) {
+				TimeUnit.MILLISECONDS.sleep(25);
+			}
+			assertThat(getReceived(), is(expected));
+		}
+
+		List<String> waitUntilReceived(int expectedSize) throws InterruptedException {
+			List<String> received;
+			while ((received = getReceived()).size() < expectedSize) {
+				TimeUnit.MILLISECONDS.sleep(25);
+			}
+			return received;
+		}
+
 	}
 
 	private final int serverPort = freePort();
@@ -108,7 +132,7 @@ public class UdpServerTest {
 		assertTimeout(ofSeconds(10), () -> {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
 			verify(tournament, timesWithTimeout(1)).registerPlayer(Mockito.any(Player.class));
-			assertClientReceived(client1, "Welcome 1");
+			client1.assertReceived("Welcome 1");
 			verify(tournament, times(0)).playSeason();
 		});
 	}
@@ -134,7 +158,7 @@ public class UdpServerTest {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
 			verify(tournament, timesWithTimeout(1)).registerPlayer(Mockito.any(Player.class));
-			assertClientReceived(client, "Welcome " + longName);
+			client.assertReceived("Welcome " + longName);
 			verify(tournament, timesWithTimeout(0)).playSeason();
 		});
 	}
@@ -146,7 +170,7 @@ public class UdpServerTest {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
 			verify(tournament, timesWithTimeout(0)).registerPlayer(Mockito.any(Player.class));
-			assertClientReceived(client, "NAME_TOO_LONG");
+			client.assertReceived("NAME_TOO_LONG");
 			verify(tournament, timesWithTimeout(0)).playSeason();
 		});
 	}
@@ -159,14 +183,14 @@ public class UdpServerTest {
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
 
 			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
-			assertClientReceived(client1, "Welcome 1");
-			assertClientReceived(client2, "Welcome 2");
+			client1.assertReceived("Welcome 1");
+			client2.assertReceived("Welcome 2");
 			verify(tournament, timesWithTimeout(1)).playSeason();
 		});
 	}
 
 	@Test
-	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreJoinig() throws IOException, InterruptedException {
+	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreRegistered() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
 		assertTimeout(ofSeconds(10), () -> {
 			new DummyClient("1", "localhost", serverPort);
@@ -177,7 +201,7 @@ public class UdpServerTest {
 
 			// while season is running others can register
 			DummyClient client3 = new DummyClient("3", "localhost", serverPort);
-			assertClientReceived(client3, "Welcome 3");
+			client3.assertReceived("Welcome 3");
 			verify(tournament, timesWithTimeout(3)).registerPlayer(Mockito.any(Player.class));
 		});
 	}
@@ -188,7 +212,7 @@ public class UdpServerTest {
 		assertTimeout(ofSeconds(10), () -> {
 			DummyClient client = new DummyClient("1", "localhost", serverPort);
 			client.unregister();
-			assertClientReceived(client, "Welcome 1", "UNREGISTERED");
+			client.assertReceived("Welcome 1", "UNREGISTERED");
 		});
 	}
 
@@ -208,17 +232,17 @@ public class UdpServerTest {
 
 			// while season is running others can register
 			DummyClient client3 = new DummyClient("3", "localhost", serverPort);
-			assertClientReceived(client3, "Welcome 3");
+			client3.assertReceived("Welcome 3");
 			verify(tournament, timesWithTimeout(3)).registerPlayer(Mockito.any(Player.class));
 
 			// TODO signal to Mockito answer to delay until...
 
 			client3.unregister();
 			client2.unregister();
-			assertClientReceived(client3, "Welcome 3", "UNREGISTERED");
-			assertClientReceived(client2, "Welcome 2", "UNREGISTERED");
+			client3.assertReceived("Welcome 3", "UNREGISTERED");
+			client2.assertReceived("Welcome 2", "UNREGISTERED");
 			int seasonsStartedBeforeUnregister = seasonsStarted.get();
-			
+
 			// TODO ...here
 
 			// TODO eliminate wait
@@ -229,7 +253,8 @@ public class UdpServerTest {
 	}
 
 //	TODO joining with long runner
-//	TODO when reregistering with same name we should be in game again
+//	TODO We NEED a message when a NEW game is started!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (so clients can reset states)
+//	TODO when reregistering with same name we should be in game again!!!
 
 	private void infiniteSeason(Tournament mock) {
 		when(mock.playSeason()).then(s -> {
@@ -241,14 +266,6 @@ public class UdpServerTest {
 
 	private String nameOfLength(int len) {
 		return IntStream.range(0, len).mapToObj(i -> "X").collect(joining());
-	}
-
-	private void assertClientReceived(DummyClient client, String... messages) throws InterruptedException {
-		List<String> expected = asList(messages);
-		while (client.getReceived().size() < expected.size()) {
-			TimeUnit.MILLISECONDS.sleep(25);
-		}
-		assertThat(client.getReceived(), is(expected));
 	}
 
 	private VerificationMode timesWithTimeout(int times) {

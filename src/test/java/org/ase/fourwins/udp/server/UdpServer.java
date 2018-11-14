@@ -1,5 +1,6 @@
 package org.ase.fourwins.udp.server;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.IOException;
@@ -9,12 +10,17 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament;
@@ -25,10 +31,12 @@ import lombok.Value;
 public class UdpServer {
 
 	public static final int MAX_CLIENT_NAME_LENGTH = 30;
-	private static final int SOCKET_TIMEOUT = 250;
+//	private static final int SOCKET_TIMEOUT = 250;
+	private static final int SOCKET_TIMEOUT = (int) TimeUnit.SECONDS.toMillis(2);
 
 	private final Tournament tournament;
 	private final Map<UdpPlayerInfo, Player> players = new HashMap<>();
+	private final Map<UdpPlayerInfo, ArrayBlockingQueue<String>> receiverQueues = new ConcurrentHashMap<>();
 
 	private final DatagramSocket socket;
 	private final byte[] buf = new byte[1024];
@@ -68,8 +76,13 @@ public class UdpServer {
 					System.out.println("Waiting for more players to join");
 				} else {
 					System.out.println("Season starting");
-					final Stream<GameState> results = tournament.playSeason();
-					// TODO accumulate
+					tournament.playSeason().forEach(s -> {
+						Score score = s.getScore();
+						Object token = s.getToken();
+						// TODO find matching PlayerInfo and send score/token
+						System.out.println(score + ";" + token);
+					});
+					// TODO accumulate score? do we still need beside influx?
 				}
 			}
 		}).start();
@@ -89,8 +102,7 @@ public class UdpServer {
 			try {
 				socket.receive(packet);
 				String received = new String(packet.getData(), 0, packet.getLength());
-				System.out.println("Server received: " + received);
-				// TODO we depend on the IP not the name
+				// TODO we depend just on the IP not the name -> depend on IP AND name!
 				dispatchCommand(new UdpPlayerInfo(packet.getAddress(), packet.getPort()), received);
 			} catch (final IOException e) {
 				e.printStackTrace();
@@ -106,10 +118,13 @@ public class UdpServer {
 		} else if ("UNREGISTER".equals(received)) {
 			synchronized (players) {
 				Player removed = players.remove(playerInfo);
-				send("UNREGISTERED", playerInfo);
+				receiverQueues.remove(playerInfo);
+				send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
 				System.out.println(
 						"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
 			}
+		} else {
+			receiverQueues.get(playerInfo).offer(received);
 		}
 	}
 
@@ -117,24 +132,63 @@ public class UdpServer {
 			throws SocketException, IOException {
 		String[] split = received.split(";");
 		if (split.length < 2) {
-			send("NO_NAME_GIVEN", playerInfo);
+			send("NO_NAME_GIVEN", playerInfo.getAdressInfo(), playerInfo.getPort());
 			return;
 		}
 		String playerName = split[1].trim();
 		if (playerName.length() > MAX_CLIENT_NAME_LENGTH) {
-			send("NAME_TOO_LONG", playerInfo);
+			send("NAME_TOO_LONG", playerInfo.getAdressInfo(), playerInfo.getPort());
 			return;
 		}
 
-		Player player = newPlayer(playerName);
+		Player player = new Player(playerName) {
+			@Override
+			protected int nextColumn() {
+				String uuid = uuid();
+				try {
+					send("YOURTURN;" + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
+					try {
+						String[] response = receiverQueues.get(playerInfo).poll(SOCKET_TIMEOUT, MILLISECONDS)
+								.split(";");
+						if (response.length == 2 && response[1].equals(uuid)) {
+							return Integer.parseInt(response[0]);
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+						return -1;
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				// TODO where and who should handle how?
+				return Integer.MIN_VALUE;
+			}
+
+			private String uuid() {
+				String uuid = UUID.randomUUID().toString();
+				int pos = uuid.indexOf("-");
+				return pos < 0 ? uuid : uuid.substring(0, pos);
+			}
+
+			@Override
+			public boolean joinGame(final String opposite, final BoardInfo boardInfo) {
+				// sendAndReceive("JOIN", playerInfo);
+				// JOIN Game (not season)
+				// TODO send JOIN to the client an wait for JOINING
+				return super.joinGame(opposite, boardInfo);
+			}
+		};
+
 		synchronized (players) {
 			if (!tournament.registerPlayer(player).isOk()) {
-				send("NAME_ALREADY_TAKEN", playerInfo);
+				send("NAME_ALREADY_TAKEN", playerInfo.getAdressInfo(), playerInfo.getPort());
 				return;
 			}
 			players.put(playerInfo, player);
+			receiverQueues.put(playerInfo, new ArrayBlockingQueue<>(5));
+
 			System.out.println("Player " + playerName + " registered, we now have " + players.size() + " player(s)");
-			send("Welcome " + playerName, playerInfo);
+			send("Welcome " + playerName, playerInfo.getAdressInfo(), playerInfo.getPort());
 			try {
 				lock.lock();
 				playerRegistered.signal();
@@ -146,38 +200,23 @@ public class UdpServer {
 //		sendMessageToPlayer(registerResult.fold(ErrorMessage::toString, identity()), playerInfo);
 	}
 
-	private Player newPlayer(String playerName) {
-		final Player player = new Player(playerName) {
-			@Override
-			protected int nextColumn() {
-				// TODO Auto-generated method stub
-				return 0;
-			}
-
-			@Override
-			public boolean joinGame(final String opposite, final BoardInfo boardInfo) {
-//				sendAndReceive("JOIN", playerInfo);
-				// JOIN Game (not season)
-				// TODO send JOIN to the client an wait for JOINING
-				return super.joinGame(opposite, boardInfo);
-			}
-		};
-		return player;
-	}
-
-	private String sendAndReceive(String message, UdpPlayerInfo playerInfo) throws SocketException, IOException {
-		try (DatagramSocket sendSocket = send(message, playerInfo)) {
+	private String sendAndReceive(String message, InetAddress clientIp, int clientPort)
+			throws SocketException, IOException {
+		try (DatagramSocket sendSocket = send(message, clientIp, clientPort)) {
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			sendSocket.receive(packet);
-			return new String(packet.getData(), 0, packet.getLength());
+			String string = new String(packet.getData(), 0, packet.getLength());
+			System.out.println("+++" + string);
+			return string;
 		}
 	}
 
-	private DatagramSocket send(String message, UdpPlayerInfo playerInfo) throws SocketException, IOException {
+	private DatagramSocket send(String message, InetAddress clientIp, int clienPort)
+			throws SocketException, IOException {
 		byte[] bytes = message.getBytes();
 		DatagramSocket sendSocket = new DatagramSocket();
 		sendSocket.setSoTimeout(SOCKET_TIMEOUT);
-		sendSocket.send(new DatagramPacket(bytes, bytes.length, playerInfo.getAdressInfo(), playerInfo.getPort()));
+		sendSocket.send(new DatagramPacket(bytes, bytes.length, clientIp, clienPort));
 		return sendSocket;
 	}
 
