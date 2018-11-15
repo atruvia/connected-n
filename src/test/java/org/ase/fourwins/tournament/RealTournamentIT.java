@@ -10,6 +10,7 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -19,7 +20,8 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.board.mockplayers.RandomMockPlayer;
-import org.ase.fourwins.tournament.Tournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.Tournament.RegistrationResult;
 
 import net.jqwik.api.Example;
 import net.jqwik.api.ForAll;
@@ -80,7 +82,7 @@ public class RealTournamentIT {
 	}
 
 	Stream<GameState> playSeasons(int seasons, List<PlayerMock> players) {
-		Tournament tournament = registerPlayers(new Tournament(), players);
+		Tournament tournament = registerPlayers(new DefaultTournament(), players);
 		return playSeasons(seasons, tournament).filter(isCoffeeBreak.negate());
 	}
 
@@ -89,14 +91,23 @@ public class RealTournamentIT {
 	}
 
 	protected Tournament registerPlayers(Tournament tournament, Collection<PlayerMock> players) {
-		players.forEach(tournament::registerPlayer);
+		players.forEach(safeRegister(tournament));
 		return tournament;
+	}
+
+	protected Consumer<? super PlayerMock> safeRegister(Tournament tournament) {
+		return t -> {
+			RegistrationResult registerPlayer = tournament.registerPlayer(t);
+			if (!registerPlayer.isOk()) {
+				throw new RuntimeException("REGISTRATION_ERROR");
+			}
+		};
 	}
 
 	void verifyPlayers(Collection<PlayerMock> players, int numberOfSeasons) {
 		players.forEach(p -> {
 			int expectedJoinedMatches = (players.size() - 1) * numberOfSeasons * 2;
-			assertThat(p.getOpposites().size(), is(expectedJoinedMatches));
+			assertThat(p.getOpponents().size(), is(expectedJoinedMatches));
 		});
 	}
 

@@ -3,9 +3,8 @@ package org.ase.fourwins.board;
 import static org.ase.fourwins.board.BoardMatcher.isDraw;
 import static org.ase.fourwins.board.BoardMatcher.isGameError;
 import static org.ase.fourwins.board.BoardMatcher.isStillInGame;
-import static org.ase.fourwins.board.BoardMatcher.loserIs;
 import static org.ase.fourwins.board.BoardMatcher.winnerIs;
-import static org.ase.fourwins.board.FourWinsTest.BoardBuilder.boardOfSize;
+import static org.ase.fourwins.board.BoardTest.BoardBuilder.boardOfSize;
 import static org.ase.fourwins.board.Move.moveToColumn;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -14,11 +13,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.ase.fourwins.board.Board;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class FourWinsTest {
+public class BoardTest {
 
 	@Test
 	void no_score_when_board_still_can_be_played() {

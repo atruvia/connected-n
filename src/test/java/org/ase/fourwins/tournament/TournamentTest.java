@@ -3,6 +3,7 @@ package org.ase.fourwins.tournament;
 import static java.util.Arrays.asList;
 import static java.util.Collections.addAll;
 import static java.util.stream.Collectors.toList;
+import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.GameStateMatcher.isGameError;
@@ -11,21 +12,23 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.BoardInfo;
+import org.ase.fourwins.board.Move;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.Tournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.Tournament.RegistrationResult;
+import org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Disabled;
 
@@ -39,270 +42,307 @@ import net.jqwik.api.arbitraries.IntegerArbitrary;
 
 public class TournamentTest {
 
-  static final class TournamentBuilder {
+	static final class TournamentBuilder {
 
-    public static TournamentBuilder tournament() {
-      return new TournamentBuilder();
-    }
+		static final class DummyBoard extends Board {
 
-    private final List<Player> withPlayers = new ArrayList<>();
-    private final List<Player> registerAfterwards = new ArrayList<>();
-    private final List<Player> deregisterAfterwards = new ArrayList<>();
-    private final List<TournamentListener> listenerList = new CopyOnWriteArrayList<>();
+			public static final String LOSE_MESSAGE = "dummy board lose message";
+			private int moves;
+			private GameState gameState = GameState.builder().score(IN_GAME)
+					.build();
 
-    public TournamentBuilder withPlayers(Player... withPlayers) {
-      addAll(this.withPlayers, withPlayers);
-      return this;
-    }
+			@Override
+			public GameState gameState() {
+				return gameState;
+			}
 
-    public TournamentBuilder registerListener(TournamentListener listener) {
-      listenerList.add(listener);
-      return this;
-    }
+			@Override
+			public Board insertToken(Move move, Object token) {
+				if (++moves == 7) {
+					this.gameState = gameState.toBuilder() //
+							.score(LOSE) //
+							.token(token) //
+							.reason(LOSE_MESSAGE) //
+							.build();
+				}
+				return this;
+			}
 
-    public TournamentBuilder registerAfterwards(Player... registerAfterwards) {
-      addAll(this.registerAfterwards, registerAfterwards);
-      return this;
-    }
+			@Override
+			public BoardInfo boardInfo() {
+				return BoardInfo.sevenColsSixRows;
+			}
+		}
 
-    public TournamentBuilder deregisterAfterwards(Player... deregisterAfterwards) {
-      addAll(this.deregisterAfterwards, deregisterAfterwards);
-      return this;
-    }
+		public static TournamentBuilder tournament() {
+			return new TournamentBuilder();
+		}
 
-    public Tournament build() {
-      Tournament tournament = new Tournament() {
+		private final List<Player> withPlayers = new ArrayList<>();
+		private final List<Player> registerAfterwards = new ArrayList<>();
+		private final List<Player> deregisterAfterwards = new ArrayList<>();
+		private final List<TournamentListener> tournamentListenerList = new ArrayList<>();
 
-        private final AtomicInteger gamesStarted = new AtomicInteger(0);
+		public TournamentBuilder withPlayers(Player... withPlayers) {
+			addAll(this.withPlayers, withPlayers);
+			return this;
+		}
 
-        @Override
-        protected Board makeBoard() {
-          return new DummyBoard();
-        }
+		public TournamentBuilder registerAfterwards(
+				Player... registerAfterwards) {
+			addAll(this.registerAfterwards, registerAfterwards);
+			return this;
+		}
 
-        @Override
-        protected void gameEnded(Game game) {
-          super.gameEnded(game);
-          if (gamesStarted.incrementAndGet() == 1) {
-            registerAfterwards.stream()
-                .forEach(this::registerPlayer);
-            deregisterAfterwards.stream()
-                .forEach(this::deregisterPlayer);
-          }
-        }
+		public TournamentBuilder deregisterAfterwards(
+				Player... deregisterAfterwards) {
+			addAll(this.deregisterAfterwards, deregisterAfterwards);
+			return this;
+		}
 
-      };
-      withPlayers.stream()
-          .forEach(tournament::registerPlayer);
+		public Tournament build() {
+			Tournament tournament = new DefaultTournament() {
 
-      listenerList.stream()
-          .forEach(tournament::registerListener);
-      return tournament;
-    }
+				private final AtomicInteger gamesStarted = new AtomicInteger(0);
 
-  }
+				@Override
+				protected Board makeBoard() {
+					return new DummyBoard();
+				}
 
-  @Example
-  void cannotRegisterWithIdenticalName() {
-    String token = "aTokenTakenTwoTimes";
-    Tournament tournament = a(tournament().withPlayers(mock(token)));
-    assertThrows(RuntimeException.class, () -> {
-      tournament.registerPlayer(mock(token));
-    });
-  }
+				@Override
+				protected void gameEnded(Game game) {
+					super.gameEnded(game);
+					if (gamesStarted.incrementAndGet() == 1) {
+						registerAfterwards.stream()
+								.forEach(this::registerPlayer);
+						deregisterAfterwards.stream()
+								.forEach(this::deregisterPlayer);
+					}
+				}
 
-  @Example
-  void twoPlayersPlayOneSeason() {
-    PlayerMock p1 = mock("P1");
-    PlayerMock p2 = mock("P2");
+			};
+			withPlayers.stream().forEach(p -> {
+				tournament.registerPlayer(p);
+			});
 
-    List<GameState> states = playSeasonOf(a(tournament().withPlayers(p1, p2)));
-    assertThat(states.size(), is(2));
+			tournamentListenerList.forEach(
+					listener -> tournament.addTournamentListener(listener));
+			return tournament;
+		}
 
-    assertThat(p1.getMovesMade(), is(7));
-    assertThat(p2.getMovesMade(), is(7));
+		public TournamentBuilder registerListener(TournamentListener listener) {
+			tournamentListenerList.add(listener);
+			return this;
+		}
 
-    assertThat(states.get(0), isGameError(DummyBoard.LOSE_MESSAGE).withToken("P1"));
-    assertThat(states.get(1), isGameError(DummyBoard.LOSE_MESSAGE).withToken("P2"));
-  }
+	}
 
-  @Example
-  void whenJoiningTheStartedSeasonThereWillBeNoInteractionWithTheNewlyJoinedPlayer() {
-    PlayerMock p1 = mock("P1");
-    PlayerMock p2 = mock("P2");
-    PlayerMock p3 = mock("P3");
+	@Example
+	void cannotRegisterWithIdenticalName() {
+		String token = "aTokenTakenTwoTimes";
+		Tournament tournament = a(tournament().withPlayers(mock(token)));
+		RegistrationResult registerPlayer = tournament
+				.registerPlayer(mock(token));
+		assertThat(registerPlayer.isOk(), is(false));
+	}
 
-    playSeasonOf(a(tournament().withPlayers(p1, p2)));
-    assertThat(p3.getMovesMade(), is(0));
-  }
+	@Example
+	void twoPlayersPlayOneSeason() {
+		PlayerMock p1 = mock("P1");
+		PlayerMock p2 = mock("P2");
 
-  @Example
-  void theJoinedPlayersWillBePartOfTheNextSeason() {
-    PlayerMock p1 = mock("P1");
-    PlayerMock p2 = mock("P2");
-    PlayerMock p3 = mock("P3");
-    PlayerMock p4 = mock("P4");
+		List<GameState> states = playSeasonOf(
+				a(tournament().withPlayers(p1, p2)));
+		assertThat(states.size(), is(2));
 
-    Tournament tournament = a(tournament().withPlayers(p1, p2)
-        .registerAfterwards(p3, p4));
+		assertThat(p1.getMovesMade(), is(7));
+		assertThat(p2.getMovesMade(), is(7));
 
-    playSeasonOf(tournament);
-    assertOppositesOf(p1, haveBeen(twoTimes("P2")));
-    assertOppositesOf(p2, haveBeen(twoTimes("P1")));
-    assertOppositesOf(p3, haveBeen(twoTimes("--")));
-    assertOppositesOf(p4, haveBeen(twoTimes("--")));
+		assertThat(states.get(0),
+				isGameError(DummyBoard.LOSE_MESSAGE).withToken("P1"));
+		assertThat(states.get(1),
+				isGameError(DummyBoard.LOSE_MESSAGE).withToken("P2"));
+	}
 
-    playSeasonOf(tournament);
-    assertOppositesOf(p1, haveBeen("P2 P2 P4 P2 P3 P4 P2 P3"));
-    assertOppositesOf(p2, haveBeen("P1 P1 P3 P1 P4 P3 P1 P4"));
-    assertOppositesOf(p3, haveBeen("-- -- P2 P4 P1 P2 P4 P1"));
-    assertOppositesOf(p4, haveBeen("-- -- P1 P3 P2 P1 P3 P2"));
-  }
+	@Example
+	void whenJoiningTheStartedSeasonThereWillBeNoInteractionWithTheNewlyJoinedPlayer() {
+		PlayerMock p1 = mock("P1");
+		PlayerMock p2 = mock("P2");
+		PlayerMock p3 = mock("P3");
 
-  @Example
-  void aDereigsteredPlayerWillStillBePartOfTheRunningSeason() {
-    PlayerMock p1 = mock("P1");
-    PlayerMock p2 = mock("P2");
-    PlayerMock p3 = mock("P3");
-    PlayerMock p4 = mock("P4");
+		playSeasonOf(a(tournament().withPlayers(p1, p2)));
+		assertThat(p3.getMovesMade(), is(0));
+	}
 
-    Tournament tournament = a(tournament().withPlayers(p1, p2, p3, p4)
-        .deregisterAfterwards(p1, p4));
+	@Example
+	void theJoinedPlayersWillBePartOfTheNextSeason() {
+		PlayerMock p1 = mock("P1");
+		PlayerMock p2 = mock("P2");
+		PlayerMock p3 = mock("P3");
+		PlayerMock p4 = mock("P4");
 
-    playSeasonOf(tournament);
-    assertOppositesOf(p1, haveBeen(twoTimes("P4 P2 P3")));
-    assertOppositesOf(p2, haveBeen(twoTimes("P3 P1 P4")));
-    assertOppositesOf(p3, haveBeen(twoTimes("P2 P4 P1")));
-    assertOppositesOf(p4, haveBeen(twoTimes("P1 P3 P2")));
+		Tournament tournament = a(
+				tournament().withPlayers(p1, p2).registerAfterwards(p3, p4));
 
-    playSeasonOf(tournament);
-    assertOppositesOf(p1, haveBeen(twoTimes("P4 P2 P3") + " " + twoTimes("--")));
-    assertOppositesOf(p2, haveBeen(twoTimes("P3 P1 P4") + " " + twoTimes("P3")));
-    assertOppositesOf(p3, haveBeen(twoTimes("P2 P4 P1") + " " + twoTimes("P2")));
-    assertOppositesOf(p4, haveBeen(twoTimes("P1 P3 P2") + " " + twoTimes("--")));
-  }
+		playSeasonOf(tournament);
+		assertOpponentsOf(p1, haveBeen(twoTimes("P2")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P1")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("--")));
+		assertOpponentsOf(p4, haveBeen(twoTimes("--")));
 
-  private String twoTimes(String string) {
-    return string + " " + string;
-  }
+		playSeasonOf(tournament);
+		assertOpponentsOf(p1, haveBeen("P2 P2 P4 P2 P3 P4 P2 P3"));
+		assertOpponentsOf(p2, haveBeen("P1 P1 P3 P1 P4 P3 P1 P4"));
+		assertOpponentsOf(p3, haveBeen("-- -- P2 P4 P1 P2 P4 P1"));
+		assertOpponentsOf(p4, haveBeen("-- -- P1 P3 P2 P1 P3 P2"));
+	}
 
-  @Example
-  void tournamentWithOddPlayerCount() {
-    PlayerMock p1 = mock("P1");
-    PlayerMock p2 = mock("P2");
-    PlayerMock p3 = mock("P3");
+	@Example
+	void aDereigsteredPlayerWillStillBePartOfTheRunningSeason() {
+		PlayerMock p1 = mock("P1");
+		PlayerMock p2 = mock("P2");
+		PlayerMock p3 = mock("P3");
+		PlayerMock p4 = mock("P4");
 
-    List<GameState> states = playSeasonOf(a(tournament().withPlayers(p1, p2, p3)));
+		Tournament tournament = a(tournament().withPlayers(p1, p2, p3, p4)
+				.deregisterAfterwards(p1, p4));
 
-    assertOppositesOf(p1, haveBeen(twoTimes("-- P2 P3")));
-    assertOppositesOf(p2, haveBeen(twoTimes("P3 P1 --")));
-    assertOppositesOf(p3, haveBeen(twoTimes("P2 -- P1")));
+		playSeasonOf(tournament);
+		assertOpponentsOf(p1, haveBeen(twoTimes("P4 P2 P3")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 P4")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("P2 P4 P1")));
+		assertOpponentsOf(p4, haveBeen(twoTimes("P1 P3 P2")));
 
-    int i = 0;
-    assertThat(states.size(), is(3 * 2 * 2));
-    assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P2"))));
-    assertThat(next(states, i += 2), is(asList(lose("P1"), coffeeBreakWin("P3"))));
-    assertThat(next(states, i += 2), is(asList(lose("P1"), coffeeBreakWin("P2"))));
+		playSeasonOf(tournament);
+		assertOpponentsOf(p1,
+				haveBeen(twoTimes("P4 P2 P3") + " " + twoTimes("--")));
+		assertOpponentsOf(p2,
+				haveBeen(twoTimes("P3 P1 P4") + " " + twoTimes("P3")));
+		assertOpponentsOf(p3,
+				haveBeen(twoTimes("P2 P4 P1") + " " + twoTimes("P2")));
+		assertOpponentsOf(p4,
+				haveBeen(twoTimes("P1 P3 P2") + " " + twoTimes("--")));
+	}
 
-    assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P3"))));
-    assertThat(next(states, i += 2), is(asList(lose("P2"), coffeeBreakWin("P3"))));
-    assertThat(next(states, i += 2), is(asList(lose("P3"), coffeeBreakWin("P2"))));
-  }
+	private String twoTimes(String string) {
+		return string + " " + string;
+	}
 
-  private List<GameState> next(List<GameState> states, int index) {
-    return states.subList(index - 2, index);
-  }
+	@Example
+	void tournamentWithOddPlayerCount() {
+		PlayerMock p1 = mock("P1");
+		PlayerMock p2 = mock("P2");
+		PlayerMock p3 = mock("P3");
 
-  GameState coffeeBreakWin(String token) {
-    return GameState.builder()
-        .score(WIN)
-        .token(token)
-        .reason(CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE)
-        .build();
-  }
+		List<GameState> states = playSeasonOf(
+				a(tournament().withPlayers(p1, p2, p3)));
 
-  GameState lose(String token) {
-    return GameState.builder()
-        .score(LOSE)
-        .token(token)
-        .reason(DummyBoard.LOSE_MESSAGE)
-        .build();
-  }
+		assertOpponentsOf(p1, haveBeen(twoTimes("-- P2 P3")));
+		assertOpponentsOf(p2, haveBeen(twoTimes("P3 P1 --")));
+		assertOpponentsOf(p3, haveBeen(twoTimes("P2 -- P1")));
 
-  @Example
-  void playersCanUseTheCoffeeBreakToken() {
-    PlayerMock p1 = mock(Tournament.coffeeBreakPlayer.getToken());
-    Tournament tournament = a(tournament().withPlayers(p1));
-    playSeasonOf(tournament);
-    assertOppositesOf(p1, haveBeen("-- --"));
-  }
+		int i = 0;
+		assertThat(states.size(), is(3 * 2 * 2));
+		assertThat(next(states, i += 2),
+				is(asList(coffeeBreakWin("P1"), lose("P2"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P1"), coffeeBreakWin("P3"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P1"), coffeeBreakWin("P2"))));
 
-  @Example
-  @Disabled
-  private void whatIsTheResultIfBothPlayersDontWantToPlay_SecondWins_or_Draw() {
-    fail("implement");
-  }
+		assertThat(next(states, i += 2),
+				is(asList(coffeeBreakWin("P1"), lose("P3"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P2"), coffeeBreakWin("P3"))));
+		assertThat(next(states, i += 2),
+				is(asList(lose("P3"), coffeeBreakWin("P2"))));
+	}
 
-  @Property
-  void jqwikCheckTest(@ForAll("players") List<PlayerMock> players,
-      @ForAll("numberOfSeasons") int numberOfSeasons) {
-    Tournament tournament = a(tournament().withPlayers(players.toArray(new Player[0])));
-    for (int i = 0; i < numberOfSeasons; i++) {
-      playSeasonOf(tournament);
-    }
+	private List<GameState> next(List<GameState> states, int index) {
+		return states.subList(index - 2, index);
+	}
 
-    Matcher<Integer> matcher = is(0);
-    boolean negate = numberOfSeasons == 0 || players.size() < 2;
-    players.forEach(p -> assertThat(p.getMovesMade(), negate ? matcher : not(matcher)));
-  }
+	GameState coffeeBreakWin(String token) {
+		return GameState.builder().score(WIN).token(token)
+				.reason(CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE).build();
+	}
 
-  @Provide
-  IntegerArbitrary numberOfSeasons() {
-    return Arbitraries.integers()
-        .between(0, 100);
-  }
+	GameState lose(String token) {
+		return GameState.builder().score(LOSE).token(token)
+				.reason(DummyBoard.LOSE_MESSAGE).build();
+	}
 
-  @Provide
-  Arbitrary<List<PlayerMock>> players() {
-    return Arbitraries.integers()
-        .between(2, 5)
-        .flatMap( //
-            stringSize -> Arbitraries.strings() //
-                .alpha() //
-                .ofMinLength(stringSize) //
-                .ofMaxLength(stringSize) //
-                .unique() //
-                .map(PlayerMock::new) //
-                .list()
-                .ofMinSize(0)
-                .ofMaxSize(20));
-  }
+	@Example
+	void playersCanUseTheCoffeeBreakToken() {
+		PlayerMock p1 = mock(DefaultTournament.coffeeBreakPlayer.getToken());
+		Tournament tournament = a(tournament().withPlayers(p1));
+		playSeasonOf(tournament);
+		assertOpponentsOf(p1, haveBeen("-- --"));
+	}
 
-  void assertOppositesOf(PlayerMock playerMock, List<String> expectedOpposites) {
-    assertThat(playerMock.getOpposites(), is(expectedOpposites));
-  }
+	@Example
+	@Disabled
+	private void whatIsTheResultIfBothPlayersDontWantToPlay_SecondWins_or_Draw() {
+		fail("implement");
+	}
 
-  Tournament a(TournamentBuilder builder) {
-    return builder.build();
-  }
+	@Property
+	void jqwikCheckTest(@ForAll("players") List<PlayerMock> players,
+			@ForAll("numberOfSeasons") int numberOfSeasons) {
+		Tournament tournament = a(
+				tournament().withPlayers(players.toArray(new Player[0])));
+		for (int i = 0; i < numberOfSeasons; i++) {
+			playSeasonOf(tournament);
+		}
 
-  List<String> haveBeen(String games) {
-    return Stream.of(games.split("\\s"))
-        .filter(isCoffeeBreak().negate())
-        .collect(toList());
-  }
+		Matcher<Integer> matcher = is(0);
+		boolean negate = numberOfSeasons == 0 || players.size() < 2;
+		players.forEach(p -> assertThat(p.getMovesMade(),
+				negate ? matcher : not(matcher)));
+	}
 
-  Predicate<? super String> isCoffeeBreak() {
-    return "--"::equals;
-  }
+	@Provide
+	IntegerArbitrary numberOfSeasons() {
+		return Arbitraries.integers().between(0, 100);
+	}
 
-  List<GameState> playSeasonOf(Tournament tournament) {
-    return tournament.playSeason()
-        .collect(toList());
-  }
+	@Provide
+	Arbitrary<List<PlayerMock>> players() {
+		return Arbitraries.integers().between(2, 5).flatMap( //
+				stringSize -> Arbitraries.strings() //
+						.alpha() //
+						.ofMinLength(stringSize) //
+						.ofMaxLength(stringSize) //
+						.unique() //
+						.map(PlayerMock::new) //
+						.list().ofMinSize(0).ofMaxSize(20));
+	}
 
-  PlayerMock mock(String token) {
-    return new PlayerMock(token);
-  }
+	void assertOpponentsOf(PlayerMock playerMock,
+			List<String> expectedOpponents) {
+		assertThat(playerMock.getOpponents(), is(expectedOpponents));
+	}
+
+	Tournament a(TournamentBuilder builder) {
+		return builder.build();
+	}
+
+	List<String> haveBeen(String games) {
+		return Stream.of(games.split("\\s")).filter(isCoffeeBreak().negate())
+				.collect(toList());
+	}
+
+	Predicate<? super String> isCoffeeBreak() {
+		return "--"::equals;
+	}
+
+	List<GameState> playSeasonOf(Tournament tournament) {
+		return tournament.playSeason().collect(toList());
+	}
+
+	PlayerMock mock(String token) {
+		return new PlayerMock(token);
+	}
 
 }
