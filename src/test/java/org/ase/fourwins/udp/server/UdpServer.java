@@ -52,11 +52,11 @@ public class UdpServer {
 		// TODO Switch to CompletableFuture
 		private final ArrayBlockingQueue<String> receiverQueues = new ArrayBlockingQueue<>(5);
 
-		boolean toQueue(String received) {
+		boolean writeQueue(String received) {
 			return receiverQueues.offer(received);
 		}
 
-		String fromQueue(Duration timeout) {
+		String readQueue(Duration timeout) {
 			try {
 				return receiverQueues.poll(timeout.toMillis(), MILLISECONDS);
 			} catch (InterruptedException e) {
@@ -91,7 +91,7 @@ public class UdpServer {
 		String delimiter = ";";
 		String uuid = uuid();
 		send(command + delimiter + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
-		String response = playerInfo.fromQueue(TIMEOUT);
+		String response = playerInfo.readQueue(TIMEOUT);
 		if (response == null) {
 			throw new IllegalStateException("TIMEOUT");
 		}
@@ -186,7 +186,7 @@ public class UdpServer {
 		} else if ("UNREGISTER".equals(received)) {
 			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
 		} else {
-			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> i.toQueue(received));
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> i.writeQueue(received));
 		}
 	}
 
