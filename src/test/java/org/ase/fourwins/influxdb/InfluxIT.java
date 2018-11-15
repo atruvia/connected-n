@@ -4,9 +4,7 @@ import static org.junit.Assert.assertThat;
 
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
-import org.ase.fourwins.game.DefaultGame;
 import org.ase.fourwins.game.Game;
-import org.ase.fourwins.game.Player;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
@@ -15,7 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class InfluxTest {
+class InfluxIT {
 	private static final String RETENTION_POLICY = "default";
 	private static final String DBNAME = "GAMES";
 	private InfluxDB influxDB;
@@ -43,16 +41,12 @@ class InfluxTest {
 	@Test
 	void testOneGameEndingIsInsertedToInfluxDB() throws InterruptedException {
 		String token1 = "P1";
-		String token2 = "P2";
 		Game game = buildGame(token1, Score.WIN);
 		listener.gameEnded(game);
-		Thread.sleep(500L);
 
 		Object pointsForP1 = queryPlayerPoints(token1);
 		assertThat(pointsForP1, is(1.0));
 
-		Object pointsForP2 = queryPlayerPoints(token2);
-		assertThat(pointsForP2, is(0.0));
 	}
 
 	private Object queryPlayerPoints(String token) {
