@@ -1,5 +1,8 @@
 package org.ase.fourwins.influxdb;
-import java.util.concurrent.TimeUnit;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+
+import java.util.List;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
@@ -9,7 +12,6 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
-
 public class InfluxDBListener implements TournamentListener {
 
 	private InfluxDB influxDB;
@@ -25,27 +27,35 @@ public class InfluxDBListener implements TournamentListener {
 
 	@Override
 	public void gameEnded(Game game) {
-		Object lastToken = game.gameState().getToken();
 
-		BatchPoints batchPoints = BatchPoints.database(databaseName)
-				.tag("async", "true").retentionPolicy(retentionPolicy)
+		getPointList(game).forEach(point -> {
+			BatchPoints batchPoint = createBatchPoint().point(point);
+			influxDB.write(batchPoint);
+		});
+
+	}
+
+	private BatchPoints createBatchPoint() {
+		return BatchPoints.database(databaseName).tag("async", "true")
+				.retentionPolicy(retentionPolicy)
 				.consistency(ConsistencyLevel.ALL).build();
+	}
 
+	private List<Point> getPointList(Game game) {
+		Object lastToken = game.gameState().getToken();
 		Score score = game.gameState().getScore();
 		if (score.equals(Score.LOSE)) {
-			game.getPlayers().stream()
+			return game.getPlayers().stream()
 					.filter(p -> !p.getToken().equals(lastToken))
 					.map(Player::getToken).map(this::createFullPointForToken)
-					.forEach(batchPoints::point);
+					.collect(toList());
 		} else if (score.equals(Score.WIN)) {
-			batchPoints.point(createFullPointForToken(lastToken));
+			return asList(createFullPointForToken(lastToken));
 		} else if (score.equals(Score.DRAW)) {
-			game.getPlayers().stream().map(Player::getToken)
-					.map(this::createHalfPointForToken)
-					.forEach(batchPoints::point);
+			return game.getPlayers().stream().map(Player::getToken)
+					.map(this::createHalfPointForToken).collect(toList());
 		}
-		System.out.println(batchPoints);
-		influxDB.write(batchPoints);
+		throw new RuntimeException("Game is still in progress!");
 	}
 
 	private Point createHalfPointForToken(String token) {
@@ -56,11 +66,9 @@ public class InfluxDBListener implements TournamentListener {
 		return createPointForToken(token, 1);
 	}
 	private Point createPointForToken(Object lastToken, double value) {
-		Point point = Point.measurement("GAMES")
-				.time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+		return Point.measurement("GAMES")
 				.addField("player_id", lastToken.toString())
 				.addField("value", value).build();
-		return point;
 	}
 
 }

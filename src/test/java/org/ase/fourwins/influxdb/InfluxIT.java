@@ -82,8 +82,6 @@ class InfluxIT {
 				+ DBNAME + " WHERE \"player_id\" = '" + player.getToken() + "'",
 				DBNAME));
 
-		System.out.println(query.getResults());
-
 		return query.getResults().get(0).getSeries().get(0).getValues().get(0)
 				.get(1);
 	}
