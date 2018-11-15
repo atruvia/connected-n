@@ -180,11 +180,12 @@ public class UdpServer {
 				send("NAME_TOO_LONG", clientIp, clientPort);
 				return;
 			}
-			// Fall 1: Nix da -> Neu anlegen
-			// Fall 2: IP/Name Kombi bereits vorhanden -> ersetzen
-			// Fall 3: Name da aber andere IP -> NIX
-			Optional<UdpPlayerInfo> ex = findBy(ipAddressAndName(clientIp, playerName));
-			handleRegisterCommand(ex.orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
+			handleRegisterCommand(findBy(ipAddressAndName(clientIp, playerName)).map(i -> {
+				synchronized (players) {
+					players.remove(i);
+				}
+				return new UdpPlayerInfo(clientIp, clientPort, playerName);
+			}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
 		} else if ("UNREGISTER".equals(received)) {
 			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
 		} else {
