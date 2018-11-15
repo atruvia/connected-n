@@ -2,9 +2,14 @@ package org.ase.fourwins.influxdb;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
+import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
+import org.ase.fourwins.game.Player;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
@@ -39,35 +44,68 @@ class InfluxIT {
 	}
 
 	@Test
-	void testOneGameEndingIsInsertedToInfluxDB() throws InterruptedException {
-		String token1 = "P1";
-		Game game = buildGame(token1, Score.WIN);
+	void testOneGameEndingIsInsertedToInfluxDB() {
+		Player p1 = new PlayerMock("P1");
+		Game game = buildGame(p1.getToken(), Score.WIN, Arrays.asList(p1));
 		listener.gameEnded(game);
 
-		Object pointsForP1 = queryPlayerPoints(token1);
-		assertThat(pointsForP1, is(1.0));
+		Object pointsForP1 = queryPoints(p1);
 
+		assertThat(pointsForP1, is(1.0));
 	}
 
-	private Object queryPlayerPoints(String token) {
+	@Test
+	void testPlayerMakesIllegalMoveAndOpponentGetsAFullPoint() {
+		Player p1 = new PlayerMock("P1");
+		Player p2 = new PlayerMock("P2");
+		Game game = buildGame(p1.getToken(), Score.LOSE, Arrays.asList(p1, p2));
+		listener.gameEnded(game);
+
+		Object pointsForP2 = queryPoints(p2);
+
+		assertThat(pointsForP2, is(1.0));
+	}
+
+	@Test
+	void testBothPlayersGetAHalfPointForADraw() {
+		Player p1 = new PlayerMock("P1");
+		Player p2 = new PlayerMock("P2");
+		Game game = buildGame(p1.getToken(), Score.DRAW, Arrays.asList(p1, p2));
+		listener.gameEnded(game);
+
+		assertThat(queryPoints(p1), is(0.5));
+		assertThat(queryPoints(p2), is(0.5));
+	}
+
+	private Object queryPoints(Player player) {
 		QueryResult query = influxDB.query(new Query("SELECT value FROM "
-				+ DBNAME + " WHERE \"player_id\" = '" + token + "'", DBNAME));
+				+ DBNAME + " WHERE \"player_id\" = '" + player.getToken() + "'",
+				DBNAME));
+
+		System.out.println(query.getResults());
 
 		return query.getResults().get(0).getSeries().get(0).getValues().get(0)
 				.get(1);
 	}
 
-	private Game buildGame(String token, Score score) {
+	private Game buildGame(String lastToken, Score score,
+			List<Player> players) {
 		Game game = new Game() {
 
 			@Override
 			public Game runGame() {
-				return null;
+				throw new UnsupportedOperationException();
 			}
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().token(token).score(score).build();
+				return GameState.builder().token(lastToken).score(score)
+						.build();
+			}
+
+			@Override
+			public List<Player> getPlayers() {
+				return players;
 			}
 		};
 		return game;
