@@ -25,13 +25,12 @@ import java.util.function.Predicate;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
-import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
-import org.ase.fourwins.tournament.TournamentListener;
 
-import lombok.Value;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 public class UdpServer {
 
@@ -47,12 +46,13 @@ public class UdpServer {
 	private final Lock lock = new ReentrantLock();
 	private final Condition playerRegistered = lock.newCondition();
 
-	@Value
+	@Getter
+	@RequiredArgsConstructor
 	private static class UdpPlayerInfo {
 
-		private InetAddress adressInfo;
-		private Integer port;
-		private String name;
+		private final InetAddress adressInfo;
+		private final Integer port;
+		private final String name;
 		private CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
 		void writeQueue(String received) {
@@ -60,6 +60,7 @@ public class UdpServer {
 		}
 
 		String readQueue(Duration timeout) {
+			completableFuture = new CompletableFuture<>();
 			try {
 				return completableFuture.get(timeout.toMillis(), MILLISECONDS);
 			} catch (InterruptedException | ExecutionException e) {
@@ -87,7 +88,8 @@ public class UdpServer {
 
 		@Override
 		public boolean joinGame(String opposite, BoardInfo boardInfo) {
-			return "JOINING".equals(sendAndWait("JOIN", playerInfo));
+			send("NEW GAME", playerInfo);
+			return true;
 		}
 
 	}
@@ -95,7 +97,7 @@ public class UdpServer {
 	private String sendAndWait(String command, UdpPlayerInfo playerInfo) {
 		String delimiter = ";";
 		String uuid = uuid();
-		send(command + delimiter + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
+		send(command + delimiter + uuid, playerInfo);
 		String response = playerInfo.readQueue(TIMEOUT);
 		String[] splitted = response.split(delimiter);
 		if (splitted.length < 2) {
@@ -119,13 +121,6 @@ public class UdpServer {
 
 	public UdpServer(int port, Tournament tournament) {
 		this.tournament = tournament;
-		tournament.addTournamentListener(new TournamentListener() {
-			@Override
-			public void gameStarted(Game game) {
-				// TODO send JOIN
-//				players.forEach();
-			}
-		});
 		try {
 			socket = new DatagramSocket(port);
 			System.out.println("Socket created");
@@ -214,14 +209,14 @@ public class UdpServer {
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player player = newPlayer(playerInfo, playerInfo.getName());
 		if (!tournament.registerPlayer(player).isOk()) {
-			send("NAME_ALREADY_TAKEN", playerInfo.getAdressInfo(), playerInfo.getPort());
+			send("NAME_ALREADY_TAKEN", playerInfo);
 			return;
 		}
 		players.put(playerInfo, player);
 
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
-		send("Welcome " + playerInfo.getName(), playerInfo.getAdressInfo(), playerInfo.getPort());
+		send("Welcome " + playerInfo.getName(), playerInfo);
 		try {
 			lock.lock();
 			playerRegistered.signal();
@@ -237,9 +232,15 @@ public class UdpServer {
 
 	private void handleUnRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player removed = players.remove(playerInfo);
-		send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
+		send("UNREGISTERED", playerInfo);
 		System.out.println(
 				"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
+	}
+
+	private DatagramSocket send(String message, UdpPlayerInfo udpPlayerInfo) {
+		synchronized (udpPlayerInfo) {
+			return send(message, udpPlayerInfo.getAdressInfo(), udpPlayerInfo.getPort());
+		}
 	}
 
 	private DatagramSocket send(String message, InetAddress clientIp, int clienPort) {

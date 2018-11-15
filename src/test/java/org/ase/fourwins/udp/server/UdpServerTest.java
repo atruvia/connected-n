@@ -183,9 +183,6 @@ public class UdpServerTest {
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
 
 			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
-			// TODO Wait for join
-//			client1.assertReceived("Welcome 1", "ROUND STARTING");
-//			client2.assertReceived("Welcome 2", "ROUND STARTING");
 			client1.assertReceived("Welcome 1");
 			client2.assertReceived("Welcome 2");
 			verify(tournament, timesWithTimeout(1)).playSeason();
@@ -256,7 +253,7 @@ public class UdpServerTest {
 	}
 
 //	TODO joining with long runner
-//	TODO We NEED a message when a NEW game is started!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (so clients can reset states)
+//	TODO test when retuning a wrong UUID the next message must be working
 
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {
