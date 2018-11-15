@@ -11,7 +11,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,14 +36,35 @@ public class UdpServer {
 
 	private final Tournament tournament;
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
-	// TODO Switch to CompletableFuture
-	private final Map<UdpPlayerInfo, ArrayBlockingQueue<String>> receiverQueues = new ConcurrentHashMap<>();
 
 	private final DatagramSocket socket;
 	private final byte[] buf = new byte[1024];
 
 	private final Lock lock = new ReentrantLock();
 	private final Condition playerRegistered = lock.newCondition();
+
+	@Value
+	private static class UdpPlayerInfo {
+
+		private InetAddress adressInfo;
+		private Integer port;
+		private String name;
+		// TODO Switch to CompletableFuture
+		private final ArrayBlockingQueue<String> receiverQueues = new ArrayBlockingQueue<>(5);
+
+		boolean toQueue(String received) {
+			return receiverQueues.offer(received);
+		}
+
+		String fromQueue(Duration timeout) {
+			try {
+				return receiverQueues.poll(timeout.toMillis(), MILLISECONDS);
+			} catch (InterruptedException e) {
+				throw new RuntimeException("TIMEOUT");
+			}
+		}
+
+	}
 
 	private final class UdpPlayer extends Player {
 
@@ -71,7 +91,7 @@ public class UdpServer {
 		String delimiter = ";";
 		String uuid = uuid();
 		send(command + delimiter + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
-		String response = fromQueue(playerInfo);
+		String response = playerInfo.fromQueue(TIMEOUT);
 		if (response == null) {
 			throw new IllegalStateException("TIMEOUT");
 		}
@@ -85,25 +105,10 @@ public class UdpServer {
 		return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 	}
 
-	private String fromQueue(UdpPlayerInfo playerInfo) {
-		try {
-			return receiverQueues.get(playerInfo).poll(TIMEOUT.toMillis(), MILLISECONDS);
-		} catch (InterruptedException e) {
-			throw new RuntimeException("TIMEOUT");
-		}
-	}
-
 	private String uuid() {
 		String uuid = UUID.randomUUID().toString();
 		int pos = uuid.indexOf("-");
 		return pos < 0 ? uuid : uuid.substring(0, pos);
-	}
-
-	@Value
-	private static class UdpPlayerInfo {
-		private InetAddress adressInfo;
-		private Integer port;
-		private String name;
 	}
 
 	public UdpServer(int port) {
@@ -153,7 +158,7 @@ public class UdpServer {
 				socket.receive(packet);
 				String received = new String(packet.getData(), 0, packet.getLength());
 				// TODO we depend just on the IP not the name -> depend on IP AND name!
-				dispatchCommand(packet.getAddress(), packet.getPort(), null, received);
+				dispatchCommand(packet.getAddress(), packet.getPort(), received);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -161,7 +166,7 @@ public class UdpServer {
 		return this;
 	}
 
-	private void dispatchCommand(InetAddress clientIp, int clientPort, UdpPlayerInfo xxxxxxx, String received)
+	private void dispatchCommand(InetAddress clientIp, int clientPort, String received)
 			throws SocketException, IOException {
 		if (received.startsWith("REGISTER;")) {
 			String[] split = received.split(";");
@@ -181,7 +186,7 @@ public class UdpServer {
 		} else if ("UNREGISTER".equals(received)) {
 			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
 		} else {
-			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> receiverQueues.get(i).offer(received));
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> i.toQueue(received));
 		}
 	}
 
@@ -204,7 +209,6 @@ public class UdpServer {
 			return;
 		}
 		players.put(playerInfo, player);
-		receiverQueues.put(playerInfo, new ArrayBlockingQueue<>(5));
 
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
@@ -224,7 +228,6 @@ public class UdpServer {
 
 	private void handleUnRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player removed = players.remove(playerInfo);
-		receiverQueues.remove(playerInfo);
 		send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
 		System.out.println(
 				"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
