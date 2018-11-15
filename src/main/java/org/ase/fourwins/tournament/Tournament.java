@@ -20,124 +20,122 @@ import org.ase.fourwins.season.Season;
 
 public class Tournament {
 
-  private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
+	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
 
-  static final class CoffeebreakGame implements Game {
+	static final class CoffeebreakGame implements Game {
 
-    static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
-    private final Object other;
+		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
+		private final Object other;
 
-    CoffeebreakGame(Object other) {
-      this.other = other;
-    }
+		CoffeebreakGame(Object other) {
+			this.other = other;
+		}
 
-    @Override
-    public GameState gameState() {
-      return GameState.builder()
-          .score(WIN)
-          .token(other)
-          .reason(COFFEE_BREAK_WIN_MESSAGE)
-          .build();
-    }
+		@Override
+		public GameState gameState() {
+			return GameState.builder().score(WIN).token(other)
+					.reason(COFFEE_BREAK_WIN_MESSAGE).build();
+		}
 
-    @Override
-    public Game runGame() {
-      return this;
-    }
-  }
+		@Override
+		public Game runGame() {
+			return this;
+		}
+	}
 
-  private final List<Player> players = new ArrayList<>();
-  private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
+	private final List<Player> players = new ArrayList<>();
+	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
 
-  static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
-    @Override
-    protected int nextColumn() {
-      throw new RuntimeException("I am the coffee break");
-    }
+	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
+		@Override
+		protected int nextColumn() {
+			throw new RuntimeException("I am the coffee break");
+		}
 
-    @Override
-    public boolean joinGame(String opposite, BoardInfo boardInfo) {
-      return false;
-    }
-  };
+		@Override
+		public boolean joinGame(String opposite, BoardInfo boardInfo) {
+			return false;
+		}
+	};
 
-  public Stream<GameState> playSeason() {
-    return newSeason().getMatchdays()
-        .map(Matchday::getMatches)
-        .map(this::runMatches)
-        .flatMap(identity());
-  }
+	public Stream<GameState> playSeason() {
+		return newSeason().getMatchdays().map(Matchday::getMatches)
+				.map(this::runMatches).flatMap(identity());
+	}
 
-  private Stream<GameState> runMatches(Stream<Match<Player>> matches) {
-    return matches.map(this::newGame)
-        .map(Game::runGame)
-        .peek(this::gameEnded)
-        .map(Game::gameState)
-        .parallel();
-  }
+	private Stream<GameState> runMatches(Stream<Match<Player>> matches) {
+		return matches.map(this::newGame).map(Game::runGame)
+				.peek(this::gameEnded).map(Game::gameState).parallel();
+	}
 
-  private Season<Player> newSeason() {
-    synchronized (players) {
-      List<Player> playersClone = new ArrayList<>(players);
-      return new Season<>(evenPlayerCount() ? playersClone : addCoffeeBreakPlayer(playersClone));
-    }
-  }
+	private Season<Player> newSeason() {
+		synchronized (players) {
+			List<Player> playersClone = new ArrayList<>(players);
+			return new Season<>(evenPlayerCount()
+					? playersClone
+					: addCoffeeBreakPlayer(playersClone));
+		}
+	}
 
-  private boolean evenPlayerCount() {
-    synchronized (players) {
-      return players.size() % 2 == 0;
-    }
-  }
+	private boolean evenPlayerCount() {
+		synchronized (players) {
+			return players.size() % 2 == 0;
+		}
+	}
 
-  private List<Player> addCoffeeBreakPlayer(List<Player> playersClone) {
-    synchronized (players) {
-      playersClone.add(coffeeBreakPlayer);
-      return playersClone;
-    }
-  }
+	private List<Player> addCoffeeBreakPlayer(List<Player> playersClone) {
+		synchronized (players) {
+			playersClone.add(coffeeBreakPlayer);
+			return playersClone;
+		}
+	}
 
-  public Tournament registerPlayer(Player player) {
-    String token = player.getToken();
-    synchronized (players) {
-      if (players.stream()
-          .map(Player::getToken)
-          .anyMatch(token::equals)) {
-        throw new RuntimeException("Token " + player.getToken() + " alreay taken");
-      }
-      players.add(player);
-    }
-    return this;
-  }
+	public Tournament registerPlayer(Player player) {
+		String token = player.getToken();
+		synchronized (players) {
+			if (players.stream().map(Player::getToken)
+					.anyMatch(token::equals)) {
+				throw new RuntimeException(
+						"Token " + player.getToken() + " alreay taken");
+			}
+			players.add(player);
+		}
+		return this;
+	}
 
-  public Tournament deregisterPlayer(Player player) {
-    synchronized (players) {
-      players.remove(player);
-    }
-    return this;
-  }
+	public Tournament deregisterPlayer(Player player) {
+		synchronized (players) {
+			players.remove(player);
+		}
+		return this;
+	}
 
-  private Game newGame(Match<Player> match) {
-    if (match.getTeam1() == coffeeBreakPlayer) {
-      return new CoffeebreakGame(match.getTeam2()
-          .getToken());
-    } else if (match.getTeam2() == coffeeBreakPlayer) {
-      return new CoffeebreakGame(match.getTeam1()
-          .getToken());
-    }
-    Board board = makeBoard();
-    return new DefaultGame(match.getTeam1(), match.getTeam2(), board);
-  }
+	private Game newGame(Match<Player> match) {
+		if (match.getTeam1() == coffeeBreakPlayer) {
+			return new CoffeebreakGame(match.getTeam2().getToken());
+		} else if (match.getTeam2() == coffeeBreakPlayer) {
+			return new CoffeebreakGame(match.getTeam1().getToken());
+		}
+		Board board = makeBoard();
+		return new DefaultGame(match.getTeam1(), match.getTeam2(), board);
+	}
 
-  protected Board makeBoard() {
-    return Board.newBoard(boardInfo);
-  }
+	protected Board makeBoard() {
+		return Board.newBoard(boardInfo);
+	}
 
-  protected void gameEnded(Game game) {
-    tournamentListenerList.forEach(listener -> listener.gameEnded(game));
-  }
+	protected void gameEnded(Game game) {
+		// Der Listener möchte jetzt jedem Spieler die Punkte in die InfluxDB
+		// schreiben:
+		// Dazu muss er wissen, welche beiden Spieler/Token an der Partie
+		// beteiligt waren.
+		// Im GameState findet man nur den Token vom letzten Zug mit dem
+		// zugehörigen Zustand des Spiels
+		tournamentListenerList.forEach(listener -> listener.gameEnded(game));
+	}
 
-  public void registerListener(TournamentListener listener) {
-    tournamentListenerList.add(listener);
-  }
+	public void registerListener(TournamentListener listener) {
+		tournamentListenerList.add(listener);
+	}
 
 }
