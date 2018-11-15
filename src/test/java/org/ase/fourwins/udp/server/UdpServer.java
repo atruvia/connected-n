@@ -58,9 +58,13 @@ public class UdpServer {
 
 		String readQueue(Duration timeout) {
 			try {
-				return receiverQueues.poll(timeout.toMillis(), MILLISECONDS);
+				String response = receiverQueues.poll(timeout.toMillis(), MILLISECONDS);
+				if (response == null) {
+					throw new IllegalStateException("TIMEOUT");
+				}
+				return response;
 			} catch (InterruptedException e) {
-				throw new RuntimeException("TIMEOUT");
+				throw new RuntimeException(e);
 			}
 		}
 
@@ -92,9 +96,6 @@ public class UdpServer {
 		String uuid = uuid();
 		send(command + delimiter + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
 		String response = playerInfo.readQueue(TIMEOUT);
-		if (response == null) {
-			throw new IllegalStateException("TIMEOUT");
-		}
 		String[] splitted = response.split(delimiter);
 		if (splitted.length < 2) {
 			throw new IllegalArgumentException("Cannot handle/parse " + response);
