@@ -36,8 +36,8 @@ public class UdpServer {
 	private final Duration TIMEOUT = Duration.ofMillis(250);
 
 	private final Tournament tournament;
-	// TODO switch to ConcurrentHashMap and remove sycnhronizations
-	private final Map<UdpPlayerInfo, Player> players = new HashMap<>();
+	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
+	// TODO Switch to CompletableFuture
 	private final Map<UdpPlayerInfo, ArrayBlockingQueue<String>> receiverQueues = new ConcurrentHashMap<>();
 
 	private final DatagramSocket socket;
@@ -120,7 +120,7 @@ public class UdpServer {
 		}
 		new Thread(() -> {
 			while (true) {
-				if (lessThan2Players()) {
+				if (players.size() < 2) {
 					try {
 						lock.lock();
 						playerRegistered.await(5, SECONDS);
@@ -143,12 +143,6 @@ public class UdpServer {
 			}
 		}).start();
 
-	}
-
-	private boolean lessThan2Players() {
-		synchronized (players) {
-			return players.size() < 2;
-		}
 	}
 
 	public UdpServer startServer() {
@@ -181,9 +175,7 @@ public class UdpServer {
 				return;
 			}
 			handleRegisterCommand(findBy(ipAddressAndName(clientIp, playerName)).map(i -> {
-				synchronized (players) {
-					players.remove(i);
-				}
+				players.remove(i);
 				return new UdpPlayerInfo(clientIp, clientPort, playerName);
 			}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
 		} else if ("UNREGISTER".equals(received)) {
@@ -202,32 +194,27 @@ public class UdpServer {
 	}
 
 	private Optional<UdpPlayerInfo> findBy(Predicate<UdpPlayerInfo> p) {
-		synchronized (players) {
-			return players.keySet().stream().filter(p).findFirst();
-		}
+		return players.keySet().stream().filter(p).findFirst();
 	}
 
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player player = newPlayer(playerInfo, playerInfo.getName());
-		synchronized (players) {
-			if (!tournament.registerPlayer(player).isOk()) {
-				send("NAME_ALREADY_TAKEN", playerInfo.getAdressInfo(), playerInfo.getPort());
-				return;
-			}
-			players.put(playerInfo, player);
-			receiverQueues.put(playerInfo, new ArrayBlockingQueue<>(5));
-
-			System.out.println(
-					"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
-			send("Welcome " + playerInfo.getName(), playerInfo.getAdressInfo(), playerInfo.getPort());
-			try {
-				lock.lock();
-				playerRegistered.signal();
-			} finally {
-				lock.unlock();
-			}
+		if (!tournament.registerPlayer(player).isOk()) {
+			send("NAME_ALREADY_TAKEN", playerInfo.getAdressInfo(), playerInfo.getPort());
+			return;
 		}
+		players.put(playerInfo, player);
+		receiverQueues.put(playerInfo, new ArrayBlockingQueue<>(5));
 
+		System.out.println(
+				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
+		send("Welcome " + playerInfo.getName(), playerInfo.getAdressInfo(), playerInfo.getPort());
+		try {
+			lock.lock();
+			playerRegistered.signal();
+		} finally {
+			lock.unlock();
+		}
 //		sendMessageToPlayer(registerResult.fold(ErrorMessage::toString, identity()), playerInfo);
 	}
 
@@ -236,13 +223,11 @@ public class UdpServer {
 	}
 
 	private void handleUnRegisterCommand(UdpPlayerInfo playerInfo) {
-		synchronized (players) {
-			Player removed = players.remove(playerInfo);
-			receiverQueues.remove(playerInfo);
-			send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
-			System.out.println(
-					"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
-		}
+		Player removed = players.remove(playerInfo);
+		receiverQueues.remove(playerInfo);
+		send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
+		System.out.println(
+				"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
 	}
 
 	private DatagramSocket send(String message, InetAddress clientIp, int clienPort) {
