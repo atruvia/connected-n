@@ -71,7 +71,7 @@ public class UdpServerRealTournamentIT {
 			protected void messageReceived(String received) {
 				super.messageReceived(received);
 				if (received.startsWith("YOURTURN;")) {
-					trySend(row + ";" + received.split(";")[1]);
+					trySend("INSERT;" + row + ";" + received.split(";")[1]);
 				}
 			}
 		};

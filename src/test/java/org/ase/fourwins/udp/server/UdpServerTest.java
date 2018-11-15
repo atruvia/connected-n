@@ -253,7 +253,7 @@ public class UdpServerTest {
 	}
 
 //	TODO joining with long runner
-//	TODO test when retuning a wrong UUID the next message must be working
+//	TODO test when returning a wrong UUID the next message must be working
 
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {

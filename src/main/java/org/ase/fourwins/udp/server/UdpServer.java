@@ -83,13 +83,27 @@ public class UdpServer {
 
 		@Override
 		protected int nextColumn() {
-			return Integer.parseInt(sendAndWait("YOURTURN", playerInfo));
+			String response = sendAndWait("YOURTURN", playerInfo);
+			if (!response.startsWith("INSERT;")) {
+				throw new IllegalStateException("Unexpected response " + response);
+			}
+			String[] split = response.split(";");
+			if (split.length < 2) {
+				throw new IllegalStateException("Unexpected response " + response);
+			}
+			return Integer.parseInt(split[1]);
 		}
 
 		@Override
 		public boolean joinGame(String opposite, BoardInfo boardInfo) {
 			send("NEW GAME", playerInfo);
 			return true;
+		}
+
+		@Override
+		protected void tokenWasInserted(String token, int column) {
+			send("TOKEN INSERTED;" + token + ";" + column, playerInfo);
+			super.tokenWasInserted(token, column);
 		}
 
 	}
