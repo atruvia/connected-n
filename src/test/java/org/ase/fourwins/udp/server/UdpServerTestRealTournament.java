@@ -1,8 +1,6 @@
 package org.ase.fourwins.udp.server;
 
 import static java.time.Duration.ofSeconds;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.fail;
 

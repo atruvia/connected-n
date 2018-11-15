@@ -14,8 +14,10 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,9 +25,11 @@ import java.util.function.Predicate;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
+import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
+import org.ase.fourwins.tournament.TournamentListener;
 
 import lombok.Value;
 
@@ -49,22 +53,19 @@ public class UdpServer {
 		private InetAddress adressInfo;
 		private Integer port;
 		private String name;
-		// TODO Switch to CompletableFuture
-		private final ArrayBlockingQueue<String> receiverQueues = new ArrayBlockingQueue<>(5);
+		private CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
-		boolean writeQueue(String received) {
-			return receiverQueues.offer(received);
+		void writeQueue(String received) {
+			completableFuture.complete(received);
 		}
 
 		String readQueue(Duration timeout) {
 			try {
-				String response = receiverQueues.poll(timeout.toMillis(), MILLISECONDS);
-				if (response == null) {
-					throw new IllegalStateException("TIMEOUT");
-				}
-				return response;
-			} catch (InterruptedException e) {
+				return completableFuture.get(timeout.toMillis(), MILLISECONDS);
+			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
+			} catch (TimeoutException e) {
+				throw new IllegalStateException("TIMEOUT");
 			}
 		}
 
@@ -118,6 +119,13 @@ public class UdpServer {
 
 	public UdpServer(int port, Tournament tournament) {
 		this.tournament = tournament;
+		tournament.addTournamentListener(new TournamentListener() {
+			@Override
+			public void gameStarted(Game game) {
+				// TODO send JOIN
+//				players.forEach();
+			}
+		});
 		try {
 			socket = new DatagramSocket(port);
 			System.out.println("Socket created");

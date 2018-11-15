@@ -85,7 +85,8 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private Stream<GameState> runMatches(Stream<Match<Player>> matches) {
-		return matches.map(this::newGame).map(Game::runGame).peek(this::gameEnded).map(Game::gameState).parallel();
+		return matches.map(this::newGame).peek(this::gameStarted).map(Game::runGame).peek(this::gameEnded)
+				.map(Game::gameState).parallel();
 	}
 
 	private Season<Player> newSeason() {
@@ -140,6 +141,10 @@ public class DefaultTournament implements Tournament {
 
 	protected Board makeBoard() {
 		return Board.newBoard(boardInfo);
+	}
+
+	protected void gameStarted(Game game) {
+		tournamentListenerList.forEach(listener -> listener.gameStarted(game));
 	}
 
 	protected void gameEnded(Game game) {

@@ -4,6 +4,10 @@ import org.ase.fourwins.game.Game;
 
 public interface TournamentListener {
 
-	void gameEnded(Game game);
+	default void gameStarted(Game game) {
+	}
+
+	default void gameEnded(Game game) {
+	}
 
 }
