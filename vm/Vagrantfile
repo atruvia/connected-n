@@ -1,0 +1,19 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/xenial64"
+  config.vm.box_download_insecure = true
+  config.vm.provision :shell, path: "bootstrap.sh"
+  Vagrant::DEFAULT_SERVER_URL.replace('https://vagrantcloud.com')
+
+  config.proxy.http     = "http://pro-campus.noc.fiducia.de:8080"
+  config.proxy.https    = "http://pro-campus.noc.fiducia.de:8080"
+  config.proxy.no_proxy = "localhost,127.0.0.1"
+
+  config.vm.provider :virtualbox do |vb|
+    vb.gui = false
+  end
+  config.vm.network "forwarded_port", guest: 8086, host: 8086
+
+end
