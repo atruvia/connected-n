@@ -63,7 +63,40 @@ class TournamentScoreListenerTest {
 
 		assertThat(listener.getResult(), hasEntry(player1, 1.5));
 		assertThat(listener.getResult(), hasEntry(player2, 0.5));
+	}
 
+	@Test
+	void testPlayerWins4GamesInARow() {
+		TournamentScoreListener listener = new TournamentScoreListener();
+		PlayerMock player1 = new PlayerMock("P1");
+		PlayerMock player2 = new PlayerMock("P2");
+
+		Game gameDraw = buildGame(player1, player2, Score.DRAW,
+				player1.getToken());
+		Game gameLost = buildGame(player1, player2, Score.LOSE,
+				player2.getToken());
+
+		listener.gameEnded(gameDraw);
+		listener.gameEnded(gameLost);
+		listener.gameEnded(gameLost);
+		listener.gameEnded(gameLost);
+		listener.gameEnded(gameLost);
+
+		assertThat(listener.getResult(), hasEntry(player1, 4.5));
+		assertThat(listener.getResult(), hasEntry(player2, 0.5));
+	}
+
+	@Test
+	void testStatisticForCoffeebreakGame() {
+		TournamentScoreListener listener = new TournamentScoreListener();
+		PlayerMock player1 = new PlayerMock("P1");
+
+		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(
+				player1);
+
+		listener.gameEnded(coffeebreakGame);
+
+		assertThat(listener.getResult(), hasEntry(player1, 1.0));
 	}
 
 	private Game buildGame(Player player1, Player player2, Score score,

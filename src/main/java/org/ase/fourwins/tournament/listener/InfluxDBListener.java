@@ -11,7 +11,7 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
-public class InfluxDBListener implements TournamentListener<Object> {
+public class InfluxDBListener implements TournamentListener {
 
 	private InfluxDB influxDB;
 	private String retentionPolicy;

@@ -5,7 +5,7 @@ import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.ScoreSheet;
 
-public class TournamentScoreListener implements TournamentListener<ScoreSheet> {
+public class TournamentScoreListener implements TournamentListener {
 	private static final double FULL_POINT = 1;
 	private static final double ZERO = 0.0;
 	private static final double HALF_POINT = 0.5;
@@ -16,12 +16,15 @@ public class TournamentScoreListener implements TournamentListener<ScoreSheet> {
 		Score score = game.gameState().getScore();
 		if (score.equals(Score.WIN)) {
 			addPointForPlayer(game.getPlayerForToken(lastToken), FULL_POINT);
-			addPointForPlayer(game.getOpponentForToken(lastToken), ZERO);
+			game.getOpponentForToken(lastToken)
+					.ifPresent(p -> addPointForPlayer(p, ZERO));
 		} else if (score.equals(Score.DRAW)) {
 			addPointForPlayer(game.getPlayerForToken(lastToken), HALF_POINT);
-			addPointForPlayer(game.getOpponentForToken(lastToken), HALF_POINT);
+			game.getOpponentForToken(lastToken)
+					.ifPresent(p -> addPointForPlayer(p, HALF_POINT));
 		} else if (score.equals(Score.LOSE)) {
-			addPointForPlayer(game.getOpponentForToken(lastToken), FULL_POINT);
+			game.getOpponentForToken(lastToken)
+					.ifPresent(p -> addPointForPlayer(p, FULL_POINT));
 			addPointForPlayer(game.getPlayerForToken(lastToken), ZERO);
 		}
 	}
@@ -30,7 +33,6 @@ public class TournamentScoreListener implements TournamentListener<ScoreSheet> {
 		scoreSheet.merge(player, value, (i, j) -> i + value);
 	}
 
-	@Override
 	public ScoreSheet getResult() {
 		return scoreSheet;
 	}
