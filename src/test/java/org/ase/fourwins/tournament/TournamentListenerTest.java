@@ -11,6 +11,7 @@ import java.util.List;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.tournament.TournamentTest.TournamentBuilder;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.junit.jupiter.api.Test;
 
 class TournamentListenerTest {

@@ -10,6 +10,7 @@ import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
+import org.ase.fourwins.tournament.listener.InfluxDBListener;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;

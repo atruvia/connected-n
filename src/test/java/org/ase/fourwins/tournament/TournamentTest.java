@@ -29,6 +29,7 @@ import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
 import org.ase.fourwins.tournament.Tournament.RegistrationResult;
 import org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Disabled;
 

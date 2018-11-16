@@ -4,6 +4,7 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Player;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 
 public interface Tournament {
 

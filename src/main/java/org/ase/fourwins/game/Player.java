@@ -3,7 +3,8 @@ package org.ase.fourwins.game;
 import org.ase.fourwins.board.BoardInfo;
 
 import lombok.Getter;
-
+import lombok.ToString;
+@ToString
 public abstract class Player {
 
 	@Getter

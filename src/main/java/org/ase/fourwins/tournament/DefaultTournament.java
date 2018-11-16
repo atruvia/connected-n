@@ -18,6 +18,7 @@ import org.ase.fourwins.game.Player;
 import org.ase.fourwins.season.Match;
 import org.ase.fourwins.season.Matchday;
 import org.ase.fourwins.season.Season;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 
 import lombok.Getter;
 

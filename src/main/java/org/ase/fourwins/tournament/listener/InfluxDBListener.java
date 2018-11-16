@@ -1,4 +1,4 @@
-package org.ase.fourwins.influxdb;
+package org.ase.fourwins.tournament.listener;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
@@ -7,12 +7,11 @@ import java.util.List;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.TournamentListener;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
-public class InfluxDBListener implements TournamentListener {
+public class InfluxDBListener implements TournamentListener<Object> {
 
 	private InfluxDB influxDB;
 	private String retentionPolicy;
