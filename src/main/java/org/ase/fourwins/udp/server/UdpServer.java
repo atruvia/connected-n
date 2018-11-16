@@ -207,7 +207,7 @@ public class UdpServer {
 			}
 			handleRegisterCommand(
 					findBy(ipAddressAndName(clientIp, playerName)).map(i -> {
-						players.remove(i);
+						tournament.deregisterPlayer(players.remove(i));
 						return new UdpPlayerInfo(clientIp, clientPort,
 								playerName);
 					}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort,

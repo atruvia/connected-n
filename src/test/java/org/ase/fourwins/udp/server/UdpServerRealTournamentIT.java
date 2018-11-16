@@ -39,6 +39,14 @@ public class UdpServerRealTournamentIT {
 	}
 
 	@Test
+	void canReRegister() throws IOException, InterruptedException {
+		assertTimeout(ofSeconds(10), () -> {
+			playingClient("1", 0).assertReceived("Welcome 1");
+			playingClient("1", 0).assertReceived("Welcome 1");
+		});
+	}
+
+	@Test
 	void canPlay() throws IOException, InterruptedException {
 		assertTimeout(ofSeconds(10), () -> {
 			DummyClient client1 = playingClient("1", 0);
