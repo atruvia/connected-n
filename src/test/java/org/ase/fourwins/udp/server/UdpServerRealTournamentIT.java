@@ -1,13 +1,12 @@
 package org.ase.fourwins.udp.server;
 
 import static java.time.Duration.ofSeconds;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.ase.fourwins.tournament.DefaultTournament;
@@ -16,7 +15,7 @@ import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-public class UdpServerTestRealTournament {
+public class UdpServerRealTournamentIT {
 
 	private final int serverPort = freePort();
 
@@ -47,8 +46,8 @@ public class UdpServerTestRealTournament {
 
 			// directly after client2 is instantiated the tournament will start
 
-			System.out.println(client1.waitUntilReceived(1 + 4));
-			System.out.println(client2.waitUntilReceived(1 + 3));
+			System.out.println(client1.waitUntilReceived(2 + 4));
+			System.out.println(client2.waitUntilReceived(2 + 3));
 
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);

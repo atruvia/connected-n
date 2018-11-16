@@ -253,7 +253,7 @@ public class UdpServerTest {
 	}
 
 //	TODO joining with long runner
-//	TODO We NEED a message when a NEW game is started!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! (so clients can reset states)
+//	TODO test when retuning a wrong UUID the next message must be working
 
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {

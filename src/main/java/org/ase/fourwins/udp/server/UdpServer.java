@@ -14,8 +14,10 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,7 +29,8 @@ import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 
-import lombok.Value;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 public class UdpServer {
 
@@ -43,28 +46,27 @@ public class UdpServer {
 	private final Lock lock = new ReentrantLock();
 	private final Condition playerRegistered = lock.newCondition();
 
-	@Value
+	@Getter
+	@RequiredArgsConstructor
 	private static class UdpPlayerInfo {
 
-		private InetAddress adressInfo;
-		private Integer port;
-		private String name;
-		// TODO Switch to CompletableFuture
-		private final ArrayBlockingQueue<String> receiverQueues = new ArrayBlockingQueue<>(5);
+		private final InetAddress adressInfo;
+		private final Integer port;
+		private final String name;
+		private CompletableFuture<String> completableFuture = new CompletableFuture<>();
 
-		boolean writeQueue(String received) {
-			return receiverQueues.offer(received);
+		void writeQueue(String received) {
+			completableFuture.complete(received);
 		}
 
 		String readQueue(Duration timeout) {
+			completableFuture = new CompletableFuture<>();
 			try {
-				String response = receiverQueues.poll(timeout.toMillis(), MILLISECONDS);
-				if (response == null) {
-					throw new IllegalStateException("TIMEOUT");
-				}
-				return response;
-			} catch (InterruptedException e) {
+				return completableFuture.get(timeout.toMillis(), MILLISECONDS);
+			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
+			} catch (TimeoutException e) {
+				throw new IllegalStateException("TIMEOUT");
 			}
 		}
 
@@ -86,7 +88,8 @@ public class UdpServer {
 
 		@Override
 		public boolean joinGame(String opposite, BoardInfo boardInfo) {
-			return "JOINING".equals(sendAndWait("JOIN", playerInfo));
+			send("NEW GAME", playerInfo);
+			return true;
 		}
 
 	}
@@ -94,7 +97,7 @@ public class UdpServer {
 	private String sendAndWait(String command, UdpPlayerInfo playerInfo) {
 		String delimiter = ";";
 		String uuid = uuid();
-		send(command + delimiter + uuid, playerInfo.getAdressInfo(), playerInfo.getPort());
+		send(command + delimiter + uuid, playerInfo);
 		String response = playerInfo.readQueue(TIMEOUT);
 		String[] splitted = response.split(delimiter);
 		if (splitted.length < 2) {
@@ -206,14 +209,14 @@ public class UdpServer {
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player player = newPlayer(playerInfo, playerInfo.getName());
 		if (!tournament.registerPlayer(player).isOk()) {
-			send("NAME_ALREADY_TAKEN", playerInfo.getAdressInfo(), playerInfo.getPort());
+			send("NAME_ALREADY_TAKEN", playerInfo);
 			return;
 		}
 		players.put(playerInfo, player);
 
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
-		send("Welcome " + playerInfo.getName(), playerInfo.getAdressInfo(), playerInfo.getPort());
+		send("Welcome " + playerInfo.getName(), playerInfo);
 		try {
 			lock.lock();
 			playerRegistered.signal();
@@ -229,9 +232,15 @@ public class UdpServer {
 
 	private void handleUnRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player removed = players.remove(playerInfo);
-		send("UNREGISTERED", playerInfo.getAdressInfo(), playerInfo.getPort());
+		send("UNREGISTERED", playerInfo);
 		System.out.println(
 				"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
+	}
+
+	private DatagramSocket send(String message, UdpPlayerInfo udpPlayerInfo) {
+		synchronized (udpPlayerInfo) {
+			return send(message, udpPlayerInfo.getAdressInfo(), udpPlayerInfo.getPort());
+		}
 	}
 
 	private DatagramSocket send(String message, InetAddress clientIp, int clienPort) {

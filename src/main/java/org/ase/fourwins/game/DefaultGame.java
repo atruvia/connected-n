@@ -113,7 +113,6 @@ public class DefaultGame implements Game {
 	}
 
 	private void makeMove(Player player) {
-		// TODO what todo if one of these methods will throw RTE? (player should lose?)
 		int column = player.nextColumn();
 		String token = player.getToken();
 		// TODO log
