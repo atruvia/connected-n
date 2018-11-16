@@ -56,19 +56,29 @@ public class UdpServer {
 		private final Condition condition = lock.newCondition();
 		private String response;
 
-		void writeQueue(String received) {
-			condition.signal();
-			response = received;
+		void reponseReceived(String received) {
+			try {
+				lock.lock();
+				response = received;
+				condition.signal();
+			} finally {
+				lock.unlock();
+			}
 		}
 
-		String readQueue(Duration timeout) {
+		String getResponse(Duration timeout) {
 			try {
+				lock.lock();
 				if (!condition.await(timeout.toMillis(), MILLISECONDS)) {
 					throw new IllegalStateException("TIMEOUT");
 				}
-				return response;
+				String a = response;
+				response = null;
+				return a;
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
+			} finally {
+				lock.unlock();
 			}
 		}
 
@@ -118,7 +128,7 @@ public class UdpServer {
 		// will response!
 		send(command + delimiter + uuid, playerInfo);
 
-		String response = playerInfo.readQueue(TIMEOUT);
+		String response = playerInfo.getResponse(TIMEOUT);
 		String[] splitted = response.split(delimiter);
 		if (splitted.length < 2) {
 			throw new IllegalArgumentException("Cannot handle/parse " + response);
@@ -161,7 +171,7 @@ public class UdpServer {
 					System.out.println("Waiting for more players to join");
 				} else {
 					System.out.println("Season starting");
-					tournament.playSeason().forEach(s -> {
+					tournament.playSeason(s -> {
 						Score score = s.getScore();
 						Object token = s.getToken();
 						// TODO find matching PlayerInfo and send score/token
@@ -210,7 +220,7 @@ public class UdpServer {
 			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
 		} else {
 			// TODO FIX! Only write client responses to queue!
-			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> i.writeQueue(received));
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> i.reponseReceived(received));
 		}
 	}
 
@@ -268,7 +278,7 @@ public class UdpServer {
 		try {
 			byte[] bytes = message.getBytes();
 			DatagramSocket sendSocket = new DatagramSocket();
-			sendSocket.setSoTimeout((int) (TIMEOUT.toMillis() * 2));
+			sendSocket.setSoTimeout((int) TIMEOUT.toMillis());
 			sendSocket.send(new DatagramPacket(bytes, bytes.length, clientIp, clienPort));
 			return sendSocket;
 		} catch (IOException e) {

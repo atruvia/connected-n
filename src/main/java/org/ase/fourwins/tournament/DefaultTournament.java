@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
@@ -81,8 +82,11 @@ public class DefaultTournament implements Tournament {
 	};
 
 	@Override
-	public Stream<GameState> playSeason() {
-		return newSeason().getMatchdays().map(Matchday::getMatches).map(this::runMatches).flatMap(identity());
+	public void playSeason(Consumer<GameState> consumer) {
+		newSeason().getMatchdays().map(Matchday::getMatches) //
+				.map(this::runMatches).flatMap(identity()) //
+				.forEach(consumer);
+		seasonEnded();
 	}
 
 	private Stream<GameState> runMatches(Stream<Match<Player>> matches) {
@@ -150,6 +154,10 @@ public class DefaultTournament implements Tournament {
 
 	protected void gameEnded(Game game) {
 		tournamentListenerList.forEach(listener -> listener.gameEnded(game));
+	}
+
+	protected void seasonEnded() {
+		tournamentListenerList.forEach(listener -> listener.seasonEnded());
 	}
 
 	@Override

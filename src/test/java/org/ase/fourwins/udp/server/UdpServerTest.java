@@ -8,6 +8,8 @@ import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -20,9 +22,11 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.Tournament.RegistrationResult;
@@ -133,7 +137,7 @@ public class UdpServerTest {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
 			verify(tournament, timesWithTimeout(1)).registerPlayer(Mockito.any(Player.class));
 			client1.assertReceived("Welcome 1");
-			verify(tournament, times(0)).playSeason();
+			verify(tournament, times(0)).playSeason(anyGameStateConsumer());
 		});
 	}
 
@@ -147,7 +151,7 @@ public class UdpServerTest {
 				}
 			};
 			verify(tournament, timesWithTimeout(0)).registerPlayer(Mockito.any(Player.class));
-			verify(tournament, timesWithTimeout(0)).playSeason();
+			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
 		});
 	}
 
@@ -159,7 +163,7 @@ public class UdpServerTest {
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
 			verify(tournament, timesWithTimeout(1)).registerPlayer(Mockito.any(Player.class));
 			client.assertReceived("Welcome " + longName);
-			verify(tournament, timesWithTimeout(0)).playSeason();
+			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
 		});
 	}
 
@@ -171,7 +175,7 @@ public class UdpServerTest {
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
 			verify(tournament, timesWithTimeout(0)).registerPlayer(Mockito.any(Player.class));
 			client.assertReceived("NAME_TOO_LONG");
-			verify(tournament, timesWithTimeout(0)).playSeason();
+			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
 		});
 	}
 
@@ -185,7 +189,7 @@ public class UdpServerTest {
 			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
 			client1.assertReceived("Welcome 1");
 			client2.assertReceived("Welcome 2");
-			verify(tournament, timesWithTimeout(1)).playSeason();
+			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
 		});
 	}
 
@@ -196,7 +200,7 @@ public class UdpServerTest {
 			new DummyClient("1", "localhost", serverPort);
 			new DummyClient("2", "localhost", serverPort);
 
-			verify(tournament, timesWithTimeout(1)).playSeason();
+			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
 			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
 
 			// while season is running others can register
@@ -219,16 +223,16 @@ public class UdpServerTest {
 	@Test
 	void whenDeregisteringNoNextSeasonIsStarted() throws IOException, InterruptedException {
 		AtomicInteger seasonsStarted = new AtomicInteger(0);
-		when(tournament.playSeason()).then(s -> {
+		doAnswer(s -> {
 			seasonsStarted.incrementAndGet();
 			TimeUnit.MILLISECONDS.sleep(25);
 			return Stream.empty();
-		});
+		}).when(tournament).playSeason(anyGameStateConsumer());
 		assertTimeout(ofSeconds(10), () -> {
 			new DummyClient("1", "localhost", serverPort);
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
 
-			verify(tournament, timesWithTimeout(1)).playSeason();
+			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
 
 			// while season is running others can register
 			DummyClient client3 = new DummyClient("3", "localhost", serverPort);
@@ -265,18 +269,18 @@ public class UdpServerTest {
 			DummyClient newClientWithSameTokenFromSameIP = new DummyClient(nameToReuse, "localhost", serverPort);
 			newClientWithSameTokenFromSameIP.assertReceived("Welcome " + nameToReuse);
 
-			verify(tournament, timesWithTimeout(0)).playSeason();
+			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
 			client.unregister();
 			newClientWithSameTokenFromSameIP.unregister();
 		});
 	}
 
 	private void infiniteSeason(Tournament mock) {
-		when(mock.playSeason()).then(s -> {
+		doAnswer(s -> {
 			while (true) {
 				TimeUnit.DAYS.sleep(Long.MAX_VALUE);
 			}
-		});
+		}).when(tournament).playSeason(anyGameStateConsumer());
 	}
 
 	private String nameOfLength(int len) {
@@ -286,6 +290,16 @@ public class UdpServerTest {
 	private VerificationMode timesWithTimeout(int times) {
 		return timeout(SECONDS.toMillis(5)).times(times);
 	}
+
+	private Consumer<GameState> anyGameStateConsumer() {
+		return anyConsumer(GameState.class);
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> Consumer<T> anyConsumer(Class<T> clazz) {
+		return any(Consumer.class);
+	}
+
 
 	private static int freePort() {
 		try {

@@ -1,6 +1,5 @@
 package org.ase.fourwins.tournament;
 
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
@@ -8,6 +7,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -87,7 +87,9 @@ public class RealTournamentIT {
 	}
 
 	Stream<GameState> playSeasons(int seasons, Tournament tournament) {
-		return IntStream.range(0, seasons).mapToObj(i -> tournament.playSeason()).flatMap(identity());
+		List<GameState> states = new ArrayList<GameState>();
+		IntStream.range(0, seasons).forEach(s -> tournament.playSeason(states::add));
+		return states.stream();
 	}
 
 	protected Tournament registerPlayers(Tournament tournament, Collection<PlayerMock> players) {

@@ -10,4 +10,7 @@ public interface TournamentListener {
 	default void gameEnded(Game game) {
 	}
 
+	default void seasonEnded() {
+	}
+
 }

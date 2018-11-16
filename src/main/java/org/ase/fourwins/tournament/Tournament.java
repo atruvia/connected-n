@@ -1,6 +1,6 @@
 package org.ase.fourwins.tournament;
 
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Player;
@@ -16,8 +16,8 @@ public interface Tournament {
 
 	void removeTournamentListener(TournamentListener listener);
 
-	Stream<GameState> playSeason();
-
+	void playSeason(Consumer<GameState> consumer);
+	
 	RegistrationResult registerPlayer(Player player);
 
 	Tournament deregisterPlayer(Player player);

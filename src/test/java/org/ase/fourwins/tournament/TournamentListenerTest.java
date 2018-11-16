@@ -1,11 +1,11 @@
 package org.ase.fourwins.tournament;
 
-import static java.util.stream.Collectors.toList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -29,10 +29,13 @@ class TournamentListenerTest {
 
 		verify(listener, times(12)).gameStarted(any());
 		verify(listener, times(12)).gameEnded(any());
+		verify(listener, times(1)).seasonEnded();
 	}
 
 	List<GameState> playSeasonOf(Tournament tournament) {
-		return tournament.playSeason().collect(toList());
+		List<GameState> states = new ArrayList<>();
+		tournament.playSeason(states::add);
+		return states;
 	}
 
 	PlayerMock mockPlayer(String token) {

@@ -337,7 +337,9 @@ public class TournamentTest {
 	}
 
 	List<GameState> playSeasonOf(Tournament tournament) {
-		return tournament.playSeason().collect(toList());
+		List<GameState> states = new ArrayList<>();
+		tournament.playSeason(states::add);
+		return states;
 	}
 
 	PlayerMock mock(String token) {
