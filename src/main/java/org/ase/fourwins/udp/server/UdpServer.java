@@ -14,10 +14,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -31,6 +28,7 @@ import org.ase.fourwins.tournament.Tournament;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 public class UdpServer {
 
@@ -48,25 +46,29 @@ public class UdpServer {
 
 	@Getter
 	@RequiredArgsConstructor
+	@ToString
 	private static class UdpPlayerInfo {
 
 		private final InetAddress adressInfo;
 		private final Integer port;
 		private final String name;
-		private CompletableFuture<String> completableFuture = new CompletableFuture<>();
+		private final Lock lock = new ReentrantLock();
+		private final Condition condition = lock.newCondition();
+		private String response;
 
 		void writeQueue(String received) {
-			completableFuture.complete(received);
+			condition.signal();
+			response = received;
 		}
 
 		String readQueue(Duration timeout) {
-			completableFuture = new CompletableFuture<>();
 			try {
-				return completableFuture.get(timeout.toMillis(), MILLISECONDS);
-			} catch (InterruptedException | ExecutionException e) {
+				if (!condition.await(timeout.toMillis(), MILLISECONDS)) {
+					throw new IllegalStateException("TIMEOUT");
+				}
+				return response;
+			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
-			} catch (TimeoutException e) {
-				throw new IllegalStateException("TIMEOUT");
 			}
 		}
 
@@ -85,13 +87,11 @@ public class UdpServer {
 		protected int nextColumn() {
 			String response = sendAndWait("YOURTURN", playerInfo);
 			if (!response.startsWith("INSERT;")) {
-				throw new IllegalStateException(
-						"Unexpected response " + response);
+				throw new IllegalStateException("Unexpected response " + response);
 			}
 			String[] split = response.split(";");
 			if (split.length < 2) {
-				throw new IllegalStateException(
-						"Unexpected response " + response);
+				throw new IllegalStateException("Unexpected response " + response);
 			}
 			return Integer.parseInt(split[1]);
 		}
@@ -113,18 +113,20 @@ public class UdpServer {
 	private String sendAndWait(String command, UdpPlayerInfo playerInfo) {
 		String delimiter = ";";
 		String uuid = uuid();
+
+		// TODO we have to ensure that WE will in the readQueue call BEFORE the client
+		// will response!
 		send(command + delimiter + uuid, playerInfo);
+
 		String response = playerInfo.readQueue(TIMEOUT);
 		String[] splitted = response.split(delimiter);
 		if (splitted.length < 2) {
-			throw new IllegalArgumentException(
-					"Cannot handle/parse " + response);
+			throw new IllegalArgumentException("Cannot handle/parse " + response);
 		} else if (!splitted[splitted.length - 1].equals(uuid)) {
-			throw new IllegalStateException("UUID mismatch, expected " + uuid
-					+ " got " + splitted[splitted.length - 1]);
+			throw new IllegalStateException(
+					"UUID mismatch, expected " + uuid + " got " + splitted[splitted.length - 1]);
 		}
-		return Arrays.stream(splitted).limit(splitted.length - 1)
-				.collect(joining(delimiter));
+		return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 	}
 
 	private String uuid() {
@@ -163,8 +165,7 @@ public class UdpServer {
 						Score score = s.getScore();
 						Object token = s.getToken();
 						// TODO find matching PlayerInfo and send score/token
-						System.out.println(
-								score + ";" + token + " --" + s.getReason());
+						System.out.println(score + ";" + token + " --" + s.getReason());
 					});
 					// TODO accumulate score? do we still need beside influx?
 				}
@@ -179,12 +180,8 @@ public class UdpServer {
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			try {
 				socket.receive(packet);
-				String received = new String(packet.getData(), 0,
-						packet.getLength());
-				// TODO we depend just on the IP not the name -> depend on IP
-				// AND name!
-				dispatchCommand(packet.getAddress(), packet.getPort(),
-						received);
+				String received = new String(packet.getData(), 0, packet.getLength());
+				dispatchCommand(packet.getAddress(), packet.getPort(), received);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -192,8 +189,8 @@ public class UdpServer {
 		return this;
 	}
 
-	private void dispatchCommand(InetAddress clientIp, int clientPort,
-			String received) throws SocketException, IOException {
+	private void dispatchCommand(InetAddress clientIp, int clientPort, String received)
+			throws SocketException, IOException {
 		if (received.startsWith("REGISTER;")) {
 			String[] split = received.split(";");
 			if (split.length < 2) {
@@ -205,32 +202,24 @@ public class UdpServer {
 				send("NAME_TOO_LONG", clientIp, clientPort);
 				return;
 			}
-			handleRegisterCommand(
-					findBy(ipAddressAndName(clientIp, playerName)).map(i -> {
-						tournament.deregisterPlayer(players.remove(i));
-						return new UdpPlayerInfo(clientIp, clientPort,
-								playerName);
-					}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort,
-							playerName)));
+			handleRegisterCommand(findBy(ipAddressAndName(clientIp, playerName)).map(i -> {
+				tournament.deregisterPlayer(players.remove(i));
+				return new UdpPlayerInfo(clientIp, clientPort, playerName);
+			}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
 		} else if ("UNREGISTER".equals(received)) {
-			findBy(ipAndPort(clientIp, clientPort))
-					.ifPresent(i -> handleUnRegisterCommand(i));
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> handleUnRegisterCommand(i));
 		} else {
-			findBy(ipAndPort(clientIp, clientPort))
-					.ifPresent(i -> i.writeQueue(received));
+			// TODO FIX! Only write client responses to queue!
+			findBy(ipAndPort(clientIp, clientPort)).ifPresent(i -> i.writeQueue(received));
 		}
 	}
 
-	private Predicate<UdpPlayerInfo> ipAndPort(InetAddress clientIp,
-			int clientPort) {
-		return i -> (i.getAdressInfo().equals(clientIp)
-				&& i.getPort() == clientPort);
+	private Predicate<UdpPlayerInfo> ipAndPort(InetAddress clientIp, int clientPort) {
+		return i -> (i.getAdressInfo().equals(clientIp) && i.getPort() == clientPort);
 	}
 
-	private Predicate<UdpPlayerInfo> ipAddressAndName(InetAddress clientIp,
-			String name) {
-		return i -> (i.getAdressInfo().equals(clientIp)
-				&& i.getName().equals(name));
+	private Predicate<UdpPlayerInfo> ipAddressAndName(InetAddress clientIp, String name) {
+		return i -> (i.getAdressInfo().equals(clientIp) && i.getName().equals(name));
 	}
 
 	private Optional<UdpPlayerInfo> findBy(Predicate<UdpPlayerInfo> p) {
@@ -245,8 +234,8 @@ public class UdpServer {
 		}
 		players.put(playerInfo, player);
 
-		System.out.println("Player " + playerInfo.getName()
-				+ " registered, we now have " + players.size() + " player(s)");
+		System.out.println(
+				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
 		send("Welcome " + playerInfo.getName(), playerInfo);
 		try {
 			lock.lock();
@@ -266,25 +255,21 @@ public class UdpServer {
 		Player removed = players.remove(playerInfo);
 		send("UNREGISTERED", playerInfo);
 		System.out.println(
-				"Player " + removed.getToken() + " unregistered, we now have "
-						+ players.size() + " player(s)");
+				"Player " + removed.getToken() + " unregistered, we now have " + players.size() + " player(s)");
 	}
 
 	private DatagramSocket send(String message, UdpPlayerInfo udpPlayerInfo) {
 		synchronized (udpPlayerInfo) {
-			return send(message, udpPlayerInfo.getAdressInfo(),
-					udpPlayerInfo.getPort());
+			return send(message, udpPlayerInfo.getAdressInfo(), udpPlayerInfo.getPort());
 		}
 	}
 
-	private DatagramSocket send(String message, InetAddress clientIp,
-			int clienPort) {
+	private DatagramSocket send(String message, InetAddress clientIp, int clienPort) {
 		try {
 			byte[] bytes = message.getBytes();
 			DatagramSocket sendSocket = new DatagramSocket();
 			sendSocket.setSoTimeout((int) (TIMEOUT.toMillis() * 2));
-			sendSocket.send(new DatagramPacket(bytes, bytes.length, clientIp,
-					clienPort));
+			sendSocket.send(new DatagramPacket(bytes, bytes.length, clientIp, clienPort));
 			return sendSocket;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
