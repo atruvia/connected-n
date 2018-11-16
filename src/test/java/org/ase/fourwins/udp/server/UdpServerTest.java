@@ -16,8 +16,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -41,7 +41,7 @@ public class UdpServerTest {
 		private final String name;
 		private final UdpCommunicator communicator;
 		@Getter
-		private final List<String> received = new ArrayList<>();
+		private final List<String> received = new CopyOnWriteArrayList<String>();
 
 		public DummyClient(String name, String remoteHost, int remotePort) throws IOException {
 			this.name = name;

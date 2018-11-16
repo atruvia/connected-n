@@ -64,7 +64,7 @@ public class RealTournamentITest {
 		int gamesPerDay = realPlayers / 2;
 		double expectedSumOfAllPoints = 2 * (realPlayers - 1) * gamesPerDay
 				* seasons;
-		ScoreSheet result = scoreListener.getResult();
+		ScoreSheet result = scoreListener.getScoreSheet();
 		Double sumOfAllPoints = result.values().stream()
 				.collect(Collectors.summingDouble(d -> d));
 		assertThat(sumOfAllPoints, is(expectedSumOfAllPoints));
