@@ -1,6 +1,5 @@
 package org.ase.fourwins.udp.server;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 
@@ -52,29 +51,37 @@ public class UdpServer {
 		private final InetAddress adressInfo;
 		private final Integer port;
 		private final String name;
-		private final Lock lock = new ReentrantLock();
-		private final Condition condition = lock.newCondition();
+
 		private String response;
+		private boolean available ;
+	    private final Lock lock = new ReentrantLock();
+	    private final Condition condition = lock.newCondition();
 
 		void reponseReceived(String received) {
+			lock.lock();
 			try {
-				lock.lock();
-				response = received;
-				condition.signal();
+				while (available) {
+						condition.await();
+				}
+				this.response = received;
+				available = true;
+				condition.signalAll();
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
 			} finally {
 				lock.unlock();
 			}
 		}
 
 		String getResponse(Duration timeout) {
+			lock.lock();
 			try {
-				lock.lock();
-				if (!condition.await(timeout.toMillis(), MILLISECONDS)) {
-					throw new IllegalStateException("TIMEOUT");
+				while (!available) {
+					condition.await();
 				}
-				String a = response;
-				response = null;
-				return a;
+				available = false;
+				condition.signalAll();
+				return response;
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			} finally {
@@ -124,10 +131,7 @@ public class UdpServer {
 		String delimiter = ";";
 		String uuid = uuid();
 
-		// TODO we have to ensure that WE will in the readQueue call BEFORE the client
-		// will response!
 		send(command + delimiter + uuid, playerInfo);
-
 		String response = playerInfo.getResponse(TIMEOUT);
 		String[] splitted = response.split(delimiter);
 		if (splitted.length < 2) {
