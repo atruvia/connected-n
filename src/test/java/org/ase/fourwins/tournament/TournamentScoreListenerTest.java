@@ -25,8 +25,8 @@ class TournamentScoreListenerTest {
 
 		listener.gameEnded(game);
 
-		assertThat(listener.getResult(), hasEntry(player1, 1.0));
-		assertThat(listener.getResult(), hasEntry(player2, 0.0));
+		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.0));
+		assertThat(listener.getScoreSheet(), hasEntry(player2, 0.0));
 
 	}
 
@@ -42,8 +42,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(game);
 		listener.gameEnded(game);
 
-		assertThat(listener.getResult(), hasEntry(player1, 1.5));
-		assertThat(listener.getResult(), hasEntry(player2, 1.5));
+		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.5));
+		assertThat(listener.getScoreSheet(), hasEntry(player2, 1.5));
 
 	}
 
@@ -61,8 +61,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(gameDraw);
 		listener.gameEnded(gameLost);
 
-		assertThat(listener.getResult(), hasEntry(player1, 1.5));
-		assertThat(listener.getResult(), hasEntry(player2, 0.5));
+		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.5));
+		assertThat(listener.getScoreSheet(), hasEntry(player2, 0.5));
 
 	}
 

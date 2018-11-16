@@ -5,11 +5,16 @@ import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.ScoreSheet;
 
-public class TournamentScoreListener implements TournamentListener<ScoreSheet> {
+import lombok.Getter;
+
+public class TournamentScoreListener implements TournamentListener {
+
 	private static final double FULL_POINT = 1;
 	private static final double ZERO = 0.0;
 	private static final double HALF_POINT = 0.5;
-	private ScoreSheet scoreSheet = new ScoreSheet();
+	@Getter
+	private final ScoreSheet scoreSheet = new ScoreSheet();
+
 	@Override
 	public void gameEnded(Game game) {
 		Object lastToken = game.gameState().getToken();
@@ -28,11 +33,6 @@ public class TournamentScoreListener implements TournamentListener<ScoreSheet> {
 
 	private void addPointForPlayer(Player player, double value) {
 		scoreSheet.merge(player, value, (i, j) -> i + value);
-	}
-
-	@Override
-	public ScoreSheet getResult() {
-		return scoreSheet;
 	}
 
 }
