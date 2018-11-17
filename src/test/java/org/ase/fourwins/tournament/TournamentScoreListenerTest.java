@@ -1,5 +1,8 @@
 package org.ase.fourwins.tournament;
 
+import static org.ase.fourwins.board.Board.Score.DRAW;
+import static org.ase.fourwins.board.Board.Score.LOSE;
+import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -22,8 +25,7 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 		PlayerMock player2 = new PlayerMock("P2");
 
-		Game game = buildGame(player1, player2, Score.WIN, player1.getToken());
-
+		Game game = buildGame(player1, player2, WIN, player1);
 		listener.gameEnded(game);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
@@ -37,8 +39,7 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 		PlayerMock player2 = new PlayerMock("P2");
 
-		Game game = buildGame(player1, player2, Score.DRAW, player1.getToken());
-
+		Game game = buildGame(player1, player2, DRAW, player1);
 		listener.gameEnded(game);
 		listener.gameEnded(game);
 		listener.gameEnded(game);
@@ -55,9 +56,8 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 		PlayerMock player2 = new PlayerMock("P2");
 
-		Game gameDraw = buildGame(player1, player2, Score.DRAW, player1.getToken());
-		Game gameLost = buildGame(player1, player2, Score.LOSE, player2.getToken());
-
+		Game gameDraw = buildGame(player1, player2, DRAW, player1);
+		Game gameLost = buildGame(player1, player2, LOSE, player2);
 		listener.gameEnded(gameDraw);
 		listener.gameEnded(gameLost);
 
@@ -72,9 +72,8 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 		PlayerMock player2 = new PlayerMock("P2");
 
-		Game gameDraw = buildGame(player1, player2, Score.DRAW, player1.getToken());
-		Game gameLost = buildGame(player1, player2, Score.LOSE, player2.getToken());
-
+		Game gameDraw = buildGame(player1, player2, DRAW, player1);
+		Game gameLost = buildGame(player1, player2, LOSE, player2);
 		listener.gameEnded(gameDraw);
 		listener.gameEnded(gameLost);
 		listener.gameEnded(gameLost);
@@ -92,14 +91,13 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 
 		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(player1);
-
 		listener.gameEnded(coffeebreakGame);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
 		assertThat(scoreSheet.scoreOf(player1), is(1.0));
 	}
 
-	private Game buildGame(Player player1, Player player2, Score score, String lastToken) {
+	private Game buildGame(Player player1, Player player2, Score score, Player lastMoveBy) {
 		return new Game() {
 
 			@Override
@@ -114,7 +112,7 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().score(score).token(lastToken).build();
+				return GameState.builder().score(score).token(lastMoveBy.getToken()).build();
 			}
 		};
 	}
