@@ -9,31 +9,30 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
-import org.ase.fourwins.game.Player;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class ScoreSheet {
 
-	private final ConcurrentHashMap<Player, Double> data = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Double> data = new ConcurrentHashMap<>();
 
-	public LinkedHashMap<Player, Double> getTableau() {
+	@Deprecated
+	public LinkedHashMap<String, Double> getTableau() {
 		return data.entrySet().stream().sorted(Map.Entry.comparingByValue())
 				.collect(toMap(e -> e.getKey(), e -> e.getValue(), (e1, e2) -> e2, LinkedHashMap::new));
 	}
 
-	public Double merge(Player player, double value,
+	public Double merge(String player, double value,
 			BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction) {
 		return data.merge(player, value, remappingFunction);
 	}
 
-	public Set<Player> players(Player player) {
+	public Set<String> players(String player) {
 		return getTableau().keySet();
 	}
 
-	public Double scoreOf(Player player) {
-		return getTableau().get(player);
+	public Double scoreOf(String name) {
+		return getTableau().get(name);
 	}
 
 	@Deprecated

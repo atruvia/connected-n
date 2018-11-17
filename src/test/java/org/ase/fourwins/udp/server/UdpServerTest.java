@@ -42,6 +42,7 @@ public class UdpServerTest {
 
 	static class DummyClient {
 
+		@Getter
 		private final String name;
 		private final UdpCommunicator communicator;
 		@Getter
@@ -60,7 +61,7 @@ public class UdpServerTest {
 			});
 			register();
 		}
-
+		
 		protected void messageReceived(String received) {
 			DummyClient.this.received.add(received);
 		}

@@ -35,6 +35,6 @@ public class TournamentScoreListener implements TournamentListener {
 	}
 
 	private void addPointForPlayer(Player player, double value) {
-		scoreSheet.merge(player, value, (i, j) -> i + value);
+		scoreSheet.merge(player.getToken(), value, (i, j) -> i + value);
 	}
 }

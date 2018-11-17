@@ -29,8 +29,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(game);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1), is(1.0));
-		assertThat(scoreSheet.scoreOf(player2), is(0.0));
+		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
+		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.0));
 	}
 
 	@Test
@@ -45,8 +45,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(game);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1), is(1.5));
-		assertThat(scoreSheet.scoreOf(player2), is(1.5));
+		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.5));
+		assertThat(scoreSheet.scoreOf(player2.getToken()), is(1.5));
 
 	}
 
@@ -62,8 +62,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(gameLost);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1), is(1.5));
-		assertThat(scoreSheet.scoreOf(player2), is(0.5));
+		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.5));
+		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.5));
 	}
 
 	@Test
@@ -81,8 +81,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(gameLost);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1), is(4.5));
-		assertThat(scoreSheet.scoreOf(player2), is(0.5));
+		assertThat(scoreSheet.scoreOf(player1.getToken()), is(4.5));
+		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.5));
 	}
 
 	@Test
@@ -94,7 +94,7 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(coffeebreakGame);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1), is(1.0));
+		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
 	}
 
 	private Game buildGame(Player player1, Player player2, Score score, Player lastMoveBy) {

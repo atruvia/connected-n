@@ -1,5 +1,6 @@
 package org.ase.fourwins.tournament;
 
+import static java.util.stream.Collectors.summingDouble;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -66,7 +66,7 @@ public class RealTournamentITest {
 				* seasons;
 		ScoreSheet result = scoreListener.getScoreSheet();
 		Double sumOfAllPoints = result.values().stream()
-				.collect(Collectors.summingDouble(d -> d));
+				.collect(summingDouble(d -> d));
 		assertThat(sumOfAllPoints, is(expectedSumOfAllPoints));
 	}
 
