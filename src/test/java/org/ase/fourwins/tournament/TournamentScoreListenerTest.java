@@ -1,6 +1,6 @@
 package org.ase.fourwins.tournament;
 
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
@@ -13,6 +13,7 @@ import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.junit.jupiter.api.Test;
+
 class TournamentScoreListenerTest {
 
 	@Test
@@ -25,9 +26,8 @@ class TournamentScoreListenerTest {
 
 		listener.gameEnded(game);
 
-		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.0));
-		assertThat(listener.getScoreSheet(), hasEntry(player2, 0.0));
-
+		assertThat(listener.getScoreSheet().scoreOf(player1), is(1.0));
+		assertThat(listener.getScoreSheet().scoreOf(player2), is(0.0));
 	}
 
 	@Test
@@ -42,8 +42,9 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(game);
 		listener.gameEnded(game);
 
-		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.5));
-		assertThat(listener.getScoreSheet(), hasEntry(player2, 1.5));
+		ScoreSheet scoreSheet = listener.getScoreSheet();
+		assertThat(scoreSheet.scoreOf(player1), is(1.5));
+		assertThat(scoreSheet.scoreOf(player2), is(1.5));
 
 	}
 
@@ -53,16 +54,15 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 		PlayerMock player2 = new PlayerMock("P2");
 
-		Game gameDraw = buildGame(player1, player2, Score.DRAW,
-				player1.getToken());
-		Game gameLost = buildGame(player1, player2, Score.LOSE,
-				player2.getToken());
+		Game gameDraw = buildGame(player1, player2, Score.DRAW, player1.getToken());
+		Game gameLost = buildGame(player1, player2, Score.LOSE, player2.getToken());
 
 		listener.gameEnded(gameDraw);
 		listener.gameEnded(gameLost);
 
-		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.5));
-		assertThat(listener.getScoreSheet(), hasEntry(player2, 0.5));
+		ScoreSheet scoreSheet = listener.getScoreSheet();
+		assertThat(scoreSheet.scoreOf(player1), is(1.5));
+		assertThat(scoreSheet.scoreOf(player2), is(0.5));
 	}
 
 	@Test
@@ -71,10 +71,8 @@ class TournamentScoreListenerTest {
 		PlayerMock player1 = new PlayerMock("P1");
 		PlayerMock player2 = new PlayerMock("P2");
 
-		Game gameDraw = buildGame(player1, player2, Score.DRAW,
-				player1.getToken());
-		Game gameLost = buildGame(player1, player2, Score.LOSE,
-				player2.getToken());
+		Game gameDraw = buildGame(player1, player2, Score.DRAW, player1.getToken());
+		Game gameLost = buildGame(player1, player2, Score.LOSE, player2.getToken());
 
 		listener.gameEnded(gameDraw);
 		listener.gameEnded(gameLost);
@@ -82,8 +80,9 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(gameLost);
 		listener.gameEnded(gameLost);
 
-		assertThat(listener.getScoreSheet(), hasEntry(player1, 4.5));
-		assertThat(listener.getScoreSheet(), hasEntry(player2, 0.5));
+		ScoreSheet scoreSheet = listener.getScoreSheet();
+		assertThat(scoreSheet.scoreOf(player1), is(4.5));
+		assertThat(scoreSheet.scoreOf(player2), is(0.5));
 	}
 
 	@Test
@@ -91,17 +90,16 @@ class TournamentScoreListenerTest {
 		TournamentScoreListener listener = new TournamentScoreListener();
 		PlayerMock player1 = new PlayerMock("P1");
 
-		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(
-				player1);
+		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(player1);
 
 		listener.gameEnded(coffeebreakGame);
 
-		assertThat(listener.getScoreSheet(), hasEntry(player1, 1.0));
+		ScoreSheet scoreSheet = listener.getScoreSheet();
+		assertThat(scoreSheet.scoreOf(player1), is(1.0));
 	}
 
-	private Game buildGame(Player player1, Player player2, Score score,
-			String lastToken) {
-		Game game = new Game() {
+	private Game buildGame(Player player1, Player player2, Score score, String lastToken) {
+		return new Game() {
 
 			@Override
 			public Game runGame() {
@@ -115,11 +113,9 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().score(score).token(lastToken)
-						.build();
+				return GameState.builder().score(score).token(lastToken).build();
 			}
 		};
-		return game;
 	}
 
 }
