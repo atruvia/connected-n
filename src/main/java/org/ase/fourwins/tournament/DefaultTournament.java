@@ -39,6 +39,7 @@ public class DefaultTournament implements Tournament {
 		}
 	}
 
+	@Getter
 	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
 
 	static final class CoffeebreakGame implements Game {

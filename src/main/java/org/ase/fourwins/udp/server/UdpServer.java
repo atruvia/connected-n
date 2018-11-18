@@ -66,11 +66,11 @@ public class UdpServer {
 					condition.await();
 				}
 				this.response = received;
-				available = true;
-				condition.signalAll();
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			} finally {
+				available = true;
+				condition.signalAll();
 				lock.unlock();
 			}
 		}
@@ -83,12 +83,12 @@ public class UdpServer {
 						throw new TimeoutException("TIMEOUT");
 					}
 				}
-				available = false;
-				condition.signalAll();
 				return response;
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			} finally {
+				available = false;
+				condition.signalAll();
 				lock.unlock();
 			}
 		}

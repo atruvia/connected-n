@@ -48,7 +48,7 @@ public class UdpServerRealTournamentIT {
 
 	private final int serverPort = freePort();
 
-	private final Tournament tournament = new DefaultTournament();
+	private final DefaultTournament tournament = new DefaultTournament();
 
 	private final UdpServer sut = udpServerInBackground();
 
@@ -133,7 +133,7 @@ public class UdpServerRealTournamentIT {
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
 				try {
-					playingClient(String.valueOf(i), 0);
+					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -157,6 +157,7 @@ public class UdpServerRealTournamentIT {
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort) {
 				@Override
 				protected void messageReceived(String received) {
+					System.out.println("--- " + received + " by " + getName());
 					super.messageReceived(received);
 					if (received.startsWith("YOURTURN;")) {
 						waitForever();
