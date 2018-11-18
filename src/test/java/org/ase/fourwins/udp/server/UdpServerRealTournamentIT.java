@@ -128,7 +128,6 @@ public class UdpServerRealTournamentIT {
 	}
 
 	@Test
-	@Disabled
 	void canPlay_Multi() throws IOException, InterruptedException {
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
@@ -155,7 +154,15 @@ public class UdpServerRealTournamentIT {
 
 			DummyClient client1 = playingClient("1", 0);
 			// this client won't respond to server messages
-			DummyClient client2 = new DummyClient("2", SERVER, serverPort);
+			DummyClient client2 = new DummyClient("2", SERVER, serverPort) {
+				@Override
+				protected void messageReceived(String received) {
+					super.messageReceived(received);
+					if (received.startsWith("NEW SEASON;")) {
+						trySend("JOIN;" + received.split(";")[1]);
+					}
+				}
+			};
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
 
@@ -189,7 +196,9 @@ public class UdpServerRealTournamentIT {
 			@Override
 			protected void messageReceived(String received) {
 				super.messageReceived(received);
-				if (received.startsWith("YOURTURN;")) {
+				if (received.startsWith("NEW SEASON;")) {
+					trySend("JOIN;" + received.split(";")[1]);
+				} else if (received.startsWith("YOURTURN;")) {
 					trySend("INSERT;" + row + ";" + received.split(";")[1]);
 				}
 			}

@@ -12,7 +12,9 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
@@ -183,6 +185,19 @@ public class UdpServer {
 					System.out.println("Waiting for more players to join");
 				} else {
 					System.out.println("Season starting");
+					// deregister all players from tournament
+					players.values().forEach(tournament::deregisterPlayer);
+
+					players.entrySet().parallelStream().forEach(p -> {
+						try {
+							if ("JOIN".equals(sendAndWait("NEW SEASON", p.getKey()))) {
+								tournament.registerPlayer(p.getValue());
+							}
+						} catch (TimeoutException e) {
+							System.out.println("Timeout on new season for " + p);
+						}
+					});
+
 					tournament.playSeason(s -> {
 						Score score = s.getScore();
 						Object token = s.getToken();
