@@ -282,8 +282,9 @@ public class UdpServer {
 
 	private DatagramSocket send(String message, UdpPlayerInfo udpPlayerInfo) {
 		synchronized (udpPlayerInfo) {
-			System.out.println("+++ " + message + " to " + udpPlayerInfo.getName());
-			return send(message, udpPlayerInfo.getAdressInfo(), udpPlayerInfo.getPort());
+			DatagramSocket sent = send(message, udpPlayerInfo.getAdressInfo(), udpPlayerInfo.getPort());
+			System.out.println(	"+++ " + message + " sent to " + udpPlayerInfo.getName());
+			return sent;
 		}
 	}
 

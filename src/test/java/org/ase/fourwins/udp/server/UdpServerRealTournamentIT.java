@@ -157,7 +157,6 @@ public class UdpServerRealTournamentIT {
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort) {
 				@Override
 				protected void messageReceived(String received) {
-					System.out.println("--- " + received + " by " + getName());
 					super.messageReceived(received);
 					if (received.startsWith("YOURTURN;")) {
 						waitForever();

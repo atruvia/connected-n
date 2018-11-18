@@ -64,7 +64,7 @@ public class UdpServerTest {
 		}
 		
 		protected void messageReceived(String received) {
-			System.out.println("--- " + received + " by " + getName());
+			System.out.println("--- " + received + " received by " + getName());
 			DummyClient.this.received.add(received);
 		}
 
