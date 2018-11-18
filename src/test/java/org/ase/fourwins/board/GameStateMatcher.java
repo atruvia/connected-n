@@ -26,7 +26,7 @@ public class GameStateMatcher extends TypeSafeMatcher<GameState> {
 	}
 
 	public static GameStateMatcher winnerIs(Object token) {
-		return scoreIs(WIN).withToken(token).withCombinations(1);
+		return scoreIs(WIN).withToken(token).withReason("four in a row").withCombinations(1);
 	}
 
 	public GameStateMatcher withCombinations(int combinations) {
@@ -85,6 +85,11 @@ public class GameStateMatcher extends TypeSafeMatcher<GameState> {
 
 	public GameStateMatcher withToken(Object token) {
 		this.expected = this.expected.toBuilder().token(token).build();
+		return this;
+	}
+
+	public GameStateMatcher withReason(String reason) {
+		this.expected = this.expected.toBuilder().reason(reason).build();
 		return this;
 	}
 

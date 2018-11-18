@@ -22,7 +22,7 @@ public class BoardMatcher extends TypeSafeMatcher<Board> {
 	}
 
 	public static BoardMatcher winnerIs(Object token) {
-		return scoreIs(WIN).withToken(token).withCombinations(1);
+		return scoreIs(WIN).withToken(token).withReason("four in a row").withCombinations(1);
 	}
 
 	public static BoardMatcher loserIs(Object token) {
@@ -66,6 +66,11 @@ public class BoardMatcher extends TypeSafeMatcher<Board> {
 
 	public BoardMatcher withToken(Object token) {
 		matcher = matcher.withToken(token);
+		return this;
+	}
+
+	public BoardMatcher withReason(String reason) {
+		matcher = matcher.withReason(reason);
 		return this;
 	}
 
