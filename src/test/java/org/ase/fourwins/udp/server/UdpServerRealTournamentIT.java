@@ -22,7 +22,6 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.ScoreSheet;
-import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
@@ -33,6 +32,9 @@ import org.junit.jupiter.api.Test;
 import lombok.Getter;
 
 public class UdpServerRealTournamentIT {
+
+	private static final String SERVER = "localhost";
+	private final int serverPort = freePort();
 
 	private final class GameStateCollector implements TournamentListener {
 
@@ -45,8 +47,6 @@ public class UdpServerRealTournamentIT {
 		}
 
 	}
-
-	private final int serverPort = freePort();
 
 	private final DefaultTournament tournament = new DefaultTournament();
 
@@ -140,7 +140,7 @@ public class UdpServerRealTournamentIT {
 			});
 
 			/// ...let it run for a long while
-			TimeUnit.SECONDS.sleep(10);
+			TimeUnit.SECONDS.sleep(30);
 
 			fail("add more assertions");
 
@@ -154,17 +154,8 @@ public class UdpServerRealTournamentIT {
 			tournament.addTournamentListener(stateListener);
 
 			DummyClient client1 = playingClient("1", 0);
-			DummyClient client2 = new DummyClient("2", "localhost", serverPort) {
-				@Override
-				protected void messageReceived(String received) {
-					super.messageReceived(received);
-					if (received.startsWith("YOURTURN;")) {
-						waitForever();
-					}
-				}
-
-			};
-
+			// this client won't respond to server messages
+			DummyClient client2 = new DummyClient("2", SERVER, serverPort);
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
 
@@ -194,7 +185,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	private DummyClient playingClient(String name, int row) throws IOException {
-		return new DummyClient(name, "localhost", serverPort) {
+		return new DummyClient(name, SERVER, serverPort) {
 			@Override
 			protected void messageReceived(String received) {
 				super.messageReceived(received);
@@ -203,16 +194,6 @@ public class UdpServerRealTournamentIT {
 				}
 			}
 		};
-	}
-
-	private void waitForever() {
-		try {
-			while (true) {
-				TimeUnit.DAYS.sleep(Long.MAX_VALUE);
-			}
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	private static int freePort() {
