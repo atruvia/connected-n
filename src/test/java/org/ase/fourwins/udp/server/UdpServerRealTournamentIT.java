@@ -128,6 +128,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	@Test
+	@Disabled
 	void canPlay_Multi() throws IOException, InterruptedException {
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
