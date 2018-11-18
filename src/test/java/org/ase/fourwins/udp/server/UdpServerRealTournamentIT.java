@@ -193,17 +193,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	private DummyClient playingClient(String name, int row) throws IOException {
-		return new DummyClient(name, SERVER, serverPort) {
-			@Override
-			protected void messageReceived(String received) {
-				super.messageReceived(received);
-				if (received.startsWith("NEW SEASON;")) {
-					trySend("JOIN;" + received.split(";")[1]);
-				} else if (received.startsWith("YOURTURN;")) {
-					trySend("INSERT;" + row + ";" + received.split(";")[1]);
-				}
-			}
-		};
+		return new PlayingClient(name, SERVER, serverPort, row);
 	}
 
 	private static int freePort() {

@@ -41,38 +41,18 @@ import lombok.Getter;
 
 public class UdpServerTest {
 
-	static class DummyClient {
+	private static class BaseClient {
 
-		@Getter
-		private final String name;
-		private final UdpCommunicator communicator;
-		@Getter
-		private final List<String> received = new CopyOnWriteArrayList<String>();
+		protected final String name;
+		protected final UdpCommunicator communicator;
 
-		public DummyClient(String name, String remoteHost, int remotePort) throws IOException {
+		public BaseClient(String name, String remoteHost, int remotePort) throws IOException {
 			this.name = name;
 			this.communicator = new UdpCommunicator(remoteHost, remotePort);
-			this.communicator.addMessageListener(received -> messageReceived(received));
-			runInBackground(() -> {
-				try {
-					this.communicator.listenForMessages();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			});
-			register();
-		}
-		
-		protected void messageReceived(String received) {
-			DummyClient.this.received.add(received);
 		}
 
-		protected void register() throws IOException {
-			send("REGISTER;" + name);
-		}
-
-		protected void unregister() throws IOException {
-			send("UNREGISTER");
+		public String getName() {
+			return name;
 		}
 
 		void send(String message) throws IOException {
@@ -85,6 +65,38 @@ public class UdpServerTest {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+
+	}
+
+	static class DummyClient extends BaseClient {
+
+		@Getter
+		private final List<String> received = new CopyOnWriteArrayList<String>();
+
+		public DummyClient(String name, String remoteHost, int remotePort) throws IOException {
+			super(name, remoteHost, remotePort);
+			this.communicator.addMessageListener(received -> messageReceived(received));
+			runInBackground(() -> {
+				try {
+					this.communicator.listenForMessages();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
+			register();
+		}
+
+		protected void messageReceived(String received) {
+			DummyClient.this.received.add(received);
+		}
+
+		protected void register() throws IOException {
+			send("REGISTER;" + name);
+		}
+
+		protected void unregister() throws IOException {
+			send("UNREGISTER");
 		}
 
 		void assertReceived(String... messages) throws InterruptedException {
@@ -189,8 +201,8 @@ public class UdpServerTest {
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
 
 			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
-			client1.assertReceived("Welcome 1");
-			client2.assertReceived("Welcome 2");
+			assertWelcomed(client1);
+			assertWelcomed(client2);
 			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
 		});
 	}
@@ -231,28 +243,38 @@ public class UdpServerTest {
 			return Stream.empty();
 		}).when(tournament).playSeason(anyGameStateConsumer());
 		assertTimeout(ofSeconds(10), () -> {
-			new DummyClient("1", "localhost", serverPort);
-			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
+			new PlayingClient("1", "localhost", serverPort, -1);
+			DummyClient client2 = new PlayingClient("2", "localhost", serverPort, -1);
 
 			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
 
 			// while season is running others can register
-			DummyClient client3 = new DummyClient("3", "localhost", serverPort);
-			client3.assertReceived("Welcome 3");
+			DummyClient client3 = new PlayingClient("3", "localhost", serverPort, -1);
+			assertWelcomed(client3);
 			verify(tournament, timesWithTimeout(3)).registerPlayer(Mockito.any(Player.class));
 
 			// TODO signal to Mockito answer to delay until...
 
 			client3.unregister();
 			client2.unregister();
-			client3.assertReceived("Welcome 3", "UNREGISTERED");
-			client2.assertReceived("Welcome 2", "UNREGISTERED");
+
+			assertWelcomed(client3);
+			assertWelcomed(client2);
+
+			List<String> waitUntilReceived3 = client3.waitUntilReceived(3);
+			List<String> waitUntilReceived2 = client2.waitUntilReceived(3);
+
+			assertThat(waitUntilReceived3.get(0), is("Welcome 3"));
+			assertThat(waitUntilReceived3.get(waitUntilReceived3.size()-1), is("UNREGISTERED"));
+			assertThat(waitUntilReceived2.get(0), is("Welcome 2"));
+			assertThat(waitUntilReceived2.get(waitUntilReceived2.size()-1), is("UNREGISTERED"));
+
 			int seasonsStartedBeforeUnregister = seasonsStarted.get();
 
 			// TODO ...here
 
 			// TODO eliminate wait
-			SECONDS.sleep(1);
+			SECONDS.sleep(3);
 			assertThat(seasonsStarted.get(), is(seasonsStartedBeforeUnregister));
 
 		});
@@ -275,6 +297,11 @@ public class UdpServerTest {
 			client.unregister();
 			newClientWithSameTokenFromSameIP.unregister();
 		});
+	}
+
+	private void assertWelcomed(DummyClient client) throws InterruptedException {
+		List<String> received = client.waitUntilReceived(1);
+		assertThat(received.toString(), received.get(0), is("Welcome " + client.getName()));
 	}
 
 	private void infiniteSeason(Tournament mock) {
@@ -301,7 +328,6 @@ public class UdpServerTest {
 	private <T> Consumer<T> anyConsumer(Class<T> clazz) {
 		return any(Consumer.class);
 	}
-
 
 	private static int freePort() {
 		try {
