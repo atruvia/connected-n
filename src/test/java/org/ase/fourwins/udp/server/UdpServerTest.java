@@ -2,6 +2,8 @@ package org.ase.fourwins.udp.server;
 
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
@@ -20,7 +22,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -63,6 +64,7 @@ public class UdpServerTest {
 		}
 		
 		protected void messageReceived(String received) {
+			System.out.println("--- " + received + " by " + getName());
 			DummyClient.this.received.add(received);
 		}
 
@@ -89,7 +91,7 @@ public class UdpServerTest {
 		void assertReceived(String... messages) throws InterruptedException {
 			List<String> expected = asList(messages);
 			while (getReceived().size() < expected.size()) {
-				TimeUnit.MILLISECONDS.sleep(25);
+				MILLISECONDS.sleep(25);
 			}
 			assertThat(getReceived(), is(expected));
 		}
@@ -97,7 +99,7 @@ public class UdpServerTest {
 		List<String> waitUntilReceived(int expectedSize) throws InterruptedException {
 			List<String> received;
 			while ((received = getReceived()).size() < expectedSize) {
-				TimeUnit.MILLISECONDS.sleep(25);
+				MILLISECONDS.sleep(25);
 			}
 			return received;
 		}
@@ -226,7 +228,7 @@ public class UdpServerTest {
 		AtomicInteger seasonsStarted = new AtomicInteger(0);
 		doAnswer(s -> {
 			seasonsStarted.incrementAndGet();
-			TimeUnit.MILLISECONDS.sleep(25);
+			MILLISECONDS.sleep(25);
 			return Stream.empty();
 		}).when(tournament).playSeason(anyGameStateConsumer());
 		assertTimeout(ofSeconds(10), () -> {
@@ -251,7 +253,7 @@ public class UdpServerTest {
 			// TODO ...here
 
 			// TODO eliminate wait
-			TimeUnit.SECONDS.sleep(1);
+			SECONDS.sleep(1);
 			assertThat(seasonsStarted.get(), is(seasonsStartedBeforeUnregister));
 
 		});
@@ -279,7 +281,7 @@ public class UdpServerTest {
 	private void infiniteSeason(Tournament mock) {
 		doAnswer(s -> {
 			while (true) {
-				TimeUnit.DAYS.sleep(Long.MAX_VALUE);
+				DAYS.sleep(Long.MAX_VALUE);
 			}
 		}).when(tournament).playSeason(anyGameStateConsumer());
 	}

@@ -1,5 +1,6 @@
 package org.ase.fourwins.udp.server;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,15 +55,15 @@ public class UdpServer {
 		private final String name;
 
 		private String response;
-		private boolean available ;
-	    private final Lock lock = new ReentrantLock();
-	    private final Condition condition = lock.newCondition();
+		private boolean available;
+		private final Lock lock = new ReentrantLock();
+		private final Condition condition = lock.newCondition();
 
 		void reponseReceived(String received) {
 			lock.lock();
 			try {
 				while (available) {
-						condition.await();
+					condition.await();
 				}
 				this.response = received;
 				available = true;
@@ -73,11 +75,13 @@ public class UdpServer {
 			}
 		}
 
-		String getResponse(Duration timeout) {
+		String getResponse(Duration timeout) throws TimeoutException {
 			lock.lock();
 			try {
 				while (!available) {
-					condition.await();
+					if (!condition.await(timeout.toMillis(), MILLISECONDS)) {
+						throw new TimeoutException("TIMEOUT");
+					}
 				}
 				available = false;
 				condition.signalAll();
@@ -102,15 +106,19 @@ public class UdpServer {
 
 		@Override
 		protected int nextColumn() {
-			String response = sendAndWait("YOURTURN", playerInfo);
-			if (!response.startsWith("INSERT;")) {
-				throw new IllegalStateException("Unexpected response " + response);
+			try {
+				String response = sendAndWait("YOURTURN", playerInfo);
+				if (!response.startsWith("INSERT;")) {
+					throw new IllegalArgumentException("Unexpected response " + response);
+				}
+				String[] split = response.split(";");
+				if (split.length < 2) {
+					throw new IllegalArgumentException("Unexpected response " + response);
+				}
+				return Integer.parseInt(split[1]);
+			} catch (TimeoutException e) {
+				throw new IllegalArgumentException(e.getMessage());
 			}
-			String[] split = response.split(";");
-			if (split.length < 2) {
-				throw new IllegalStateException("Unexpected response " + response);
-			}
-			return Integer.parseInt(split[1]);
 		}
 
 		@Override
@@ -127,7 +135,7 @@ public class UdpServer {
 
 	}
 
-	private String sendAndWait(String command, UdpPlayerInfo playerInfo) {
+	private String sendAndWait(String command, UdpPlayerInfo playerInfo) throws TimeoutException {
 		String delimiter = ";";
 		String uuid = uuid();
 
@@ -274,6 +282,7 @@ public class UdpServer {
 
 	private DatagramSocket send(String message, UdpPlayerInfo udpPlayerInfo) {
 		synchronized (udpPlayerInfo) {
+			System.out.println("+++ " + message + " to " + udpPlayerInfo.getName());
 			return send(message, udpPlayerInfo.getAdressInfo(), udpPlayerInfo.getPort());
 		}
 	}

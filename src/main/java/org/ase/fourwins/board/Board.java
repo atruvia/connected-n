@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -41,16 +40,6 @@ public abstract class Board {
 
     public List<WinningCombination> getWinningCombinations() {
       return winningCombinations == null ? emptyList() : winningCombinations;
-    }
-
-    public Optional<Object> getWinningToken() {
-      if (score.equals(IN_GAME)) {
-        throw new RuntimeException("Game is still in progress!");
-      }
-      if (score.equals(WIN)) {
-        return Optional.of(token);
-      }
-      throw new RuntimeException("Peter: Wie kommt man an das Token des anderen Spielers?");
     }
 
   }
@@ -136,6 +125,7 @@ public abstract class Board {
         BoardInfo boardInfo) {
       super(WIN, token, boardInfo);
       this.gameState = gameState.toBuilder()
+          .reason("four in a row")
           .winningCombinations(winningCombinatios)
           .build();
     }
