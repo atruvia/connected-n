@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -125,7 +126,7 @@ public class UdpServer {
 
 		@Override
 		public boolean joinGame(String opposite, BoardInfo boardInfo) {
-			send("NEW GAME", playerInfo);
+			send("NEW GAME;" + opposite, playerInfo);
 			return true;
 		}
 
@@ -193,19 +194,21 @@ public class UdpServer {
 					System.out.println("Waiting for more players to join");
 				} else {
 					System.out.println("Season starting");
-					// deregister all players from tournament
 					reregisterAllPlayers(tournament);
-					tournament.playSeason(s -> {
-						Score score = s.getScore();
-						Object token = s.getToken();
-						// TODO find matching PlayerInfo and send score/token
-						System.out.println(score + ";" + token + " --" + s.getReason());
-					});
-					// TODO accumulate score? do we still need beside influx?
+					tournament.playSeason(noop());
 				}
 			}
 		}).start();
 
+	}
+
+	private Consumer<GameState> noop() {
+		return s -> {
+		};
+	}
+
+	private Consumer<GameState> sysout() {
+		return s -> System.out.println(s.getScore() + ";" + s.getToken() + " --" + s.getReason());
 	}
 
 	private void reregisterAllPlayers(Tournament tournament) {
