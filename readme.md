@@ -59,7 +59,7 @@ Ein Spiel kann
 
 Über das Ende jedes Spiels informiert der Server beide Spieler via: 
 ```
-ergebnis;spieler_name;grund
+RESULT;ergebnis;spieler_name;grund
 ```
 ergebnis hat die Ausprägungen LOSE|WIN|DRAW
 
