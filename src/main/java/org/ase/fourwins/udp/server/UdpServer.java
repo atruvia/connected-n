@@ -216,8 +216,8 @@ public class UdpServer {
 					tournament.registerPlayer(p.getValue());
 				}
 			} catch (Exception e) {
-				System.out.println(
-						"Exception while retrieving response for " + "NEW SEASON" + " for " + p.getValue().getToken());
+				System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for "
+						+ p.getValue().getToken() + ": " + e.getMessage());
 			}
 		});
 	}
