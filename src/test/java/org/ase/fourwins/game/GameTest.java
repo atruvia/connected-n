@@ -7,15 +7,13 @@ import static org.ase.fourwins.board.BoardInfo.sevenColsSixRows;
 import static org.ase.fourwins.board.GameStateMatcher.winnerIs;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import org.ase.fourwins.board.Board;
-import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.junit.jupiter.api.Test;
 

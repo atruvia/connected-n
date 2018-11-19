@@ -44,6 +44,20 @@ public class UdpServerRealTournamentIT {
 	private InfluxDB influxDB;
 	private final int serverPort = freePort();
 
+	private final class NoResponseClient extends DummyClient {
+		private NoResponseClient(String name, String remoteHost, int remotePort) throws IOException {
+			super(name, remoteHost, remotePort);
+		}
+
+		@Override
+		protected void messageReceived(String received) {
+			super.messageReceived(received);
+			if (received.startsWith("NEW SEASON;")) {
+				trySend("JOIN;" + received.split(";")[1]);
+			}
+		}
+	}
+
 	private final class GameStateCollector implements TournamentListener {
 
 		@Getter
@@ -69,10 +83,10 @@ public class UdpServerRealTournamentIT {
 	private static void runInBackground(Runnable runnable) {
 		new Thread(runnable).start();
 	}
+
 	@BeforeEach
 	public void setup() {
-		influxDB = InfluxDBFactory.connect("http://localhost:8086", "root",
-				"root");
+		influxDB = InfluxDBFactory.connect("http://localhost:8086", "root", "root");
 		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
 		influxDB.setDatabase(DBNAME);
 	}
@@ -120,10 +134,8 @@ public class UdpServerRealTournamentIT {
 			assertThat(score2, is(not(0)));
 			assertEquals(score1, score2, 1.0);
 
-			List<String> results1 = getReceived(client1,
-					s -> s.startsWith("RESULT;"));
-			List<String> results2 = getReceived(client2,
-					s -> s.startsWith("RESULT;"));
+			List<String> results1 = getReceived(client1, s -> s.startsWith("RESULT;"));
+			List<String> results2 = getReceived(client2, s -> s.startsWith("RESULT;"));
 			assertThat(results1.size(), is(not(0)));
 			assertThat(results2.size(), is(not(0)));
 			assertThat(results1.size(), is(results2.size()));
@@ -135,16 +147,12 @@ public class UdpServerRealTournamentIT {
 		});
 	}
 
-	private List<String> getReceived(DummyClient client1,
-			Predicate<String> predicate) {
-		return client1.getReceived().stream().filter(predicate)
-				.collect(toList());
+	private List<String> getReceived(DummyClient client1, Predicate<String> predicate) {
+		return client1.getReceived().stream().filter(predicate).collect(toList());
 	}
 
-	private void assertHasTimeout(DummyClient client,
-			GameStateCollector gameStateCollector, boolean hadTimeout) {
-		List<GameState> timeout = timeouts(gameStateCollector.getGameStates(),
-				client.getName());
+	private void assertHasTimeout(DummyClient client, GameStateCollector gameStateCollector, boolean hadTimeout) {
+		List<GameState> timeout = timeouts(gameStateCollector.getGameStates(), client.getName());
 		assertThat(timeout.toString(), timeout.isEmpty(), is(!hadTimeout));
 	}
 
@@ -156,37 +164,24 @@ public class UdpServerRealTournamentIT {
 				.collect(toList());
 	}
 
-	private void assertWelcomed(DummyClient client)
-			throws InterruptedException {
+	private void assertWelcomed(DummyClient client) throws InterruptedException {
 		List<String> received = client.waitUntilReceived(1);
-		assertThat(received.toString(), received.get(0),
-				is("Welcome " + client.getName()));
+		assertThat(received.toString(), received.get(0), is("Welcome " + client.getName()));
 	}
 
 	@Test
 	void canPlay_Multi() throws IOException, InterruptedException {
-		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB,
-				RETENTION_POLICY, DBNAME);
+		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB, RETENTION_POLICY, DBNAME);
 		tournament.addTournamentListener(influxDBListener);
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
 				try {
-					playingClient(String.valueOf(i),
-							i % tournament.getBoardInfo().getColumns());
+					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
 			});
-			new PlayingClient("UUID Faker", SERVER, serverPort, 0) {
-				@Override
-				protected void messageReceived(String received) {
-					if (received.startsWith("NEW SEASON;")) {
-						trySend("JOIN;" + "fakeduuid");
-					} else {
-						super.messageReceived(received);
-					}
-				}
-			};
+			uuidFaker();
 
 			/// ...let it run for a long while
 			TimeUnit.SECONDS.sleep(60);
@@ -196,6 +191,19 @@ public class UdpServerRealTournamentIT {
 		});
 	}
 
+	private PlayingClient uuidFaker() throws IOException {
+		return new PlayingClient("UUID Faker", SERVER, serverPort, 0) {
+			@Override
+			protected void messageReceived(String received) {
+				if (received.startsWith("NEW SEASON;")) {
+					trySend("JOIN;" + "fakeduuid");
+				} else {
+					super.messageReceived(received);
+				}
+			}
+		};
+	}
+
 	@Test
 	void aClientWithTimeout() throws IOException, InterruptedException {
 		assertTimeout(ofSeconds(10), () -> {
@@ -203,16 +211,8 @@ public class UdpServerRealTournamentIT {
 			tournament.addTournamentListener(stateListener);
 
 			DummyClient client1 = playingClient("1", 0);
-			// this client won't respond to server messages
-			DummyClient client2 = new DummyClient("2", SERVER, serverPort) {
-				@Override
-				protected void messageReceived(String received) {
-					super.messageReceived(received);
-					if (received.startsWith("NEW SEASON;")) {
-						trySend("JOIN;" + received.split(";")[1]);
-					}
-				}
-			};
+			DummyClient client2 = noResponseClient();
+
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
 
@@ -233,6 +233,10 @@ public class UdpServerRealTournamentIT {
 
 			assertEquals(newGames1.size(), newGames2.size(), 0.0);
 		});
+	}
+
+	private NoResponseClient noResponseClient() throws IOException {
+		return new NoResponseClient("2", SERVER, serverPort);
 	}
 
 	private List<String> newGames(DummyClient client) {
