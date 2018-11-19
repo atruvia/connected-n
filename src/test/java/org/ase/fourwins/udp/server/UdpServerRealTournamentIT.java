@@ -23,10 +23,15 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.ScoreSheet;
+import org.ase.fourwins.tournament.listener.InfluxDBListener;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
+import org.influxdb.InfluxDB;
+import org.influxdb.InfluxDBFactory;
+import org.influxdb.dto.Query;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import lombok.Getter;
@@ -34,6 +39,9 @@ import lombok.Getter;
 public class UdpServerRealTournamentIT {
 
 	private static final String SERVER = "localhost";
+	private static final String RETENTION_POLICY = "default";
+	private static final String DBNAME = "GAMES";
+	private InfluxDB influxDB;
 	private final int serverPort = freePort();
 
 	private final class GameStateCollector implements TournamentListener {
@@ -61,10 +69,18 @@ public class UdpServerRealTournamentIT {
 	private static void runInBackground(Runnable runnable) {
 		new Thread(runnable).start();
 	}
+	@BeforeEach
+	public void setup() {
+		influxDB = InfluxDBFactory.connect("http://localhost:8086", "root",
+				"root");
+		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
+		influxDB.setDatabase(DBNAME);
+	}
 
 	@AfterEach
 	public void tearDown() {
-//		sut.shutdown();
+		// influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"",
+		// DBNAME));
 	}
 
 	@Test
@@ -104,8 +120,10 @@ public class UdpServerRealTournamentIT {
 			assertThat(score2, is(not(0)));
 			assertEquals(score1, score2, 1.0);
 
-			List<String> results1 = getReceived(client1, s -> s.startsWith("RESULT;"));
-			List<String> results2 = getReceived(client2, s -> s.startsWith("RESULT;"));
+			List<String> results1 = getReceived(client1,
+					s -> s.startsWith("RESULT;"));
+			List<String> results2 = getReceived(client2,
+					s -> s.startsWith("RESULT;"));
 			assertThat(results1.size(), is(not(0)));
 			assertThat(results2.size(), is(not(0)));
 			assertThat(results1.size(), is(results2.size()));
@@ -117,12 +135,16 @@ public class UdpServerRealTournamentIT {
 		});
 	}
 
-	private List<String> getReceived(DummyClient client1, Predicate<String> predicate) {
-		return client1.getReceived().stream().filter(predicate).collect(toList());
+	private List<String> getReceived(DummyClient client1,
+			Predicate<String> predicate) {
+		return client1.getReceived().stream().filter(predicate)
+				.collect(toList());
 	}
 
-	private void assertHasTimeout(DummyClient client, GameStateCollector gameStateCollector, boolean hadTimeout) {
-		List<GameState> timeout = timeouts(gameStateCollector.getGameStates(), client.getName());
+	private void assertHasTimeout(DummyClient client,
+			GameStateCollector gameStateCollector, boolean hadTimeout) {
+		List<GameState> timeout = timeouts(gameStateCollector.getGameStates(),
+				client.getName());
 		assertThat(timeout.toString(), timeout.isEmpty(), is(!hadTimeout));
 	}
 
@@ -134,17 +156,23 @@ public class UdpServerRealTournamentIT {
 				.collect(toList());
 	}
 
-	private void assertWelcomed(DummyClient client) throws InterruptedException {
+	private void assertWelcomed(DummyClient client)
+			throws InterruptedException {
 		List<String> received = client.waitUntilReceived(1);
-		assertThat(received.toString(), received.get(0), is("Welcome " + client.getName()));
+		assertThat(received.toString(), received.get(0),
+				is("Welcome " + client.getName()));
 	}
 
 	@Test
 	void canPlay_Multi() throws IOException, InterruptedException {
+		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB,
+				RETENTION_POLICY, DBNAME);
+		tournament.addTournamentListener(influxDBListener);
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
 				try {
-					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
+					playingClient(String.valueOf(i),
+							i % tournament.getBoardInfo().getColumns());
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -161,7 +189,7 @@ public class UdpServerRealTournamentIT {
 			};
 
 			/// ...let it run for a long while
-			TimeUnit.SECONDS.sleep(10);
+			TimeUnit.SECONDS.sleep(60);
 
 			fail("add more assertions");
 
@@ -203,7 +231,7 @@ public class UdpServerRealTournamentIT {
 			System.out.println("new games 1 " + newGames1.size());
 			System.out.println("new games 2 " + newGames2.size());
 
-			assertEquals((double) newGames1.size(), (double) newGames2.size(), 0.0);
+			assertEquals(newGames1.size(), newGames2.size(), 0.0);
 		});
 	}
 
