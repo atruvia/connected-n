@@ -128,7 +128,6 @@ public class UdpServerRealTournamentIT {
 	}
 
 	@Test
-	@Disabled
 	void canPlay_Multi() throws IOException, InterruptedException {
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
@@ -138,9 +137,19 @@ public class UdpServerRealTournamentIT {
 					throw new RuntimeException(e);
 				}
 			});
+			new PlayingClient("UUID Faker", SERVER, serverPort, 0) {
+				@Override
+				protected void messageReceived(String received) {
+					if (received.startsWith("NEW SEASON;")) {
+						trySend("JOIN;" + "fakeduuid");
+					} else {
+						super.messageReceived(received);
+					}
+				}
+			};
 
 			/// ...let it run for a long while
-			TimeUnit.SECONDS.sleep(30);
+			TimeUnit.MINUTES.sleep(30);
 
 			fail("add more assertions");
 
