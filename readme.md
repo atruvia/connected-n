@@ -33,7 +33,7 @@ Der Teil ```58ca8b44``` ist ein variabler Token, der je nach Saison variiert.
 ### Einen Zug machen
 Der Server schickt eine Nachricht an den Spieler, wenn ein neues Spiel beginnt:
 ```
-NEW GAME
+NEW GAME;gegner_name
 ```
 Bist du selbst am Zug, wird der Server dich auffordern:
 ```
