@@ -127,9 +127,9 @@ public class BoardTest {
 	}
 
 	@Test
-	void out_of_bound() {
+	void out_of_tbound() {
 		Board board = a(boardOfSize(1, 1));
-		assertThat(board.insertToken(moveToColumn('C'), "X"), isGameError("ILLEGAL_COLUMN_ANNOUNCED").withToken("X"));
+		assertThat(board.insertToken(moveToColumn('B'), "X"), isGameError("ILLEGAL_COLUMN_ANNOUNCED").withToken("X"));
 	}
 
 	@Test
