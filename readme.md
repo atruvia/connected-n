@@ -8,6 +8,11 @@ Um sich beim 4Gewinnt-Server anzumelden, ist eine Registrierung nötig:
 REGISTER;yourname
 ```
 
+### Ablauf des Turniers
+Solange mindestens zwei Spieler registriert sind, wird Saison für Saion gespielt. 
+Innerhalb einer Sasion spielt jeder Spieler, Spiel für Spiel, gegen alle anderen Spieler. 
+Hierbei gibt es Hin- und Rückrunde, so dass jeder Spieler einmal Heimrecht (=erster Zug) hat. 
+
 ### Teilnahme an einer Saison
 Wenn der Server eine neue Saison startet, schickt er eine Benachrichtung an alle
 registrierten Spieler:
@@ -44,3 +49,15 @@ Der Server informiert beide Spieler über alle gemachten Züge via:
 ```
 TOKEN INSERTED;spieler_name;spalte
 ```
+
+### Ende eines Spiels
+Ein Spiel kann
+- verloren werden (ungültiger Zug)
+- gewonnen werden (vier Steine in einer vertikalen, horizontalen oder diagonalen Reihe)
+- unentschieden enden
+
+Über das Ende jedes Spiels informiert der Server beide Spieler via: 
+```
+ergebnis;spieler_name;grund
+```
+ergebnis hat die Ausprägungen LOSE|WIN|DRAW
