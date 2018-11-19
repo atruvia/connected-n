@@ -205,8 +205,8 @@ public class UdpServer {
 				if ("JOIN".equals(sendAndWait("NEW SEASON", p.getKey()))) {
 					tournament.registerPlayer(p.getValue());
 				}
-			} catch (TimeoutException e) {
-				System.out.println("Timeout on " + "NEW SEASON" + " for " + p.getValue().getToken());
+			} catch (Exception e) {
+				System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for " + p.getValue().getToken());
 			}
 		});
 	}
