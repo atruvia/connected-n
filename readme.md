@@ -10,8 +10,9 @@ REGISTER;yourname
 
 ### Ablauf des Turniers
 Solange mindestens zwei Spieler registriert sind, wird Saison für Saion gespielt. 
-Innerhalb einer Sasion spielt jeder Spieler, Spiel für Spiel, gegen alle anderen Spieler. 
+Innerhalb einer Sasion spielt jeder Spieler, Spiel für Spiel, gegen alle anderen Spieler (=Spieltag). 
 Hierbei gibt es Hin- und Rückrunde, so dass jeder Spieler einmal Heimrecht (=erster Zug) hat. 
+Die Spiele eines Spieltags finden parallel statt. 
 
 ### Teilnahme an einer Saison
 Wenn der Server eine neue Saison startet, schickt er eine Benachrichtung an alle
@@ -61,3 +62,6 @@ Ein Spiel kann
 ergebnis;spieler_name;grund
 ```
 ergebnis hat die Ausprägungen LOSE|WIN|DRAW
+
+### Timeouts
+Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er das Spiel
