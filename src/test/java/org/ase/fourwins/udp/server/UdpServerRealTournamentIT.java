@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -173,6 +174,7 @@ public class UdpServerRealTournamentIT {
 	void canPlay_Multi() throws IOException, InterruptedException {
 		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB, RETENTION_POLICY, DBNAME);
 		tournament.addTournamentListener(influxDBListener);
+		tournament.addTournamentListener(new TournamentScoreListener());
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {
 				try {
@@ -193,13 +195,24 @@ public class UdpServerRealTournamentIT {
 
 	private PlayingClient uuidFaker() throws IOException {
 		return new PlayingClient("UUID Faker", SERVER, serverPort, 0) {
+			
+			private final Random random = new Random(System.currentTimeMillis());
+
 			@Override
 			protected void messageReceived(String received) {
 				if (received.startsWith("NEW SEASON;")) {
-					trySend("JOIN;X" + received.split(";")[1] + "X");
+					trySend("JOIN;" + (shouldFake() ? fakeUuid(received) : received.split(";")[1]));
 				} else {
 					super.messageReceived(received);
 				}
+			}
+
+			private boolean shouldFake() {
+				return random.nextInt(100) > 90;
+			}
+
+			private String fakeUuid(String received) {
+				return "X" + received.split(";")[1] + "X";
 			}
 		};
 	}
@@ -241,7 +254,7 @@ public class UdpServerRealTournamentIT {
 
 	private List<String> newGames(DummyClient client) {
 		return client.getReceived().stream() //
-				.filter(s -> s.equals("NEW GAME")) //
+				.filter(s -> s.startsWith("NEW GAME;")) //
 				.collect(toList());
 	}
 
