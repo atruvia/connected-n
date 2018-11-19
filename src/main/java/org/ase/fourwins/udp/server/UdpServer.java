@@ -20,7 +20,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
@@ -133,6 +135,14 @@ public class UdpServer {
 			super.tokenWasInserted(token, column);
 		}
 
+		public void gameEnded(GameState state) {
+			Object reason = state.getReason() == null ? "" : state.getReason();
+			String message = Stream.of("RESULT", state.getScore(), state.getToken(), reason).map(Object::toString)
+					.collect(joining(";"));
+			send(message, playerInfo);
+			super.gameEnded(state);
+		}
+
 	}
 
 	private String sendAndWait(String command, UdpPlayerInfo playerInfo) throws TimeoutException {
@@ -206,7 +216,8 @@ public class UdpServer {
 					tournament.registerPlayer(p.getValue());
 				}
 			} catch (Exception e) {
-				System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for " + p.getValue().getToken());
+				System.out.println(
+						"Exception while retrieving response for " + "NEW SEASON" + " for " + p.getValue().getToken());
 			}
 		});
 	}

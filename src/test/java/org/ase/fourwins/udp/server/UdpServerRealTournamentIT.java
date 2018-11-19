@@ -16,6 +16,7 @@ import java.net.ServerSocket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -26,7 +27,6 @@ import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import lombok.Getter;
@@ -104,9 +104,21 @@ public class UdpServerRealTournamentIT {
 			assertThat(score2, is(not(0)));
 			assertEquals(score1, score2, 1.0);
 
+			List<String> results1 = getReceived(client1, s -> s.startsWith("RESULT;"));
+			List<String> results2 = getReceived(client2, s -> s.startsWith("RESULT;"));
+			assertThat(results1.size(), is(not(0)));
+			assertThat(results2.size(), is(not(0)));
+			assertThat(results1.size(), is(results2.size()));
+			System.out.println("results 1 " + results1);
+			System.out.println("results 2 " + results2);
+
 			assertHasTimeout(client1, stateListener, false);
 			assertHasTimeout(client2, stateListener, false);
 		});
+	}
+
+	private List<String> getReceived(DummyClient client1, Predicate<String> predicate) {
+		return client1.getReceived().stream().filter(predicate).collect(toList());
 	}
 
 	private void assertHasTimeout(DummyClient client, GameStateCollector gameStateCollector, boolean hadTimeout) {
@@ -149,7 +161,7 @@ public class UdpServerRealTournamentIT {
 			};
 
 			/// ...let it run for a long while
-			TimeUnit.MINUTES.sleep(30);
+			TimeUnit.SECONDS.sleep(10);
 
 			fail("add more assertions");
 

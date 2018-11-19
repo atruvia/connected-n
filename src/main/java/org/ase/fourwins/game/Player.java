@@ -1,9 +1,11 @@
 package org.ase.fourwins.game;
 
 import org.ase.fourwins.board.BoardInfo;
+import org.ase.fourwins.board.Board.GameState;
 
 import lombok.Getter;
 import lombok.ToString;
+
 @ToString
 public abstract class Player {
 
@@ -21,6 +23,9 @@ public abstract class Player {
 	}
 
 	protected void tokenWasInserted(String token, int column) {
+	}
+
+	public void gameEnded(GameState state) {
 	}
 
 }

@@ -100,6 +100,13 @@ public class DefaultGame implements Game {
 
 	@Override
 	public Game runGame() {
+		Game game = executeGame();
+		GameState gameState = game.gameState();
+		players.forEach(p -> p.gameEnded(gameState));
+		return game;
+	}
+
+	private Game executeGame() {
 		while (gameState().getScore() == IN_GAME) {
 			moves++;
 			Player player = nextPlayer.next();
