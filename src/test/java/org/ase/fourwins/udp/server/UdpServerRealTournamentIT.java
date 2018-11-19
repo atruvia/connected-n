@@ -93,8 +93,8 @@ public class UdpServerRealTournamentIT {
 
 	@AfterEach
 	public void tearDown() {
-		// influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"",
-		// DBNAME));
+		 influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"",
+		 DBNAME));
 	}
 
 	@Test
@@ -184,7 +184,7 @@ public class UdpServerRealTournamentIT {
 			uuidFaker();
 
 			/// ...let it run for a long while
-			TimeUnit.SECONDS.sleep(60);
+			TimeUnit.MINUTES.sleep(60);
 
 			fail("add more assertions");
 
@@ -196,7 +196,7 @@ public class UdpServerRealTournamentIT {
 			@Override
 			protected void messageReceived(String received) {
 				if (received.startsWith("NEW SEASON;")) {
-					trySend("JOIN;" + "fakeduuid");
+					trySend("JOIN;X" + received.split(";")[1] + "X");
 				} else {
 					super.messageReceived(received);
 				}
