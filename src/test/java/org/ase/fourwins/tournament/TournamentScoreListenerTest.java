@@ -83,6 +83,8 @@ class TournamentScoreListenerTest {
 		ScoreSheet scoreSheet = listener.getScoreSheet();
 		assertThat(scoreSheet.scoreOf(player1.getToken()), is(4.5));
 		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.5));
+
+		System.out.println(scoreSheet);
 	}
 
 	@Test
@@ -90,14 +92,16 @@ class TournamentScoreListenerTest {
 		TournamentScoreListener listener = new TournamentScoreListener();
 		PlayerMock player1 = new PlayerMock("P1");
 
-		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(player1);
+		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(
+				player1);
 		listener.gameEnded(coffeebreakGame);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
 		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
 	}
 
-	private Game buildGame(Player player1, Player player2, Score score, Player lastMoveBy) {
+	private Game buildGame(Player player1, Player player2, Score score,
+			Player lastMoveBy) {
 		return new Game() {
 
 			@Override
@@ -112,7 +116,8 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().score(score).token(lastMoveBy.getToken()).build();
+				return GameState.builder().score(score)
+						.token(lastMoveBy.getToken()).build();
 			}
 		};
 	}
