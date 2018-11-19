@@ -54,7 +54,7 @@ TOKEN INSERTED;spieler_name;spalte
 Ein Spiel kann
 - verloren werden (ungültiger Zug)
 - gewonnen werden (vier Steine in einer vertikalen, horizontalen oder diagonalen Reihe)
-- unentschieden enden
+- unentschieden enden (Spielbrett gefüllt aber kein Spieler hat vier Steine in Reihe)
 
 Über das Ende jedes Spiels informiert der Server beide Spieler via: 
 ```
