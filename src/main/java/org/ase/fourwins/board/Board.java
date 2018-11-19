@@ -121,14 +121,11 @@ public abstract class Board {
 
   private static class WinnerBoard extends UnmodifableBoard {
 
-    public WinnerBoard(Object token, List<WinningCombination> winningCombinatios,
-        BoardInfo boardInfo) {
-      super(WIN, token, boardInfo);
-      this.gameState = gameState.toBuilder()
-          .reason("four in a row")
-          .winningCombinations(winningCombinatios)
-          .build();
-    }
+		public WinnerBoard(Object token, List<WinningCombination> winningCombinatios, BoardInfo boardInfo) {
+			super(WIN, token, boardInfo);
+			this.gameState = gameState.toBuilder().reason("FOUR_IN_A_ROW").winningCombinations(winningCombinatios)
+					.build();
+		}
 
   }
 
