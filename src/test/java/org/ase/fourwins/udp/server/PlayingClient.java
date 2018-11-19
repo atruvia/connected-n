@@ -4,7 +4,8 @@ import java.io.IOException;
 
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
 
-final class PlayingClient extends DummyClient {
+class PlayingClient extends DummyClient {
+
 	private final int row;
 
 	PlayingClient(String name, String remoteHost, int remotePort, int row) throws IOException {
