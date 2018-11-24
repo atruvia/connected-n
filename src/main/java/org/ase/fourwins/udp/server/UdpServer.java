@@ -11,10 +11,13 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -24,7 +27,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament;
@@ -156,6 +158,8 @@ public class UdpServer {
 		if (splitted.length < 2) {
 			throw new IllegalArgumentException("Cannot handle/parse " + response);
 		} else if (!splitted[splitted.length - 1].equals(uuid)) {
+			// TODO fix: Do a dummy read
+			playerInfo.getResponse(TIMEOUT);
 			throw new IllegalStateException(
 					"UUID mismatch, expected " + uuid + " got " + splitted[splitted.length - 1]);
 		}
@@ -177,6 +181,7 @@ public class UdpServer {
 		try {
 			socket = new DatagramSocket(port);
 			System.out.println("Socket created");
+			System.out.println("Listening on " + port);
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
 		}
@@ -217,6 +222,7 @@ public class UdpServer {
 			try {
 				if ("JOIN".equals(sendAndWait("NEW SEASON", p.getKey()))) {
 					tournament.registerPlayer(p.getValue());
+					System.out.println(p.getValue().getToken() + " joined season");
 				}
 			} catch (Exception e) {
 				System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for "
