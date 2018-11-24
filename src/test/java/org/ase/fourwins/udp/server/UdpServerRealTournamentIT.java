@@ -94,8 +94,7 @@ public class UdpServerRealTournamentIT {
 
 	@AfterEach
 	public void tearDown() {
-		 influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"",
-		 DBNAME));
+		influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"", DBNAME));
 	}
 
 	@Test
@@ -184,6 +183,7 @@ public class UdpServerRealTournamentIT {
 				}
 			});
 			uuidFaker();
+			sometimesNoResponse();
 
 			/// ...let it run for a long while
 			TimeUnit.MINUTES.sleep(60);
@@ -195,7 +195,7 @@ public class UdpServerRealTournamentIT {
 
 	private PlayingClient uuidFaker() throws IOException {
 		return new PlayingClient("UUID Faker", SERVER, serverPort, 0) {
-			
+
 			private final Random random = new Random(System.currentTimeMillis());
 
 			@Override
@@ -213,6 +213,32 @@ public class UdpServerRealTournamentIT {
 
 			private String fakeUuid(String received) {
 				return "X" + received.split(";")[1] + "X";
+			}
+		};
+	}
+
+	private PlayingClient sometimesNoResponse() throws IOException {
+		return new PlayingClient("Sometimes no response", SERVER, serverPort, 0) {
+
+			private final Random random = new Random(System.currentTimeMillis());
+
+			@Override
+			protected void messageReceived(String received) {
+				if (received.startsWith("NEW SEASON;")) {
+					if (shouldResponse()) {
+						super.messageReceived(received);
+					}
+				} else if (received.startsWith("YOURTURN;")) {
+					if (shouldResponse()) {
+						super.messageReceived(received);
+					}
+				} else {
+					super.messageReceived(received);
+				}
+			}
+
+			private boolean shouldResponse() {
+				return random.nextInt(100) < 90;
 			}
 		};
 	}
