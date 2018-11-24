@@ -36,7 +36,7 @@ public class BoardTest {
 				"X", //
 				"X" //
 		));
-		assertThat(board.insertToken(moveToColumn('A'), "O"), isGameError("COLUMN_IS_FULL").withToken("O"));
+		assertThat(board.insertToken(moveToColumn(0), "O"), isGameError("COLUMN_IS_FULL").withToken("O"));
 	}
 
 	@Test
