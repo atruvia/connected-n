@@ -258,8 +258,8 @@ public class UdpServerRealTournamentIT {
 				.collect(toList());
 	}
 
-	private DummyClient playingClient(String name, int row) throws IOException {
-		return new PlayingClient(name, SERVER, serverPort, row);
+	private DummyClient playingClient(String name, int column) throws IOException {
+		return new PlayingClient(name, SERVER, serverPort, column);
 	}
 
 	private static int freePort() {

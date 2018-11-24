@@ -4,13 +4,13 @@ import java.io.IOException;
 
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
 
-class PlayingClient extends DummyClient {
+public class PlayingClient extends DummyClient {
 
-	private final int row;
+	private final int column;
 
-	PlayingClient(String name, String remoteHost, int remotePort, int row) throws IOException {
+	public PlayingClient(String name, String remoteHost, int remotePort, int column) throws IOException {
 		super(name, remoteHost, remotePort);
-		this.row = row;
+		this.column = column;
 	}
 
 	@Override
@@ -19,7 +19,7 @@ class PlayingClient extends DummyClient {
 		if (received.startsWith("NEW SEASON;")) {
 			trySend("JOIN;" + received.split(";")[1]);
 		} else if (received.startsWith("YOURTURN;")) {
-			trySend("INSERT;" + row + ";" + received.split(";")[1]);
+			trySend("INSERT;" + column + ";" + received.split(";")[1]);
 		}
 	}
 }
