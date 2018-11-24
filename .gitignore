@@ -1,4 +1,6 @@
-/target
+bin
+target
 .classpath
 .project
 .settings
+.jqwik-database
