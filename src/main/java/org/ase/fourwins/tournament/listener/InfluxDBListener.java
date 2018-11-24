@@ -1,6 +1,10 @@
 package org.ase.fourwins.tournament.listener;
+
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.ase.fourwins.board.Board.Score.DRAW;
+import static org.ase.fourwins.board.Board.Score.LOSE;
+import static org.ase.fourwins.board.Board.Score.WIN;
 
 import java.util.List;
 
@@ -11,14 +15,14 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
+
 public class InfluxDBListener implements TournamentListener {
 
 	private InfluxDB influxDB;
 	private String retentionPolicy;
 	private String databaseName;
 
-	public InfluxDBListener(InfluxDB influxDB, String retentionPolicy,
-			String databaseName) {
+	public InfluxDBListener(InfluxDB influxDB, String retentionPolicy, String databaseName) {
 		this.influxDB = influxDB;
 		this.retentionPolicy = retentionPolicy;
 		this.databaseName = databaseName;
@@ -26,7 +30,6 @@ public class InfluxDBListener implements TournamentListener {
 
 	@Override
 	public void gameEnded(Game game) {
-
 		getPointList(game).forEach(point -> {
 			BatchPoints batchPoint = createBatchPoint().point(point);
 			influxDB.write(batchPoint);
@@ -35,24 +38,22 @@ public class InfluxDBListener implements TournamentListener {
 	}
 
 	private BatchPoints createBatchPoint() {
-		return BatchPoints.database(databaseName).tag("async", "true")
-				.retentionPolicy(retentionPolicy)
+		return BatchPoints.database(databaseName).tag("async", "true") //
+//				.retentionPolicy(retentionPolicy)
 				.consistency(ConsistencyLevel.ALL).build();
 	}
 
 	private List<Point> getPointList(Game game) {
 		Object lastToken = game.gameState().getToken();
 		Score score = game.gameState().getScore();
-		if (score.equals(Score.LOSE)) {
-			return game.getPlayers().stream()
-					.filter(p -> !p.getToken().equals(lastToken))
-					.map(Player::getToken).map(this::createFullPointForToken)
-					.collect(toList());
-		} else if (score.equals(Score.WIN)) {
+		if (score.equals(LOSE)) {
+			return game.getPlayers().stream().filter(p -> !p.getToken().equals(lastToken)).map(Player::getToken)
+					.map(this::createFullPointForToken).collect(toList());
+		} else if (score.equals(WIN)) {
 			return asList(createFullPointForToken(lastToken));
-		} else if (score.equals(Score.DRAW)) {
-			return game.getPlayers().stream().map(Player::getToken)
-					.map(this::createHalfPointForToken).collect(toList());
+		} else if (score.equals(DRAW)) {
+			return game.getPlayers().stream().map(Player::getToken).map(this::createHalfPointForToken)
+					.collect(toList());
 		}
 		throw new RuntimeException("Game is still in progress!");
 	}
@@ -64,10 +65,9 @@ public class InfluxDBListener implements TournamentListener {
 	private Point createFullPointForToken(Object token) {
 		return createPointForToken(token, 1);
 	}
+
 	private Point createPointForToken(Object lastToken, double value) {
-		return Point.measurement("GAMES")
-				.addField("player_id", lastToken.toString())
-				.addField("value", value).build();
+		return Point.measurement("GAMES").addField("player_id", lastToken.toString()).addField("value", value).build();
 	}
 
 }
