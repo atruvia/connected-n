@@ -3,6 +3,7 @@ package org.ase.fourwins.tournament;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +23,14 @@ public class ScoreSheet {
 
 	@Deprecated
 	public LinkedHashMap<String, Double> getTableau() {
-		return data.entrySet().stream().sorted(Map.Entry.comparingByValue())
+		return data.entrySet().stream().sorted(comp())
 				.collect(toMap(e -> e.getKey(), e -> e.getValue(),
 						(e1, e2) -> e2, LinkedHashMap::new));
+	}
+
+	private Comparator<Entry<String, Double>> comp() {
+		Comparator<Entry<String, Double>> comparingByValue = Map.Entry.comparingByValue();
+		return comparingByValue.reversed();
 	}
 
 	public Double merge(String player, double value,
