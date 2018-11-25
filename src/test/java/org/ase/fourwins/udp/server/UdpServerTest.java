@@ -11,12 +11,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -28,13 +28,10 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
-import org.ase.fourwins.tournament.Tournament.RegistrationResult;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.mockito.verification.VerificationMode;
 
 import lombok.Getter;
@@ -119,13 +116,7 @@ public class UdpServerTest {
 
 	private final int serverPort = freePort();
 
-	private final Tournament tournament = tournamentMock();
-
-	private Tournament tournamentMock() {
-		Tournament tournament = mock(Tournament.class);
-		when(tournament.registerPlayer(Mockito.any(Player.class))).thenReturn((RegistrationResult) () -> true);
-		return tournament;
-	}
+	private final Tournament tournament = mock(Tournament.class);
 
 	private final UdpServer sut = udpServerInBackground();
 
@@ -149,9 +140,8 @@ public class UdpServerTest {
 		infiniteSeason(tournament);
 		assertTimeout(ofSeconds(10), () -> {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
-			verify(tournament, timesWithTimeout(1)).registerPlayer(Mockito.any(Player.class));
 			client1.assertReceived("Welcome 1");
-			verify(tournament, times(0)).playSeason(anyGameStateConsumer());
+			verify(tournament, times(0)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
 
@@ -164,8 +154,7 @@ public class UdpServerTest {
 					send("REGISTER;");
 				}
 			};
-			verify(tournament, timesWithTimeout(0)).registerPlayer(Mockito.any(Player.class));
-			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
+			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
 
@@ -175,9 +164,8 @@ public class UdpServerTest {
 		assertTimeout(ofSeconds(10), () -> {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
-			verify(tournament, timesWithTimeout(1)).registerPlayer(Mockito.any(Player.class));
 			client.assertReceived("Welcome " + longName);
-			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
+			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
 
@@ -187,9 +175,8 @@ public class UdpServerTest {
 		assertTimeout(ofSeconds(10), () -> {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
-			verify(tournament, timesWithTimeout(0)).registerPlayer(Mockito.any(Player.class));
 			client.assertReceived("NAME_TOO_LONG");
-			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
+			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
 
@@ -200,10 +187,9 @@ public class UdpServerTest {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
 
-			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
 			assertWelcomed(client1);
 			assertWelcomed(client2);
-			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
+			verify(tournament, timesWithTimeout(1)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
 
@@ -214,13 +200,11 @@ public class UdpServerTest {
 			new DummyClient("1", "localhost", serverPort);
 			new DummyClient("2", "localhost", serverPort);
 
-			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
-			verify(tournament, timesWithTimeout(2)).registerPlayer(Mockito.any(Player.class));
+			verify(tournament, timesWithTimeout(1)).playSeason(anyCollection(), anyGameStateConsumer());
 
 			// while season is running others can register
 			DummyClient client3 = new DummyClient("3", "localhost", serverPort);
 			client3.assertReceived("Welcome 3");
-			verify(tournament, timesWithTimeout(3)).registerPlayer(Mockito.any(Player.class));
 		});
 	}
 
@@ -241,17 +225,16 @@ public class UdpServerTest {
 			seasonsStarted.incrementAndGet();
 			MILLISECONDS.sleep(25);
 			return Stream.empty();
-		}).when(tournament).playSeason(anyGameStateConsumer());
+		}).when(tournament).playSeason(anyCollection(), anyGameStateConsumer());
 		assertTimeout(ofSeconds(10), () -> {
 			new PlayingClient("1", "localhost", serverPort, -1);
 			DummyClient client2 = new PlayingClient("2", "localhost", serverPort, -1);
 
-			verify(tournament, timesWithTimeout(1)).playSeason(anyGameStateConsumer());
+			verify(tournament, timesWithTimeout(1)).playSeason(anyCollection(), anyGameStateConsumer());
 
 			// while season is running others can register
 			DummyClient client3 = new PlayingClient("3", "localhost", serverPort, -1);
 			assertWelcomed(client3);
-			verify(tournament, timesWithTimeout(3)).registerPlayer(Mockito.any(Player.class));
 
 			// TODO signal to Mockito answer to delay until...
 
@@ -265,9 +248,9 @@ public class UdpServerTest {
 			List<String> waitUntilReceived2 = client2.waitUntilReceived(3);
 
 			assertThat(waitUntilReceived3.get(0), is("Welcome 3"));
-			assertThat(waitUntilReceived3.get(waitUntilReceived3.size()-1), is("UNREGISTERED"));
+			assertThat(waitUntilReceived3.get(waitUntilReceived3.size() - 1), is("UNREGISTERED"));
 			assertThat(waitUntilReceived2.get(0), is("Welcome 2"));
-			assertThat(waitUntilReceived2.get(waitUntilReceived2.size()-1), is("UNREGISTERED"));
+			assertThat(waitUntilReceived2.get(waitUntilReceived2.size() - 1), is("UNREGISTERED"));
 
 			int seasonsStartedBeforeUnregister = seasonsStarted.get();
 
@@ -293,7 +276,7 @@ public class UdpServerTest {
 			DummyClient newClientWithSameTokenFromSameIP = new DummyClient(nameToReuse, "localhost", serverPort);
 			newClientWithSameTokenFromSameIP.assertReceived("Welcome " + nameToReuse);
 
-			verify(tournament, timesWithTimeout(0)).playSeason(anyGameStateConsumer());
+			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
 			client.unregister();
 			newClientWithSameTokenFromSameIP.unregister();
 		});
@@ -309,7 +292,7 @@ public class UdpServerTest {
 			while (true) {
 				DAYS.sleep(Long.MAX_VALUE);
 			}
-		}).when(tournament).playSeason(anyGameStateConsumer());
+		}).when(tournament).playSeason(anyCollection(), anyGameStateConsumer());
 	}
 
 	private String nameOfLength(int len) {

@@ -3,6 +3,7 @@ package org.ase.fourwins.udp.server;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -11,6 +12,8 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -37,7 +40,6 @@ public class UdpServer {
 
 	public static final int MAX_CLIENT_NAME_LENGTH = 30;
 
-	private final Tournament tournament;
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
 
 	private final DatagramSocket socket;
@@ -160,7 +162,6 @@ public class UdpServer {
 	}
 
 	public UdpServer(int port, Tournament tournament) {
-		this.tournament = tournament;
 		try {
 			socket = new DatagramSocket(port);
 			System.out.println("Socket created");
@@ -182,8 +183,7 @@ public class UdpServer {
 					System.out.println("Waiting for more players to join");
 				} else {
 					System.out.println("Season starting");
-					reregisterAllPlayers(tournament);
-					tournament.playSeason(noop());
+					tournament.playSeason(playersJoiningNextSeason().map(Entry::getValue).collect(toList()), noop());
 				}
 			}
 		}).start();
@@ -199,16 +199,14 @@ public class UdpServer {
 		return s -> System.out.println(s.getScore() + ";" + s.getToken() + " --" + s.getReason());
 	}
 
-	private void reregisterAllPlayers(Tournament tournament) {
-		players.entrySet().parallelStream().forEach(p -> {
-			tournament.deregisterPlayer(p.getValue());
+	private Stream<Entry<UdpPlayerInfo, Player>> playersJoiningNextSeason() {
+		return players.entrySet().parallelStream().filter(p -> {
 			try {
-				if ("JOIN".equals(p.getKey().sendAndWait("NEW SEASON"))) {
-					tournament.registerPlayer(p.getValue());
-				}
+				return ("JOIN".equals(p.getKey().sendAndWait("NEW SEASON")));
 			} catch (Exception e) {
 				System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for "
 						+ p.getValue().getToken() + ": " + e.getMessage());
+				return false;
 			}
 		});
 	}
@@ -243,7 +241,7 @@ public class UdpServer {
 				return;
 			}
 			handleRegisterCommand(findBy(ipAddressAndName(clientIp, playerName)).map(i -> {
-				tournament.deregisterPlayer(players.remove(i));
+				players.remove(i);
 				return new UdpPlayerInfo(clientIp, clientPort, playerName);
 			}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
 		} else if ("UNREGISTER".equals(received)) {
@@ -267,7 +265,8 @@ public class UdpServer {
 
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player player = newPlayer(playerInfo, playerInfo.getName());
-		if (!tournament.registerPlayer(player).isOk()) {
+
+		if (findBy(i -> Objects.equals(i.getName(), playerInfo.getName())).isPresent()) {
 			playerInfo.send("NAME_ALREADY_TAKEN");
 			return;
 		}

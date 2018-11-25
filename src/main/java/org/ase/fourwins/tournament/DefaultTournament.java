@@ -5,6 +5,7 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -24,20 +25,6 @@ import org.ase.fourwins.tournament.listener.TournamentListener;
 import lombok.Getter;
 
 public class DefaultTournament implements Tournament {
-
-	private static class DefaultRegistrationResult implements RegistrationResult {
-		static RegistrationResult OK = new DefaultRegistrationResult(true);
-		@Getter
-		private boolean ok;
-
-		public DefaultRegistrationResult(boolean ok) {
-			this.ok = ok;
-		}
-
-		public static RegistrationResult tokenAlreadyTaken(String token) {
-			return new DefaultRegistrationResult(false);
-		}
-	}
 
 	@Getter
 	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
@@ -67,7 +54,7 @@ public class DefaultTournament implements Tournament {
 		}
 	}
 
-	private final List<Player> players = new ArrayList<>();
+//	private final List<Player> players = new ArrayList<>();
 	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
 
 	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
@@ -83,11 +70,12 @@ public class DefaultTournament implements Tournament {
 	};
 
 	@Override
-	public void playSeason(Consumer<GameState> consumer) {
-		newSeason().getMatchdays().map(Matchday::getMatches) //
+	public void playSeason(Collection<? extends Player> players, Consumer<GameState> consumer) {
+		newSeason(players).getMatchdays().map(Matchday::getMatches) //
 				.map(this::runMatches).flatMap(identity()) //
 				.forEach(consumer);
 		seasonEnded();
+
 	}
 
 	private Stream<GameState> runMatches(Stream<Match<Player>> matches) {
@@ -95,44 +83,18 @@ public class DefaultTournament implements Tournament {
 				.map(Game::gameState).parallel();
 	}
 
-	private Season<Player> newSeason() {
-		synchronized (players) {
-			List<Player> playersClone = new ArrayList<>(players);
-			return new Season<>(evenPlayerCount() ? playersClone : addCoffeeBreakPlayer(playersClone));
-		}
+	private Season<Player> newSeason(Collection<? extends Player> players) {
+		List<Player> playersClone = new ArrayList<>(players);
+		return new Season<>(evenPlayerCount(playersClone) ? playersClone : addCoffeeBreakPlayer(playersClone));
 	}
 
-	private boolean evenPlayerCount() {
-		synchronized (players) {
-			return players.size() % 2 == 0;
-		}
+	private boolean evenPlayerCount(List<Player> players) {
+		return players.size() % 2 == 0;
 	}
 
 	private List<Player> addCoffeeBreakPlayer(List<Player> playersClone) {
-		synchronized (players) {
-			playersClone.add(coffeeBreakPlayer);
-			return playersClone;
-		}
-	}
-
-	@Override
-	public RegistrationResult registerPlayer(Player player) {
-		String token = player.getToken();
-		synchronized (players) {
-			if (players.stream().map(Player::getToken).anyMatch(token::equals)) {
-				return DefaultRegistrationResult.tokenAlreadyTaken(token);
-			}
-			players.add(player);
-		}
-		return DefaultRegistrationResult.OK;
-	}
-
-	@Override
-	public Tournament deregisterPlayer(Player player) {
-		synchronized (players) {
-			players.remove(player);
-		}
-		return this;
+		playersClone.add(coffeeBreakPlayer);
+		return playersClone;
 	}
 
 	private Game newGame(Match<Player> match) {
