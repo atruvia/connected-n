@@ -9,7 +9,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +36,6 @@ import lombok.ToString;
 public class UdpServer {
 
 	public static final int MAX_CLIENT_NAME_LENGTH = 30;
-	private static final Duration TIMEOUT = Duration.ofMillis(250);
 
 	private final Tournament tournament;
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
@@ -53,20 +51,21 @@ public class UdpServer {
 	@ToString
 	private static class UdpPlayerInfo {
 
+		private static final int TIMEOUT_IN_MILLIS = 250;
+
 		private final InetAddress adressInfo;
 		private final Integer port;
 		private final String name;
-
-		private ArrayBlockingQueue<String> responses = new ArrayBlockingQueue<>(10);
+		private final ArrayBlockingQueue<String> responses = new ArrayBlockingQueue<>(10);
 
 		void reponseReceived(String received) {
 			responses.offer(received);
 		}
 
-		String getResponse(Duration timeout, String delimiter, String uuid) throws TimeoutException {
+		String getResponse(String delimiter, String uuid) throws TimeoutException {
 			try {
 				do {
-					String response = responses.poll(timeout.toMillis(), MILLISECONDS);
+					String response = responses.poll(TIMEOUT_IN_MILLIS, MILLISECONDS);
 					if (response == null) {
 						throw new TimeoutException("TIMEOUT");
 					}
@@ -85,7 +84,7 @@ public class UdpServer {
 			try {
 				byte[] bytes = message.getBytes();
 				try (DatagramSocket sendSocket = new DatagramSocket()) {
-					sendSocket.setSoTimeout((int) TIMEOUT.toMillis());
+					sendSocket.setSoTimeout(TIMEOUT_IN_MILLIS);
 					sendSocket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
 				}
 			} catch (IOException e) {
@@ -97,14 +96,15 @@ public class UdpServer {
 			String delimiter = ";";
 			String uuid = uuid();
 			send(command + delimiter + uuid);
-			return getResponse(TIMEOUT, delimiter, uuid);
+			return getResponse(delimiter, uuid);
 		}
 
-		private String uuid() {
+		private static String uuid() {
 			String uuid = UUID.randomUUID().toString();
 			int pos = uuid.indexOf("-");
 			return pos < 0 ? uuid : uuid.substring(0, pos);
 		}
+
 	}
 
 	private final class UdpPlayer extends Player {
