@@ -81,24 +81,21 @@ public class UdpServer {
 			}
 		}
 
-		void send(String message) {
-			synchronized (this) {
-				try {
-					byte[] bytes = message.getBytes();
-					try (DatagramSocket sendSocket = new DatagramSocket()) {
-						sendSocket.setSoTimeout((int) TIMEOUT.toMillis());
-						sendSocket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
-					}
-				} catch (IOException e) {
-					throw new RuntimeException(e);
+		synchronized void send(String message) {
+			try {
+				byte[] bytes = message.getBytes();
+				try (DatagramSocket sendSocket = new DatagramSocket()) {
+					sendSocket.setSoTimeout((int) TIMEOUT.toMillis());
+					sendSocket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
 				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
 		}
 
-		String sendAndWait(String command) throws TimeoutException {
+		synchronized String sendAndWait(String command) throws TimeoutException {
 			String delimiter = ";";
 			String uuid = uuid();
-
 			send(command + delimiter + uuid);
 			return getResponse(TIMEOUT, delimiter, uuid);
 		}
