@@ -132,7 +132,7 @@ public class InfluxGrafanaIT {
 	void canPlay_Multi() throws IOException, InterruptedException {
 
 		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB,
-				RETENTION_POLICY, DBNAME);
+				DBNAME);
 		tournament.addTournamentListener(influxDBListener);
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {

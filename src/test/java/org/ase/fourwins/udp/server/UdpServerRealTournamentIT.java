@@ -24,15 +24,9 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.ScoreSheet;
-import org.ase.fourwins.tournament.listener.InfluxDBListener;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
-import org.influxdb.InfluxDB;
-import org.influxdb.InfluxDBFactory;
-import org.influxdb.dto.Query;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import lombok.Getter;
@@ -40,9 +34,6 @@ import lombok.Getter;
 public class UdpServerRealTournamentIT {
 
 	private static final String SERVER = "localhost";
-	private static final String RETENTION_POLICY = "default";
-	private static final String DBNAME = "GAMES";
-	private InfluxDB influxDB;
 	private final int serverPort = freePort();
 
 	private final class NoResponseClient extends DummyClient {
@@ -83,18 +74,6 @@ public class UdpServerRealTournamentIT {
 
 	private static void runInBackground(Runnable runnable) {
 		new Thread(runnable).start();
-	}
-
-	@BeforeEach
-	public void setup() {
-		influxDB = InfluxDBFactory.connect("http://localhost:8086", "root", "root");
-		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
-		influxDB.setDatabase(DBNAME);
-	}
-
-	@AfterEach
-	public void tearDown() {
-		influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"", DBNAME));
 	}
 
 	@Test
@@ -171,8 +150,6 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void canPlay_Multi() throws IOException, InterruptedException {
-		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB, RETENTION_POLICY, DBNAME);
-		tournament.addTournamentListener(influxDBListener);
 		tournament.addTournamentListener(new TournamentScoreListener());
 		assertTimeout(ofSeconds(10), () -> {
 			IntStream.range(0, 10).forEach(i -> {

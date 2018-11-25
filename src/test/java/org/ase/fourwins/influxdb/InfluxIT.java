@@ -49,7 +49,7 @@ class InfluxIT {
 		System.out.println(url);
 		influxDB = InfluxDBFactory.connect(
 				url, "root", "root");
-		listener = new InfluxDBListener(influxDB, RETENTION_POLICY, DBNAME);
+		listener = new InfluxDBListener(influxDB, DBNAME);
 		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
 		influxDB.setDatabase(DBNAME);
 	}

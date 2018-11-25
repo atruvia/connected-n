@@ -13,19 +13,36 @@ import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
+import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
+import org.influxdb.dto.Query;
 
 public class InfluxDBListener implements TournamentListener {
 
-	private InfluxDB influxDB;
-	private String retentionPolicy;
-	private String databaseName;
+	public static final String DBNAME = "GAMES";
 
-	public InfluxDBListener(InfluxDB influxDB, String retentionPolicy, String databaseName) {
+	private final InfluxDB influxDB;
+	private final String databaseName;
+
+	public InfluxDBListener(String url, String databaseName) {
+		this(InfluxDBFactory.connect(url, "root", "root"), databaseName);
+	}
+
+	public InfluxDBListener(InfluxDB influxDB, String databaseName) {
 		this.influxDB = influxDB;
-		this.retentionPolicy = retentionPolicy;
+		this.influxDB.setDatabase(databaseName);
 		this.databaseName = databaseName;
+	}
+
+	public InfluxDBListener createDatabase(String url) {
+		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
+		return this;
+	}
+
+	public InfluxDBListener dropDatabase() {
+		influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"", DBNAME));
+		return this;
 	}
 
 	@Override
