@@ -1,3 +1,4 @@
 Introduce spectators (and remove listeners)
 BoardTest -> GameTest
+some chars in names should be forbidden: ; ,
 
