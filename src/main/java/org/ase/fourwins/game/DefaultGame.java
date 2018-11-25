@@ -2,14 +2,22 @@ package org.ase.fourwins.game;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.function.Predicate.isEqual;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Move.moveToColumn;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
@@ -75,26 +83,26 @@ public class DefaultGame implements Game {
 	private Board board;
 	private int moves;
 
-	public DefaultGame(Player player1, Player player2, Board board) {
-		validateTokens(player1, player2);
-
-		informPlayer(player1, player2, board.boardInfo());
-		informPlayer(player2, player1, board.boardInfo());
-
+	public DefaultGame(Board board, Player... players) {
+		validateTokens(players);
+		List<Player> playerList = asList(players);
+		playerList.forEach(p -> informPlayer(board.boardInfo(), p,
+				playerList.stream().filter(isEqual(p).negate()).collect(toList())));
 		this.board = board;
-		this.players = unmodifiableList(new ArrayList<>(asList(player1, player2)));
-		this.nextPlayer = new InfiniteIterator<Player>(players);
+		this.players = unmodifiableList(new ArrayList<>(playerList));
+		this.nextPlayer = new InfiniteIterator<Player>(asList(players));
 	}
 
-	private boolean informPlayer(Player player1, Player player2, BoardInfo boardInfo) {
-		return player1.joinGame(player2.getToken(), boardInfo);
+	private boolean informPlayer(BoardInfo boardInfo, Player player, List<Player> opposites) {
+		return player.joinGame(opposites.stream().map(Player::getToken).collect(joining(",")), boardInfo);
 	}
 
-	protected void validateTokens(Player player1, Player player2) {
-		String token1 = player1.getToken();
-		String token2 = player2.getToken();
-		if (Objects.equals(token1, token2)) {
-			throw new RuntimeException("Players (" + player1 + ", " + player2 + ") with same token " + token1);
+	protected void validateTokens(Player... players) {
+		Set<String> allTokens = new HashSet<>();
+		Set<Player> duplicates = Stream.of(players).filter(p -> !allTokens.add(p.getToken())).collect(toSet());
+		if (!duplicates.isEmpty()) {
+			throw new RuntimeException("Players (" + duplicates.stream().map(Object::toString).collect(joining(", "))
+					+ ") with same tokens " + duplicates.stream().map(Player::getToken).collect(joining(", ")));
 		}
 	}
 

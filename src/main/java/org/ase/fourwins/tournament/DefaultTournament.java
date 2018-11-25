@@ -104,7 +104,7 @@ public class DefaultTournament implements Tournament {
 			return new CoffeebreakGame(match.getTeam1());
 		}
 		Board board = makeBoard();
-		return new DefaultGame(match.getTeam1(), match.getTeam2(), board);
+		return new DefaultGame(board, match.getTeam1(), match.getTeam2());
 	}
 
 	protected Board makeBoard() {

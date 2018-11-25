@@ -18,7 +18,7 @@ public abstract class Player {
 
 	protected abstract int nextColumn();
 
-	public boolean joinGame(String opposite, BoardInfo boardInfo) {
+	public boolean joinGame(String opposites, BoardInfo boardInfo) {
 		return true;
 	}
 
