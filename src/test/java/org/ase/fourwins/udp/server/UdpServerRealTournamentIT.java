@@ -201,21 +201,22 @@ public class UdpServerRealTournamentIT {
 
 			@Override
 			protected void messageReceived(String received) {
-				if (received.startsWith("NEW SEASON;")) {
-					if (shouldResponse()) {
-						super.messageReceived(received);
+				if (isMessageWithUuid(received) && shouldSwallow()) {
+					try {
+						TimeUnit.SECONDS.sleep(2);
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
 					}
-				} else if (received.startsWith("YOURTURN;")) {
-					if (shouldResponse()) {
-						super.messageReceived(received);
-					}
-				} else {
-					super.messageReceived(received);
 				}
+				super.messageReceived(received);
 			}
 
-			private boolean shouldResponse() {
-				return random.nextInt(100) < 90;
+			private boolean isMessageWithUuid(String received) {
+				return received.startsWith("NEW SEASON;") || received.startsWith("YOURTURN;");
+			}
+
+			private boolean shouldSwallow() {
+				return random.nextInt(100) > 90;
 			}
 		};
 	}
