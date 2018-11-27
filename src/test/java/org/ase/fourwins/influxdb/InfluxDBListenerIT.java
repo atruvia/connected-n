@@ -70,24 +70,30 @@ class InfluxDBListenerIT {
 
 	@Test
 	void testOneGameEndingIsInsertedToInfluxDB() {
-		List<Player> givenPlayers = players(1);
-		whenEnded(aGameOf(givenPlayers, WIN, givenPlayers.get(0)));
-		assertThat(scoreOf(givenPlayers.get(0)), is(1.0));
+		List<Player> givenPlayers = players(2);
+		whenEnded(aGameOf(givenPlayers, WIN, 0));
+		scoresAre(givenPlayers, 1.0, 0.0);
 	}
 
 	@Test
 	void testPlayerMakesIllegalMoveAndOpponentGetsAFullPoint() {
 		List<Player> players = players(2);
-		whenEnded(aGameOf(players, LOSE, players.get(0)));
-		assertThat(scoreOf(players.get(1)), is(1.0));
+		whenEnded(aGameOf(players, LOSE, 0));
+		scoresAre(players, 0.0, 1.0);
 	}
 
 	@Test
 	void testBothPlayersGetAHalfPointForADraw() {
 		List<Player> players = players(2);
-		whenEnded(aGameOf(players, DRAW, players.get(0)));
-		assertThat(scoreOf(players.get(0)), is(0.5));
-		assertThat(scoreOf(players.get(1)), is(0.5));
+		whenEnded(aGameOf(players, DRAW, 0));
+		scoresAre(players, 0.5, 0.5);
+	}
+
+	private void scoresAre(List<Player> players, double... scores) {
+		assertThat("Players size must match scores length", players.size(), is(scores.length));
+		for (int i = 0; i < players.size(); i++) {
+			assertThat(scoreOf(players.get(i)), is(scores[i]));
+		}
 	}
 
 	@Test
@@ -99,8 +105,8 @@ class InfluxDBListenerIT {
 		do {
 			List<Player> players = players(6 + random.nextInt(6));
 			Score score = scores.get(random.nextInt(scores.size()));
-			Player lastToken = players.get(random.nextInt(players.size()));
-			sut.gameEnded(aGameOf(players, score, lastToken));
+			int lastPlayer = random.nextInt(players.size());
+			sut.gameEnded(aGameOf(players, score, lastPlayer));
 			MILLISECONDS.sleep(500);
 		} while (System.currentTimeMillis() < startTime + MINUTES.toMillis(30));
 	}
@@ -132,7 +138,7 @@ class InfluxDBListenerIT {
 				+ COLUMNNAME_PLAYER_ID + "\" = '" + player.getToken() + "'", sut.getDatabaseName()));
 	}
 
-	private Game aGameOf(List<Player> players, Score score, Player lastPlayer) {
+	private Game aGameOf(List<Player> players, Score score, int lastPlayer) {
 		return new Game() {
 
 			@Override
@@ -142,7 +148,7 @@ class InfluxDBListenerIT {
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().token(lastPlayer.getToken()).score(score).build();
+				return GameState.builder().token(players.get(lastPlayer).getToken()).score(score).build();
 			}
 
 			@Override
