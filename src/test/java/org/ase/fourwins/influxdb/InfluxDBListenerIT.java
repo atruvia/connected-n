@@ -1,5 +1,6 @@
 package org.ase.fourwins.influxdb;
 
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
@@ -14,7 +15,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
@@ -37,30 +37,29 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
-class InfluxIT {
+class InfluxDBListenerIT {
 
 	private static final int INFLUX_PORT = 8086;
 
 	static GenericContainer influx = new GenericContainer("influxdb").withExposedPorts(INFLUX_PORT);
 
-	private static final String DBNAME = "GAMES";
+	private InfluxDBListener sut;
 	private InfluxDB influxDB;
-	private InfluxDBListener listener;
 
 	@BeforeEach
-	public void setup() throws InterruptedException {
+	public void setup() {
 		influx.start();
 		String url = "http://" + influx.getContainerIpAddress() + ":" + influx.getMappedPort(INFLUX_PORT);
-		System.out.println(url);
+		System.out.println("InfluxDB url " + url);
+		sut = new InfluxDBListener(url).createDatabase();
+
 		influxDB = InfluxDBFactory.connect(url, "root", "root");
-		listener = new InfluxDBListener(influxDB, DBNAME);
-		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
-		influxDB.setDatabase(DBNAME);
+		influxDB.setDatabase(sut.getDatabaseName());
 	}
 
 	@AfterEach
 	public void tearDown() {
-		influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"", DBNAME));
+		sut.dropDatabase();
 		influx.stop();
 	}
 
@@ -101,19 +100,19 @@ class InfluxIT {
 			List<Player> players = players(6 + random.nextInt(6));
 			Score score = scores.get(random.nextInt(scores.size()));
 			Player lastToken = players.get(random.nextInt(players.size()));
-			listener.gameEnded(aGameOf(players, score, lastToken));
+			sut.gameEnded(aGameOf(players, score, lastToken));
 			MILLISECONDS.sleep(500);
 		} while (System.currentTimeMillis() < startTime + MINUTES.toMillis(30));
 	}
 
 	private List<Score> validGameEndScores() {
-		List<Score> scores = new ArrayList<Score>(Arrays.asList(Score.values()));
+		List<Score> scores = new ArrayList<Score>(asList(Score.values()));
 		scores.remove(IN_GAME);
 		return scores;
 	}
 
 	private void whenEnded(Game buildGame) {
-		listener.gameEnded(buildGame);
+		sut.gameEnded(buildGame);
 	}
 
 	private List<Player> players(int count) {
@@ -121,9 +120,16 @@ class InfluxIT {
 	}
 
 	private double scoreOf(Player player) {
-		QueryResult query = influxDB.query(new Query("SELECT " + COLUMNNAME_VALUE + " FROM " + MEASUREMENT_NAME
-				+ " WHERE \"" + COLUMNNAME_PLAYER_ID + "\" = '" + player.getToken() + "'", DBNAME));
-		return new InfluxDBResultMapper().toPOJO(query, Row.class).stream().mapToDouble(Row::getValue).sum();
+		return rows(player).stream().mapToDouble(Row::getValue).sum();
+	}
+
+	private List<Row> rows(Player player) {
+		return new InfluxDBResultMapper().toPOJO(scoreQuery(player), Row.class);
+	}
+
+	private QueryResult scoreQuery(Player player) {
+		return influxDB.query(new Query("SELECT " + COLUMNNAME_VALUE + " FROM " + MEASUREMENT_NAME + " WHERE \""
+				+ COLUMNNAME_PLAYER_ID + "\" = '" + player.getToken() + "'", sut.getDatabaseName()));
 	}
 
 	private Game aGameOf(List<Player> players, Score score, Player lastPlayer) {

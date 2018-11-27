@@ -23,6 +23,7 @@ import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 
 import lombok.Data;
+import lombok.Getter;
 
 public class InfluxDBListener implements TournamentListener {
 
@@ -46,6 +47,8 @@ public class InfluxDBListener implements TournamentListener {
 	}
 
 	private final InfluxDB influxDB;
+
+	@Getter
 	private final String databaseName;
 
 	public InfluxDBListener(String url) {
@@ -62,7 +65,7 @@ public class InfluxDBListener implements TournamentListener {
 		this.databaseName = databaseName;
 	}
 
-	public InfluxDBListener createDatabase(String url) {
+	public InfluxDBListener createDatabase() {
 		influxDB.query(new Query("CREATE DATABASE " + databaseName, databaseName));
 		return this;
 	}
