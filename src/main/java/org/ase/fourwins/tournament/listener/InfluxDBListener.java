@@ -1,12 +1,14 @@
 package org.ase.fourwins.tournament.listener;
 
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
+import static java.util.function.Predicate.isEqual;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
+import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_VALUE;
+import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.MEASUREMENT_NAME;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
@@ -14,16 +16,41 @@ import org.ase.fourwins.game.Player;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.InfluxDBFactory;
+import org.influxdb.annotation.Column;
+import org.influxdb.annotation.Measurement;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 
+import lombok.Data;
+
 public class InfluxDBListener implements TournamentListener {
 
-	public static final String DBNAME = "GAMES";
+	private static final double POINTS_WIN = 1;
+	private static final double POINTS_DRAW = 0.5;
+
+	public static final String DEFAULT_DATABASE_NAME = "GAMES";
+
+	@Measurement(name = Row.MEASUREMENT_NAME)
+	@Data
+	public static class Row {
+		public static final String MEASUREMENT_NAME = "SCORES";
+
+		public static final String COLUMNNAME_PLAYER_ID = "player_id";
+		public static final String COLUMNNAME_VALUE = "value";
+
+		@Column(name = COLUMNNAME_PLAYER_ID, tag = true)
+		String playerId;
+		@Column(name = COLUMNNAME_VALUE)
+		double value;
+	}
 
 	private final InfluxDB influxDB;
 	private final String databaseName;
+
+	public InfluxDBListener(String url) {
+		this(InfluxDBFactory.connect(url, "root", "root"), DEFAULT_DATABASE_NAME);
+	}
 
 	public InfluxDBListener(String url, String databaseName) {
 		this(InfluxDBFactory.connect(url, "root", "root"), databaseName);
@@ -36,55 +63,52 @@ public class InfluxDBListener implements TournamentListener {
 	}
 
 	public InfluxDBListener createDatabase(String url) {
-		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
+		influxDB.query(new Query("CREATE DATABASE " + databaseName, databaseName));
 		return this;
 	}
 
 	public InfluxDBListener dropDatabase() {
-		influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"", DBNAME));
+		influxDB.query(new Query("DROP DATABASE \"" + databaseName + "\"", databaseName));
 		return this;
 	}
 
 	@Override
 	public void gameEnded(Game game) {
-		getPointList(game).forEach(point -> {
-			BatchPoints batchPoint = createBatchPoint().point(point);
-			influxDB.write(batchPoint);
-		});
-
+		BatchPoints batchPoints = batchPoints();
+		getPoints(game).forEach(batchPoints::point);
+		influxDB.write(batchPoints);
 	}
 
-	private BatchPoints createBatchPoint() {
-		return BatchPoints.database(databaseName).tag("async", "true") //
-//				.retentionPolicy(retentionPolicy)
-				.consistency(ConsistencyLevel.ALL).build();
+	private BatchPoints batchPoints() {
+		return BatchPoints.database(databaseName) //
+				.tag("async", "true") //
+				.consistency(ConsistencyLevel.ALL) //
+				.build();
 	}
 
-	private List<Point> getPointList(Game game) {
+	private Stream<Point> getPoints(Game game) {
 		Object lastToken = game.gameState().getToken();
 		Score score = game.gameState().getScore();
-		if (score.equals(LOSE)) {
-			return game.getPlayers().stream().filter(p -> !p.getToken().equals(lastToken)).map(Player::getToken)
-					.map(this::createFullPointForToken).collect(toList());
-		} else if (score.equals(WIN)) {
-			return asList(createFullPointForToken(lastToken));
-		} else if (score.equals(DRAW)) {
-			return game.getPlayers().stream().map(Player::getToken).map(this::createHalfPointForToken)
-					.collect(toList());
+		if (LOSE.equals(score)) {
+			return tokens(game).filter(isEqual(lastToken).negate()).map(t -> points(t, POINTS_WIN));
+		} else if (WIN.equals(score)) {
+			return Stream.of(points(lastToken, POINTS_WIN));
+		} else if (DRAW.equals(score)) {
+			return tokens(game).map(t -> points(t, POINTS_DRAW));
 		}
 		throw new RuntimeException("Game is still in progress!");
 	}
 
-	private Point createHalfPointForToken(String token) {
-		return createPointForToken(token, 0.5);
+	private Stream<String> tokens(Game game) {
+		return game.getPlayers().stream().map(Player::getToken);
 	}
 
-	private Point createFullPointForToken(Object token) {
-		return createPointForToken(token, 1);
-	}
-
-	private Point createPointForToken(Object lastToken, double value) {
-		return Point.measurement("GAMES").addField("player_id", lastToken.toString()).addField("value", value).build();
+	private Point points(Object token, double points) {
+		return Point.measurement(MEASUREMENT_NAME) //
+				.addField(COLUMNNAME_PLAYER_ID, String.valueOf(token)) //
+				.tag(COLUMNNAME_PLAYER_ID, String.valueOf(token)) //
+				.addField(COLUMNNAME_VALUE, points) //
+				.build();
 	}
 
 }

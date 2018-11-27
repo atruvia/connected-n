@@ -1,11 +1,15 @@
 package org.ase.fourwins.influxdb;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
+import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_VALUE;
+import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.MEASUREMENT_NAME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -13,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -22,12 +25,15 @@ import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.InfluxDBListener;
+import org.ase.fourwins.tournament.listener.InfluxDBListener.Row;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
+import org.influxdb.impl.InfluxDBResultMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
@@ -37,7 +43,6 @@ class InfluxIT {
 
 	static GenericContainer influx = new GenericContainer("influxdb").withExposedPorts(INFLUX_PORT);
 
-	private static final String RETENTION_POLICY = "default";
 	private static final String DBNAME = "GAMES";
 	private InfluxDB influxDB;
 	private InfluxDBListener listener;
@@ -47,8 +52,7 @@ class InfluxIT {
 		influx.start();
 		String url = "http://" + influx.getContainerIpAddress() + ":" + influx.getMappedPort(INFLUX_PORT);
 		System.out.println(url);
-		influxDB = InfluxDBFactory.connect(
-				url, "root", "root");
+		influxDB = InfluxDBFactory.connect(url, "root", "root");
 		listener = new InfluxDBListener(influxDB, DBNAME);
 		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
 		influxDB.setDatabase(DBNAME);
@@ -88,6 +92,7 @@ class InfluxIT {
 	}
 
 	@Test
+	@Disabled
 	void longRunningIntegrationTest() throws InterruptedException {
 		long startTime = System.currentTimeMillis();
 		Random random = new Random(startTime);
@@ -98,7 +103,7 @@ class InfluxIT {
 			Player lastToken = players.get(random.nextInt(players.size()));
 			listener.gameEnded(aGameOf(players, score, lastToken));
 			MILLISECONDS.sleep(500);
-		} while (System.currentTimeMillis() < startTime + TimeUnit.MINUTES.toMillis(30));
+		} while (System.currentTimeMillis() < startTime + MINUTES.toMillis(30));
 	}
 
 	private List<Score> validGameEndScores() {
@@ -115,10 +120,10 @@ class InfluxIT {
 		return IntStream.range(1, 1 + count).mapToObj(i -> new PlayerMock("P" + i)).collect(toList());
 	}
 
-	private Object scoreOf(Player player) {
-		QueryResult query = influxDB.query(new Query(
-				"SELECT value FROM " + DBNAME + " WHERE \"player_id\" = '" + player.getToken() + "'", DBNAME));
-		return query.getResults().get(0).getSeries().get(0).getValues().get(0).get(1);
+	private double scoreOf(Player player) {
+		QueryResult query = influxDB.query(new Query("SELECT " + COLUMNNAME_VALUE + " FROM " + MEASUREMENT_NAME
+				+ " WHERE \"" + COLUMNNAME_PLAYER_ID + "\" = '" + player.getToken() + "'", DBNAME));
+		return new InfluxDBResultMapper().toPOJO(query, Row.class).stream().mapToDouble(Row::getValue).sum();
 	}
 
 	private Game aGameOf(List<Player> players, Score score, Player lastPlayer) {
