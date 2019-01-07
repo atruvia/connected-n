@@ -133,6 +133,7 @@ class InfluxDBListenerIT {
 		return new InfluxDBResultMapper().toPOJO(scoreQuery(player), Row.class);
 	}
 
+	
 	private QueryResult scoreQuery(Player player) {
 		return influxDB.query(new Query("SELECT " + COLUMNNAME_VALUE + " FROM " + MEASUREMENT_NAME + " WHERE \""
 				+ COLUMNNAME_PLAYER_ID + "\" = '" + player.getToken() + "'", sut.getDatabaseName()));

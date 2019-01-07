@@ -107,7 +107,7 @@ public class RealTournamentITest {
 
 	Stream<GameState> playSeasons(Tournament tournament, List<? extends Player> players, int seasons) {
 		List<GameState> states = new ArrayList<GameState>();
-		IntStream.range(0, seasons).forEach(s -> tournament.playSeason(players, g -> states.add(g)));
+		IntStream.range(0, seasons).forEach(s -> tournament.playSeason(players, states::add));
 		return states.stream();
 	}
 
