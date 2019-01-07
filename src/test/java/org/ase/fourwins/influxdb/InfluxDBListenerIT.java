@@ -8,9 +8,9 @@ import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_PLAYER_ID;
-import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_VALUE;
-import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.MEASUREMENT_NAME;
+import static org.ase.fourwins.tournament.listener.InfluxDBRow.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.InfluxDBRow.COLUMNNAME_VALUE;
+import static org.ase.fourwins.tournament.listener.InfluxDBRow.MEASUREMENT_NAME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -25,7 +25,7 @@ import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.InfluxDBListener;
-import org.ase.fourwins.tournament.listener.InfluxDBListener.Row;
+import org.ase.fourwins.tournament.listener.InfluxDBRow;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Query;
@@ -126,11 +126,11 @@ class InfluxDBListenerIT {
 	}
 
 	private double scoreOf(Player player) {
-		return rows(player).stream().mapToDouble(Row::getValue).sum();
+		return rows(player).stream().mapToDouble(InfluxDBRow::getValue).sum();
 	}
 
-	private List<Row> rows(Player player) {
-		return new InfluxDBResultMapper().toPOJO(scoreQuery(player), Row.class);
+	private List<InfluxDBRow> rows(Player player) {
+		return new InfluxDBResultMapper().toPOJO(scoreQuery(player), InfluxDBRow.class);
 	}
 
 	

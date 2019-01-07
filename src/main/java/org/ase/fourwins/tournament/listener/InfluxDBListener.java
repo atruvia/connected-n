@@ -4,9 +4,9 @@ import static java.util.function.Predicate.isEqual;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_PLAYER_ID;
-import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.COLUMNNAME_VALUE;
-import static org.ase.fourwins.tournament.listener.InfluxDBListener.Row.MEASUREMENT_NAME;
+import static org.ase.fourwins.tournament.listener.InfluxDBRow.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.InfluxDBRow.COLUMNNAME_VALUE;
+import static org.ase.fourwins.tournament.listener.InfluxDBRow.MEASUREMENT_NAME;
 
 import java.util.stream.Stream;
 
@@ -16,13 +16,10 @@ import org.ase.fourwins.game.Player;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.InfluxDBFactory;
-import org.influxdb.annotation.Column;
-import org.influxdb.annotation.Measurement;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Query;
 
-import lombok.Data;
 import lombok.Getter;
 
 public class InfluxDBListener implements TournamentListener {
@@ -31,20 +28,6 @@ public class InfluxDBListener implements TournamentListener {
 	private static final double POINTS_DRAW = 0.5;
 
 	public static final String DEFAULT_DATABASE_NAME = "GAMES";
-
-	@Measurement(name = Row.MEASUREMENT_NAME)
-	@Data
-	public static class Row {
-		public static final String MEASUREMENT_NAME = "SCORES";
-
-		public static final String COLUMNNAME_PLAYER_ID = "player_id";
-		public static final String COLUMNNAME_VALUE = "value";
-
-		@Column(name = COLUMNNAME_PLAYER_ID, tag = true)
-		String playerId;
-		@Column(name = COLUMNNAME_VALUE)
-		double value;
-	}
 
 	private final InfluxDB influxDB;
 
