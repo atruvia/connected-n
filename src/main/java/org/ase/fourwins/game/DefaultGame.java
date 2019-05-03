@@ -15,8 +15,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
@@ -56,7 +54,7 @@ public class DefaultGame implements Game {
 
 	private final static class InfiniteIterator<T> implements Iterator<T> {
 
-		private Iterable<T> elements;
+		private final Iterable<T> elements;
 		private Iterator<T> iterator;
 
 		private InfiniteIterator(Iterable<T> elements) {
@@ -65,10 +63,7 @@ public class DefaultGame implements Game {
 
 		@Override
 		public T next() {
-			if (!iterator.hasNext()) {
-				iterator = elements.iterator();
-			}
-			return iterator.next();
+			return (iterator = iterator.hasNext() ? iterator : elements.iterator()).next();
 		}
 
 		@Override
