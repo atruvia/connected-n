@@ -17,6 +17,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.board.mockplayers.RandomMockPlayer;
@@ -41,57 +42,66 @@ public class RealTournamentITest {
 	private TournamentScoreListener scoreListener;
 
 	@Example
-	void amountOfGames_2Players() {
-		List<PlayerMock> players = createPlayers(2, RandomMockPlayer::new);
+	void twoPlayersOneSeason() {
 		int seasons = 1;
-		playSeasons(seasons, players).forEach(this::verifyGameState);
-		verifyPlayers(players, seasons);
-		verifySumOfPoints(players.size(), seasons);
+		verifyAllProperties(2, seasons);
 	}
 
 	@Example
-	void amountOfGames_3Players() {
-		List<PlayerMock> players = createPlayers(3, RandomMockPlayer::new);
+	void threePlayersOneSeason() {
 		int seasons = 1;
-		playSeasons(seasons, players).forEach(this::verifyGameState);
-		verifySumOfPoints(players.size(), seasons);
-		verifyPlayers(players, seasons);
-	}
-
-	private void verifySumOfPoints(int players, int seasons) {
-		int realPlayers = players % 2 == 0 ? players : players + 1;
-		int gamesPerDay = realPlayers / 2;
-		double expectedSumOfAllPoints = 2 * (realPlayers - 1) * gamesPerDay * seasons;
-		ScoreSheet result = scoreListener.getScoreSheet();
-		Double sumOfAllPoints = result.values().stream().collect(summingDouble(d -> d));
-		assertThat(sumOfAllPoints, is(expectedSumOfAllPoints));
+		verifyAllProperties(3, seasons);
 	}
 
 	@Example
-	void amountOfGames_4Players() {
-		List<PlayerMock> players = createPlayers(4, RandomMockPlayer::new);
+	void fourPlayersOneSeason() {
 		int seasons = 1;
-		playSeasons(seasons, players).forEach(this::verifyGameState);
+		verifyAllProperties(4, seasons);
+	}
+
+	private void verifyAllProperties(int players, int seasons) {
+		verifyGameState(players, seasons);
 		verifyPlayers(players, seasons);
-		verifySumOfPoints(players.size(), seasons);
+		verifySumOfPoints(players, seasons);
 	}
 
 	@Property
-	void jqwikCheckTestRandom(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
-			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
-		List<PlayerMock> players = createPlayers(playerCount, RandomMockPlayer::new);
-		playSeasons(seasons, players).forEach(this::verifyGameState);
-		verifyPlayers(players, seasons);
-		verifySumOfPoints(players.size(), seasons);
-	}
-
-	@Property
-	void jqwikCheckTestKeepTrack(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+	void verifySumOfPoints(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
 		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
-		playSeasons(seasons, players).forEach(this::verifyGameState);
-		verifyPlayers(players, seasons);
-		verifySumOfPoints(players.size(), seasons);
+		playSeasons(seasons, players);
+		ScoreSheet result = scoreListener.getScoreSheet();
+		Double sumOfAllPoints = result.values().stream().mapToDouble(Double::valueOf).sum();
+		assertThat(sumOfAllPoints, is(expectedSumOfAllPoints(players.size(), seasons)));
+	}
+
+	@Property
+	void verifyPlayers(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
+		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
+		playSeasons(seasons, players);
+		players.forEach(p -> assertThat(p.getOpponents().size(), is(expectedJoinedMatches(seasons, players))));
+	}
+
+	@Property
+	void verifyGameState(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
+		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
+		Stream<GameState> gameStates = playSeasons(seasons, players);
+		gameStates.forEach(this::checkGameState);
+	}
+
+	void checkGameState(GameState gameState) {
+		Score score = gameState.getScore();
+		if (score == WIN) {
+			assertThat(String.valueOf(gameState), gameState.getWinningCombinations().size(), is(not(0)));
+		}
+		if (gameState.getScore() != WIN) {
+			assertThat(String.valueOf(gameState), gameState.getWinningCombinations().size(), is(0));
+		}
+		if (gameState.getScore() == LOSE) {
+			assertThat(String.valueOf(gameState), gameState.getReason().isEmpty(), is(false));
+		}
 	}
 
 	List<PlayerMock> createPlayers(int players, Function<String, PlayerMock> function) {
@@ -111,23 +121,15 @@ public class RealTournamentITest {
 		return states.stream();
 	}
 
-	void verifyPlayers(Collection<PlayerMock> players, int numberOfSeasons) {
-		players.forEach(p -> {
-			int expectedJoinedMatches = (players.size() - 1) * numberOfSeasons * 2;
-			assertThat(p.getOpponents().size(), is(expectedJoinedMatches));
-		});
+	double expectedSumOfAllPoints(int players, int seasons) {
+		int realPlayers = players % 2 == 0 ? players : players + 1;
+		int gamesPerDay = realPlayers / 2;
+		double expectedSumOfAllPoints = 2 * (realPlayers - 1) * gamesPerDay * seasons;
+		return expectedSumOfAllPoints;
 	}
 
-	void verifyGameState(GameState score) {
-		if (score.getScore() == WIN) {
-			assertThat(String.valueOf(score), score.getWinningCombinations().size(), is(not(0)));
-		}
-		if (score.getScore() != WIN) {
-			assertThat(String.valueOf(score), score.getWinningCombinations().size(), is(0));
-		}
-		if (score.getScore() == LOSE) {
-			assertThat(String.valueOf(score), score.getReason().isEmpty(), is(false));
-		}
+	int expectedJoinedMatches(int seasons, List<PlayerMock> players) {
+		return (players.size() - 1) * seasons * 2;
 	}
 
 }
