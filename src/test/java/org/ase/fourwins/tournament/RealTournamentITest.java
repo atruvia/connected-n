@@ -40,20 +40,23 @@ public class RealTournamentITest {
 
 	@Example
 	void twoPlayersOneSeason() {
+		int players = 2;
 		int seasons = 1;
-		verifyAllProperties(2, seasons);
+		verifyAllProperties(players, seasons);
 	}
 
 	@Example
 	void threePlayersOneSeason() {
+		int players = 3;
 		int seasons = 1;
-		verifyAllProperties(3, seasons);
+		verifyAllProperties(players, seasons);
 	}
 
 	@Example
 	void fourPlayersOneSeason() {
+		int players = 4;
 		int seasons = 1;
-		verifyAllProperties(4, seasons);
+		verifyAllProperties(players, seasons);
 	}
 
 	private void verifyAllProperties(int players, int seasons) {
