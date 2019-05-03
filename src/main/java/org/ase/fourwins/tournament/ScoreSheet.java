@@ -1,5 +1,7 @@
 package org.ase.fourwins.tournament;
 
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.Collection;
@@ -11,7 +13,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,7 @@ public class ScoreSheet {
 	@Deprecated
 	public LinkedHashMap<String, Double> getTableau() {
 		return data.entrySet().stream().sorted(comp())
-				.collect(toMap(e -> e.getKey(), e -> e.getValue(),
-						(e1, e2) -> e2, LinkedHashMap::new));
+				.collect(toMap(e -> e.getKey(), e -> e.getValue(), (e1, e2) -> e2, LinkedHashMap::new));
 	}
 
 	private Comparator<Entry<String, Double>> comp() {
@@ -53,12 +53,22 @@ public class ScoreSheet {
 
 	@Override
 	public String toString() {
-		List<Entry<String, Double>> entrySetList = getTableau().entrySet()
-				.stream().collect(Collectors.toList());
-		return IntStream.range(1, data.size() + 1)
-				.mapToObj(i -> i + ": " + entrySetList.get(i - 1).getKey()
-						+ "         " + entrySetList.get(i - 1).getValue())
-				.collect(Collectors.joining("\n"));
+		String format = createFormat();
+		List<Entry<String, Double>> entrySetList = getTableau().entrySet().stream().collect(toList());
+		return IntStream.range(0, data.size()).mapToObj(i -> entryString(format, i, entrySetList.get(i)))
+				.collect(joining("\n"));
+	}
+
+	private String createFormat() {
+		int maxNameLen = getTableau().keySet().stream().mapToInt(String::length).max().orElse(0);
+		int maxPosLen = String.valueOf(getTableau().keySet().size() + 1).length();
+		int maxScoreLen = String.valueOf(getTableau().values().stream().mapToDouble(Double::valueOf).max().orElse(0))
+				.length();
+		return "%" + maxPosLen + "d: %-" + maxNameLen + "s %" + maxScoreLen + ".1f";
+	}
+
+	private String entryString(String format, int pos, Entry<String, Double> entry) {
+		return String.format(format, pos + 1, entry.getKey(), entry.getValue());
 	}
 
 }
