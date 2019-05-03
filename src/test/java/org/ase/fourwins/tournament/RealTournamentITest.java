@@ -70,7 +70,7 @@ public class RealTournamentITest {
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
 		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
 		playSeasons(seasons, players);
-		assertThat(sumPoints(scoreListener.getScoreSheet()), is(expectedSumOfAllPoints(players.size(), seasons)));
+		assertThat(sumPoints(scoreListener.getScoreSheet()), is(expectedSum(playerCount, seasons)));
 	}
 
 	@Property
@@ -78,7 +78,7 @@ public class RealTournamentITest {
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
 		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
 		playSeasons(seasons, players);
-		players.forEach(p -> assertThat(p.getOpponents().size(), is(expectedJoinedMatches(seasons, players))));
+		players.forEach(p -> assertThat(p.getOpponents().size(), is(expectedJoinedMatches(players.size(), seasons))));
 	}
 
 	@Property
@@ -123,15 +123,18 @@ public class RealTournamentITest {
 		return states.stream();
 	}
 
-	double expectedSumOfAllPoints(int players, int seasons) {
-		int realPlayers = players % 2 == 0 ? players : players + 1;
-		int gamesPerDay = realPlayers / 2;
-		double expectedSumOfAllPoints = 2 * (realPlayers - 1) * gamesPerDay * seasons;
-		return expectedSumOfAllPoints;
+	double expectedSum(int playersIncludingCoffeeBreak, int seasons) {
+		int realPlayers = playersIncludingCoffeeBreak % 2 == 0 ? playersIncludingCoffeeBreak
+				: playersIncludingCoffeeBreak + 1;
+		return expectedJoinedMatches(realPlayers, seasons) * gamesPerDay(realPlayers);
 	}
 
-	int expectedJoinedMatches(int seasons, List<PlayerMock> players) {
-		return (players.size() - 1) * seasons * 2;
+	int expectedJoinedMatches(int players, int seasons) {
+		return (players - 1) * seasons * 2;
+	}
+
+	int gamesPerDay(int players) {
+		return players / 2;
 	}
 
 }
