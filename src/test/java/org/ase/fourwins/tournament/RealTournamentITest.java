@@ -1,6 +1,5 @@
 package org.ase.fourwins.tournament;
 
-import static java.util.stream.Collectors.summingDouble;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
@@ -9,7 +8,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -20,7 +18,6 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
-import org.ase.fourwins.board.mockplayers.RandomMockPlayer;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
@@ -70,9 +67,7 @@ public class RealTournamentITest {
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
 		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
 		playSeasons(seasons, players);
-		ScoreSheet result = scoreListener.getScoreSheet();
-		Double sumOfAllPoints = result.values().stream().mapToDouble(Double::valueOf).sum();
-		assertThat(sumOfAllPoints, is(expectedSumOfAllPoints(players.size(), seasons)));
+		assertThat(sumPoints(scoreListener.getScoreSheet()), is(expectedSumOfAllPoints(players.size(), seasons)));
 	}
 
 	@Property
@@ -89,6 +84,10 @@ public class RealTournamentITest {
 		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
 		Stream<GameState> gameStates = playSeasons(seasons, players);
 		gameStates.forEach(this::checkGameState);
+	}
+
+	private double sumPoints(ScoreSheet scoreSheet) {
+		return scoreSheet.values().stream().mapToDouble(Double::valueOf).sum();
 	}
 
 	void checkGameState(GameState gameState) {
