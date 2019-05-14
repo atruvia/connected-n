@@ -1,6 +1,9 @@
 package org.ase.fourwins.tournament;
 
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
+import static net.jqwik.api.Arbitraries.frequency;
+import static net.jqwik.api.Arbitraries.strings;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
@@ -8,8 +11,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -22,16 +25,22 @@ import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
 import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
 import net.jqwik.api.Example;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.Tuple;
 import net.jqwik.api.constraints.IntRange;
 
 public class RealTournamentITest {
 
-	static final int MAX_PLAYERS = 20;
+	private static final String PLAYERS_NAMES_INCLUDING_COFFEE_BREAK = "playersNames";
 
-	static final int MAX_SEASONS = 10;
+	static final int MAX_PLAYERS = 14;
+
+	static final int MAX_SEASONS = 8;
 
 	static final Predicate<GameState> isCoffeeBreak = s -> CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE
 			.equals(s.getReason());
@@ -40,53 +49,59 @@ public class RealTournamentITest {
 
 	@Example
 	void twoPlayersOneSeason() {
-		int players = 2;
-		int seasons = 1;
-		verifyAllProperties(players, seasons);
+		verifyAllProperties(1, "P1", "P2");
 	}
 
 	@Example
 	void threePlayersOneSeason() {
-		int players = 3;
-		int seasons = 1;
-		verifyAllProperties(players, seasons);
+		verifyAllProperties(1, "P1", "P2", "P3");
 	}
 
 	@Example
 	void fourPlayersOneSeason() {
-		int players = 4;
-		int seasons = 1;
-		verifyAllProperties(players, seasons);
+		verifyAllProperties(1, "P1", "P2", "P3", "P4");
 	}
 
-	private void verifyAllProperties(int players, int seasons) {
+	private void verifyAllProperties(int seasons, String... playersNames) {
+		List<String> players = Arrays.asList(playersNames);
 		verifyGameState(players, seasons);
 		verifyPlayers(players, seasons);
 		verifySumOfPoints(players, seasons);
 	}
 
 	@Property
-	void verifySumOfPoints(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+	void verifySumOfPoints(@ForAll(PLAYERS_NAMES_INCLUDING_COFFEE_BREAK) List<String> playersNames,
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
-		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
-		playSeasons(seasons, players);
-		assertThat(sumPoints(scoreListener.getScoreSheet()), is(expectedSum(playerCount, seasons)));
+		playSeasons(seasons, players(playersNames));
+		assertThat(sumPoints(scoreListener.getScoreSheet()), is(expectedSum(playersNames.size(), seasons)));
 	}
 
 	@Property
-	void verifyPlayers(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+	void verifyPlayers(@ForAll(PLAYERS_NAMES_INCLUDING_COFFEE_BREAK) List<String> playersNames,
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
-		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
+		List<PlayerMock> players = players(playersNames);
 		playSeasons(seasons, players);
 		players.forEach(p -> assertThat(p.getOpponents().size(), is(expectedJoinedMatches(players.size(), seasons))));
 	}
 
 	@Property
-	void verifyGameState(@ForAll @IntRange(min = 0, max = MAX_PLAYERS) int playerCount,
+	void verifyGameState(@ForAll(PLAYERS_NAMES_INCLUDING_COFFEE_BREAK) List<String> playersNames,
 			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
-		List<PlayerMock> players = createPlayers(playerCount, ColumnTrackingMockPlayer::new);
-		Stream<GameState> gameStates = playSeasons(seasons, players);
+		Stream<GameState> gameStates = playSeasons(seasons, players(playersNames));
 		gameStates.forEach(this::checkGameState);
+	}
+
+	@Provide(PLAYERS_NAMES_INCLUDING_COFFEE_BREAK)
+	private Arbitrary<List<String>> playersNames() {
+		return frequency( //
+				Tuple.of(5, Arbitraries.of(DefaultTournament.coffeeBreakPlayer.getToken())), //
+				Tuple.of(5, strings().ofMinLength(1)), //
+				Tuple.of(90, strings().ofMinLength(1).ofMaxLength(5)) //
+		).flatMap(identity()).unique().list().ofMaxSize(MAX_PLAYERS);
+	}
+
+	private List<PlayerMock> players(List<String> playersNames) {
+		return playersNames.stream().map(ColumnTrackingMockPlayer::new).collect(toList());
 	}
 
 	private double sumPoints(ScoreSheet scoreSheet) {
@@ -106,13 +121,14 @@ public class RealTournamentITest {
 		}
 	}
 
-	List<PlayerMock> createPlayers(int players, Function<String, PlayerMock> function) {
-		return IntStream.range(0, players).mapToObj(String::valueOf).map("P"::concat).map(function).collect(toList());
-	}
-
 	Stream<GameState> playSeasons(int seasons, List<PlayerMock> players) {
 		Tournament tournament = new DefaultTournament();
-		scoreListener = new TournamentScoreListener();
+		scoreListener = new TournamentScoreListener() {
+			@Override
+			public void seasonEnded() {
+				// do not print
+			}
+		};
 		tournament.addTournamentListener(scoreListener);
 		return playSeasons(tournament, players, seasons).filter(isCoffeeBreak.negate());
 	}

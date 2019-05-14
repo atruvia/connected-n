@@ -26,8 +26,6 @@ import lombok.Getter;
 
 public class DefaultTournament implements Tournament {
 
-	static final String COFFEE_BREAK_PLAYER_NAME = "CoffeeBreak";
-
 	@Getter
 	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
 
@@ -58,7 +56,7 @@ public class DefaultTournament implements Tournament {
 
 	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
 
-	static final Player coffeeBreakPlayer = new Player(COFFEE_BREAK_PLAYER_NAME) {
+	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
 		@Override
 		protected int nextColumn() {
 			throw new IllegalStateException("It's me, the coffee break, I don't want to play!");
