@@ -8,11 +8,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -32,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import lombok.Getter;
 
 public class UdpServerRealTournamentIT {
+
+	private static final Duration TIMEOUT = ofSeconds(10);
 
 	private static final String SERVER = "localhost";
 	private final int serverPort = freePort();
@@ -78,7 +81,7 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void canReRegister() throws IOException, InterruptedException {
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			assertWelcomed(playingClient("1", 0));
 			assertWelcomed(playingClient("1", 0));
 		});
@@ -86,7 +89,7 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void canPlay_2() throws IOException, InterruptedException {
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			TournamentScoreListener scoreListener = new TournamentScoreListener();
 			tournament.addTournamentListener(scoreListener);
 			GameStateCollector stateListener = new GameStateCollector();
@@ -151,7 +154,8 @@ public class UdpServerRealTournamentIT {
 	@Test
 	void canPlay_Multi() throws IOException, InterruptedException {
 		tournament.addTournamentListener(new TournamentScoreListener());
-		assertTimeout(ofSeconds(10), () -> {
+		// TEST fails since is canceled after timeout has reached ;-)
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			IntStream.range(0, 10).forEach(i -> {
 				try {
 					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
@@ -203,7 +207,7 @@ public class UdpServerRealTournamentIT {
 			protected void messageReceived(String received) {
 				if (isMessageWithUuid(received) && shouldSwallow()) {
 					try {
-						TimeUnit.SECONDS.sleep(2);
+						TimeUnit.SECONDS.sleep(1);
 					} catch (InterruptedException e) {
 						throw new RuntimeException(e);
 					}
@@ -223,7 +227,7 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void aClientWithTimeout() throws IOException, InterruptedException {
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			GameStateCollector stateListener = new GameStateCollector();
 			tournament.addTournamentListener(stateListener);
 

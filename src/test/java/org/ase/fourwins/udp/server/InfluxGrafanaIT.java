@@ -1,6 +1,7 @@
 package org.ase.fourwins.udp.server;
 
 import static java.time.Duration.ofSeconds;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
@@ -8,14 +9,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -36,6 +37,8 @@ import org.junit.jupiter.api.Test;
 import lombok.Getter;
 
 public class InfluxGrafanaIT {
+
+	private static final Duration TIMEOUT = ofSeconds(10);
 
 	private static final String PORT = "8086";
 	private static final String SERVER = "localhost";
@@ -62,11 +65,11 @@ public class InfluxGrafanaIT {
 
 	@BeforeEach
 	public void setup() {
-		influxDB = InfluxDBFactory.connect("http://" + SERVER + ":" + PORT,
-				USERNAME, PASSWORD);
+		influxDB = InfluxDBFactory.connect("http://" + SERVER + ":" + PORT, USERNAME, PASSWORD);
 		influxDB.query(new Query("CREATE DATABASE " + DBNAME, DBNAME));
 		influxDB.setDatabase(DBNAME);
 	}
+
 	@AfterEach
 	public void tearDown() {
 		influxDB.query(new Query("DROP DATABASE \"" + DBNAME + "\"", DBNAME));
@@ -74,7 +77,7 @@ public class InfluxGrafanaIT {
 
 	@Test
 	void canPlay_2() throws IOException, InterruptedException {
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			TournamentScoreListener scoreListener = new TournamentScoreListener();
 			tournament.addTournamentListener(scoreListener);
 			GameStateCollector stateListener = new GameStateCollector();
@@ -106,10 +109,8 @@ public class InfluxGrafanaIT {
 		});
 	}
 
-	private void assertHasTimeout(DummyClient client,
-			GameStateCollector gameStateCollector, boolean hadTimeout) {
-		List<GameState> timeout = timeouts(gameStateCollector.getGameStates(),
-				client.getName());
+	private void assertHasTimeout(DummyClient client, GameStateCollector gameStateCollector, boolean hadTimeout) {
+		List<GameState> timeout = timeouts(gameStateCollector.getGameStates(), client.getName());
 		assertThat(timeout.toString(), timeout.isEmpty(), is(!hadTimeout));
 	}
 
@@ -121,24 +122,19 @@ public class InfluxGrafanaIT {
 				.collect(toList());
 	}
 
-	private void assertWelcomed(DummyClient client)
-			throws InterruptedException {
+	private void assertWelcomed(DummyClient client) throws InterruptedException {
 		List<String> received = client.waitUntilReceived(1);
-		assertThat(received.toString(), received.get(0),
-				is("Welcome " + client.getName()));
+		assertThat(received.toString(), received.get(0), is("Welcome " + client.getName()));
 	}
 
 	@Test
 	void canPlay_Multi() throws IOException, InterruptedException {
-
-		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB,
-				DBNAME);
+		InfluxDBListener influxDBListener = new InfluxDBListener(influxDB, DBNAME);
 		tournament.addTournamentListener(influxDBListener);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			IntStream.range(0, 10).forEach(i -> {
 				try {
-					playingClient(String.valueOf(i),
-							i % tournament.getBoardInfo().getColumns());
+					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -155,7 +151,7 @@ public class InfluxGrafanaIT {
 			};
 
 			/// ...let it run for a long while
-			TimeUnit.MINUTES.sleep(30);
+			MINUTES.sleep(30);
 
 			fail("add more assertions");
 

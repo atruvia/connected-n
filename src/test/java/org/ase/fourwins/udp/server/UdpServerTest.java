@@ -9,7 +9,7 @@ import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.doAnswer;
@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,6 +38,8 @@ import org.mockito.verification.VerificationMode;
 import lombok.Getter;
 
 public class UdpServerTest {
+
+	private static final Duration TIMEOUT = ofSeconds(10);
 
 	private static class BaseClient {
 
@@ -138,7 +141,7 @@ public class UdpServerTest {
 	@Test
 	void clientCanConnectToServer() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
 			client1.assertReceived("Welcome 1");
 			verify(tournament, times(0)).playSeason(anyCollection(), anyGameStateConsumer());
@@ -148,7 +151,7 @@ public class UdpServerTest {
 	@Test
 	void canHandleEmptyCorruptedRegisterMessage() throws IOException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			new DummyClient("1", "localhost", serverPort) {
 				protected void register() throws IOException {
 					send("REGISTER;");
@@ -161,7 +164,7 @@ public class UdpServerTest {
 	@Test
 	void acceptLongName() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
 			client.assertReceived("Welcome " + longName);
@@ -172,7 +175,7 @@ public class UdpServerTest {
 	@Test
 	void denyTooLongName() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
 			client.assertReceived("NAME_TOO_LONG");
@@ -183,7 +186,7 @@ public class UdpServerTest {
 	@Test
 	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
 			DummyClient client2 = new DummyClient("2", "localhost", serverPort);
 
@@ -196,7 +199,7 @@ public class UdpServerTest {
 	@Test
 	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreRegistered() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			new DummyClient("1", "localhost", serverPort);
 			new DummyClient("2", "localhost", serverPort);
 
@@ -211,7 +214,7 @@ public class UdpServerTest {
 	@Test
 	void canUnregister() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client = new DummyClient("1", "localhost", serverPort);
 			client.unregister();
 			client.assertReceived("Welcome 1", "UNREGISTERED");
@@ -226,7 +229,7 @@ public class UdpServerTest {
 			MILLISECONDS.sleep(25);
 			return Stream.empty();
 		}).when(tournament).playSeason(anyCollection(), anyGameStateConsumer());
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			new PlayingClient("1", "localhost", serverPort, -1);
 			DummyClient client2 = new PlayingClient("2", "localhost", serverPort, -1);
 
@@ -269,7 +272,7 @@ public class UdpServerTest {
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {
 		infiniteSeason(tournament);
-		assertTimeout(ofSeconds(10), () -> {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String nameToReuse = "1";
 			DummyClient client = new DummyClient(nameToReuse, "localhost", serverPort);
 			client.assertReceived("Welcome " + nameToReuse);
