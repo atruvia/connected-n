@@ -3,6 +3,9 @@ package org.ase.fourwins.tournament;
 import static java.util.Arrays.asList;
 import static java.util.Collections.addAll;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
+import static net.jqwik.api.Arbitraries.integers;
+import static net.jqwik.api.Arbitraries.strings;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
@@ -32,7 +35,6 @@ import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Disabled;
 
-import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.Example;
 import net.jqwik.api.ForAll;
@@ -85,14 +87,6 @@ public class TournamentTest {
 			return this;
 		}
 
-		public TournamentBuilder registerAfterwards(Player... registerAfterwards) {
-			return this;
-		}
-
-		public TournamentBuilder deregisterAfterwards(Player... deregisterAfterwards) {
-			return this;
-		}
-
 		public Tournament build() {
 			Tournament tournament = new DefaultTournament() {
 
@@ -140,20 +134,6 @@ public class TournamentTest {
 	}
 
 	@Example
-	void whenJoiningTheStartedSeasonThereWillBeNoInteractionWithTheNewlyJoinedPlayer() {
-		PlayerMock p1 = mock("P1");
-		PlayerMock p2 = mock("P2");
-		PlayerMock p3 = mock("P3");
-
-		tournament().withPlayers(p1, p2).playSeason();
-		assertThat(p3.getMovesMade(), is(0));
-	}
-
-	private String twoTimes(String string) {
-		return string + " " + string;
-	}
-
-	@Example
 	void tournamentWithOddPlayerCount() {
 		PlayerMock p1 = mock("P1");
 		PlayerMock p2 = mock("P2");
@@ -174,6 +154,10 @@ public class TournamentTest {
 		assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P3"))));
 		assertThat(next(states, i += 2), is(asList(lose("P2"), coffeeBreakWin("P3"))));
 		assertThat(next(states, i += 2), is(asList(lose("P3"), coffeeBreakWin("P2"))));
+	}
+
+	private String twoTimes(String string) {
+		return string + " " + string;
 	}
 
 	private List<GameState> next(List<GameState> states, int index) {
@@ -203,31 +187,34 @@ public class TournamentTest {
 
 	@Property
 	void jqwikCheckTest(@ForAll("players") List<PlayerMock> players, @ForAll("numberOfSeasons") int numberOfSeasons) {
-		TournamentBuilder b = tournament().withPlayers(players.toArray(new Player[0]));
-		for (int i = 0; i < numberOfSeasons; i++) {
-			b.playSeason();
-		}
+		TournamentBuilder tournament = tournament().withPlayers(players.toArray(new Player[players.size()]));
+		range(0, numberOfSeasons).forEach(i -> tournament.playSeason());
+		boolean shouldHaveMoved = numberOfSeasons > 0 && players.size() > 1;
+		players.forEach(p -> assertThat(p.getMovesMade(), shouldHaveMoved ? moved() : not(moved())));
+	}
 
-		Matcher<Integer> matcher = is(0);
-		boolean negate = numberOfSeasons == 0 || players.size() < 2;
-		players.forEach(p -> assertThat(p.getMovesMade(), negate ? matcher : not(matcher)));
+	private Matcher<Integer> moved() {
+		return not(is(0));
 	}
 
 	@Provide
 	IntegerArbitrary numberOfSeasons() {
-		return Arbitraries.integers().between(0, 100);
+		return integers().between(0, 100);
 	}
 
 	@Provide
 	Arbitrary<List<PlayerMock>> players() {
-		return Arbitraries.integers().between(2, 5).flatMap( //
-				stringSize -> Arbitraries.strings() //
+		return numberOfPlayers().flatMap( //
+				stringsLength -> strings() //
 						.alpha() //
-						.ofMinLength(stringSize) //
-						.ofMaxLength(stringSize) //
+						.ofLength(stringsLength) //
 						.unique() //
 						.map(PlayerMock::new) //
 						.list().ofMinSize(0).ofMaxSize(20));
+	}
+
+	private IntegerArbitrary numberOfPlayers() {
+		return integers().between(2, 5);
 	}
 
 	void assertOpponentsOf(PlayerMock playerMock, List<String> expectedOpponents) {
@@ -242,7 +229,7 @@ public class TournamentTest {
 		return Stream.of(games.split("\\s")).filter(isCoffeeBreak().negate()).collect(toList());
 	}
 
-	Predicate<? super String> isCoffeeBreak() {
+	Predicate<String> isCoffeeBreak() {
 		return "--"::equals;
 	}
 

@@ -146,9 +146,12 @@ public class RealTournamentITest {
 	}
 
 	double expectedSum(int playersIncludingCoffeeBreak, int seasons) {
-		int realPlayers = playersIncludingCoffeeBreak % 2 == 0 ? playersIncludingCoffeeBreak
-				: playersIncludingCoffeeBreak + 1;
+		int realPlayers = realPlayers(playersIncludingCoffeeBreak);
 		return expectedJoinedMatches(realPlayers, seasons) * gamesPerDay(realPlayers);
+	}
+
+	private int realPlayers(int playersIncludingCoffeeBreak) {
+		return playersIncludingCoffeeBreak % 2 == 0 ? playersIncludingCoffeeBreak : playersIncludingCoffeeBreak + 1;
 	}
 
 	int expectedJoinedMatches(int players, int seasons) {
