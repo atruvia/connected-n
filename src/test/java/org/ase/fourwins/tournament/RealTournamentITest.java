@@ -13,12 +13,12 @@ import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Player;
@@ -46,6 +46,8 @@ public class RealTournamentITest {
 			.equals(s.getReason());
 
 	private TournamentScoreListener scoreListener;
+
+	private AtomicInteger seasonEndedCalls;
 
 	@Example
 	void twoPlayersOneSeason() {
@@ -109,28 +111,32 @@ public class RealTournamentITest {
 	}
 
 	void checkGameState(GameState gameState) {
-		Score score = gameState.getScore();
-		if (score == WIN) {
-			assertThat(String.valueOf(gameState), gameState.getWinningCombinations().size(), is(not(0)));
+		String gameStateString = String.valueOf(gameState);
+		if (gameState.getScore() == WIN) {
+			assertThat(gameStateString, gameState.getWinningCombinations().size(), is(not(0)));
 		}
 		if (gameState.getScore() != WIN) {
-			assertThat(String.valueOf(gameState), gameState.getWinningCombinations().size(), is(0));
+			assertThat(gameStateString, gameState.getWinningCombinations().size(), is(0));
 		}
 		if (gameState.getScore() == LOSE) {
-			assertThat(String.valueOf(gameState), gameState.getReason().isEmpty(), is(false));
+			assertThat(gameStateString, gameState.getReason().isEmpty(), is(false));
 		}
 	}
 
 	Stream<GameState> playSeasons(int seasons, List<PlayerMock> players) {
 		Tournament tournament = new DefaultTournament();
+		seasonEndedCalls = new AtomicInteger(0);
 		scoreListener = new TournamentScoreListener() {
 			@Override
 			public void seasonEnded() {
-				// do not print
+				super.seasonEnded();
+				seasonEndedCalls.incrementAndGet();
 			}
 		};
 		tournament.addTournamentListener(scoreListener);
-		return playSeasons(tournament, players, seasons).filter(isCoffeeBreak.negate());
+		Stream<GameState> states = playSeasons(tournament, players, seasons).filter(isCoffeeBreak.negate());
+		assertThat(seasonEndedCalls.get(), is(seasons));
+		return states;
 	}
 
 	Stream<GameState> playSeasons(Tournament tournament, List<? extends Player> players, int seasons) {
