@@ -26,6 +26,8 @@ import lombok.Getter;
 
 public class DefaultTournament implements Tournament {
 
+	static final String COFFEE_BREAK_PLAYER_NAME = "CoffeeBreak";
+
 	@Getter
 	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
 
@@ -54,13 +56,12 @@ public class DefaultTournament implements Tournament {
 		}
 	}
 
-//	private final List<Player> players = new ArrayList<>();
 	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
 
-	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
+	static final Player coffeeBreakPlayer = new Player(COFFEE_BREAK_PLAYER_NAME) {
 		@Override
 		protected int nextColumn() {
-			throw new RuntimeException("I am the coffee break");
+			throw new IllegalStateException("It's me, the coffee break, I don't want to play!");
 		}
 
 		@Override
@@ -84,17 +85,21 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private Season<Player> newSeason(Collection<? extends Player> players) {
-		List<Player> playersClone = new ArrayList<>(players);
-		return new Season<>(evenPlayerCount(playersClone) ? playersClone : addCoffeeBreakPlayer(playersClone));
+		return new Season<>(toEventQuantity(players));
+	}
+
+	private List<Player> toEventQuantity(Collection<? extends Player> players) {
+		List<Player> listOfPlayers = new ArrayList<>(players);
+		return evenPlayerCount(listOfPlayers) ? listOfPlayers : addCoffeeBreakPlayer(listOfPlayers);
 	}
 
 	private boolean evenPlayerCount(List<Player> players) {
 		return players.size() % 2 == 0;
 	}
 
-	private List<Player> addCoffeeBreakPlayer(List<Player> playersClone) {
-		playersClone.add(coffeeBreakPlayer);
-		return playersClone;
+	private List<Player> addCoffeeBreakPlayer(List<Player> players) {
+		players.add(coffeeBreakPlayer);
+		return players;
 	}
 
 	private Game newGame(Match<Player> match) {
@@ -103,8 +108,7 @@ public class DefaultTournament implements Tournament {
 		} else if (match.getTeam2() == coffeeBreakPlayer) {
 			return new CoffeebreakGame(match.getTeam1());
 		}
-		Board board = makeBoard();
-		return new DefaultGame(board, match.getTeam1(), match.getTeam2());
+		return new DefaultGame(makeBoard(), match.getTeam1(), match.getTeam2());
 	}
 
 	protected Board makeBoard() {

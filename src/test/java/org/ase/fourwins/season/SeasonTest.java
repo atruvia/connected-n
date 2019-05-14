@@ -3,6 +3,7 @@ package org.ase.fourwins.season;
 import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.rangeClosed;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -25,17 +26,21 @@ class SeasonTest {
 
 	@Example
 	void seasonOfTwoTeams() {
-		verifyAllProperties(asList("T1", "T2"));
+		verifyAllProperties(teams(2));
 	}
 
 	@Example
 	void seasonOfFourTeams() {
-		verifyAllProperties(asList("T1", "T2", "T3", "T4"));
+		verifyAllProperties(teams(4));
 	}
 
 	@Example
 	void seasonOfSixTeams() {
-		verifyAllProperties(asList("T1", "T2", "T3", "T4", "T5", "T6"));
+		verifyAllProperties(teams(6));
+	}
+
+	static List<String> teams(int count) {
+		return rangeClosed(1, count).mapToObj(String::valueOf).map("Team "::concat).collect(toList());
 	}
 
 	void verifyAllProperties(List<String> teams) {
@@ -72,21 +77,17 @@ class SeasonTest {
 	}
 
 	@Property
-	void roundsHaveExpectedCountOfMatches(@ForAll(EVEN_TEAMS) List<String> teams) {
+	boolean roundsHaveExpectedCountOfMatches(@ForAll(EVEN_TEAMS) List<String> teams) {
 		Season<String> season = new Season<>(teams);
-		int dayCount = teams.size() - 1;
-		assertRoundHasMatchdays(season.getFirstRound(), dayCount);
-		assertRoundHasMatchdays(season.getBackRound(), dayCount);
+		return season.getFirstRound().getMatchdays().count()
+				+ season.getBackRound().getMatchdays().count() == seasonMatchCount(teams);
 	}
 
 	@Property
-	void overallMatchCount(@ForAll(EVEN_TEAMS) List<String> teams) {
+	boolean overallMatchCount(@ForAll(EVEN_TEAMS) List<String> teams) {
 		Season<String> season = new Season<>(teams);
-		int matchdays = teams.size() - 1;
-		int matchsPerDay = teams.size() / 2;
-		int matchCount = matchsPerDay * matchdays;
-		assertRoundHasMatches(teams, season.getFirstRound(), matchCount);
-		assertRoundHasMatches(teams, season.getBackRound(), matchCount);
+		return matchCount(season.getFirstRound()) + matchCount(season.getBackRound()) == matchsPerDay(teams)
+				* seasonMatchCount(teams);
 	}
 
 	@Provide(EVEN_TEAMS)
@@ -95,29 +96,33 @@ class SeasonTest {
 				.filter(l -> l.size() % 2 == 0);
 	}
 
-	<T> Stream<List<T>> teamsOf(Round<T> round) {
+	static <T> Stream<List<T>> teamsOf(Round<T> round) {
 		return matchesOf(round).map(SeasonTest::teamsOf);
 	}
 
-	<T> void assertRoundHasMatchdays(Round<T> round, long count) {
-		assertThat(round.getMatchdays().count(), is(count));
+	static <T> long matchCount(Round<T> round) {
+		return matches(round).flatMap(identity()).count();
 	}
 
-	<T> void assertRoundHasMatches(List<T> teams, Round<T> round, long count) {
-		assertThat(matches(round).flatMap(identity()).count(), is(count));
-	}
-
-	<T> void assertNoDuplicateTeams(List<T> teams, Round<T> round) {
+	static <T> void assertNoDuplicateTeams(List<T> teams, Round<T> round) {
 		matches(round).forEach(m -> assertNoDuplicateTeams(teams, m));
 	}
 
-	<T> Stream<Stream<Match<T>>> matches(Round<T> round) {
+	static <T> Stream<Stream<Match<T>>> matches(Round<T> round) {
 		return round.getMatchdays().map(Matchday::getMatches);
 	}
 
 	static <T> void assertNoDuplicateTeams(List<T> teams, Stream<Match<T>> matches) {
 		Stream<T> teamsInMatches = matches.map(SeasonTest::teamsOf).flatMap(Collection::stream);
 		assertThat(teamsInMatches.sorted().collect(toList()), is(teams.stream().sorted().collect(toList())));
+	}
+
+	static int seasonMatchCount(Collection<String> teams) {
+		return (teams.size() - 1) * 2;
+	}
+
+	static int matchsPerDay(List<String> teams) {
+		return teams.size() / 2;
 	}
 
 	static <T> Stream<List<T>> reversed(Stream<List<T>> teams) {

@@ -14,15 +14,13 @@ import lombok.Data;
 public class Matchday<T> {
 
 	private final List<T> teams;
-	private final int matchCount;
 
 	public Matchday(List<T> teams) {
 		this.teams = teams;
-		this.matchCount = teams.size() / 2;
 	}
 
 	public Stream<Match<T>> getMatches() {
-		return stream(spliterator(iterator(), matchCount, ORDERED), false);
+		return stream(spliterator(iterator(), matchCount(), ORDERED), false);
 
 	}
 
@@ -37,7 +35,7 @@ public class Matchday<T> {
 
 			@Override
 			public boolean hasNext() {
-				return i < matchCount;
+				return i < matchCount();
 			}
 
 			@Override
@@ -50,6 +48,10 @@ public class Matchday<T> {
 				return match;
 			}
 		};
+	}
+
+	private int matchCount() {
+		return teams.size() / 2;
 	}
 
 }

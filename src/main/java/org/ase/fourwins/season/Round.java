@@ -18,58 +18,60 @@ public class Round<T> {
 
 	private static final class RotatedLeagueList<T> extends ListDelegate<T> {
 
+		private final int rotateBy = 1;
+
 		private RotatedLeagueList(List<T> delegate) {
 			super(delegate);
 		}
 
 		@Override
 		public T get(int index) {
-			return super.get(rotateddIndex(index));
+			return super.get(rotatedIndex(index));
 		}
 
-		private int rotateddIndex(int index) {
-			if (index != 0) {
-				index++;
-				if (index >= size()) {
-					return index - size() + 1;
-				}
+		private int rotatedIndex(int index) {
+			if (index == 0) {
+				return index;
 			}
-			return index;
+			index += rotateBy;
+			return index >= size() ? index - size() + 1 : index;
 		}
 
 	}
 
 	private final List<T> teams;
-	private int count;
 
 	public Round(List<T> teams) {
 		this.teams = Collections.unmodifiableList(teams);
-		this.count = teams.size() - 1;
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
-		return stream(spliterator(iterator(), count, ORDERED), false);
+		return stream(spliterator(iterator(), elements(), ORDERED), false);
 	}
 
 	private Iterator<Matchday<T>> iterator() {
 		return new Iterator<Matchday<T>>() {
 
-			private int i;
+			private int cnt;
 			private List<T> teams = Round.this.teams;
 
 			@Override
 			public boolean hasNext() {
-				return i < count;
+				return cnt < elements();
 			}
 
 			@Override
 			public Matchday<T> next() {
 				Matchday<T> matchday = matchday(teams);
 				teams = new RotatedLeagueList<T>(teams);
-				i++;
+				cnt++;
 				return matchday;
 			}
 		};
+	}
+
+	private int elements() {
+		return teams.size() - 1;
 	}
 
 	protected Matchday<T> matchday(List<T> teams) {
