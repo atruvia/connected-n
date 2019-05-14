@@ -184,6 +184,17 @@ public class UdpServerTest {
 	}
 
 	@Test
+	void denyEmptyName() throws IOException, InterruptedException {
+		infiniteSeason(tournament);
+		assertTimeoutPreemptively(TIMEOUT, () -> {
+			String emptyName = "";
+			DummyClient client = new DummyClient(emptyName, "localhost", serverPort);
+			client.assertReceived("NO_NAME_GIVEN");
+			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
+		});
+	}
+
+	@Test
 	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException, InterruptedException {
 		infiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
