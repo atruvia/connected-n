@@ -1,4 +1,4 @@
-package org.ase.fourwins.tournament.listener;
+package org.ase.fourwins.tournament.listener.database;
 
 import org.influxdb.annotation.Column;
 import org.influxdb.annotation.Measurement;

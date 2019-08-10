@@ -1,18 +1,19 @@
-package org.ase.fourwins.tournament.listener;
+package org.ase.fourwins.tournament.listener.database;
 
 import static java.util.function.Predicate.isEqual;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.InfluxDBRow.COLUMNNAME_PLAYER_ID;
-import static org.ase.fourwins.tournament.listener.InfluxDBRow.COLUMNNAME_VALUE;
-import static org.ase.fourwins.tournament.listener.InfluxDBRow.MEASUREMENT_NAME;
+import static org.ase.fourwins.tournament.listener.database.InfluxDBRow.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.database.InfluxDBRow.COLUMNNAME_VALUE;
+import static org.ase.fourwins.tournament.listener.database.InfluxDBRow.MEASUREMENT_NAME;
 
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDB.ConsistencyLevel;
 import org.influxdb.InfluxDBFactory;
