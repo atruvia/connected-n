@@ -8,6 +8,8 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: anafarg
     ports:
       - "3000:3000"
+    volumes:
+      - "./grafana/datasources:/etc/grafana/provisioning/datasources"
 
   mysql:
     image: mysql
