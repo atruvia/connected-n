@@ -10,10 +10,6 @@
 		<junit.jupiter.version>5.3.1</junit.jupiter.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-<!--
-		<image>docker.io/fiduciagad/${project.artifactId}:latest</image>
--->
-		<image>docker.io/fiduciagad/fourwins:latest</image>
 	</properties>
 	<build>
 		<plugins>
@@ -21,22 +17,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.22.0</version>
 			</plugin>
-			<plugin>
-				<groupId>com.google.cloud.tools</groupId>
-				<artifactId>jib-maven-plugin</artifactId>
-				<version>1.5.1</version>
-				<configuration>
-					<container>
-						<mainClass>org.ase.fourwins.udp.server.Main</mainClass>
-						<useCurrentTimestamp>true</useCurrentTimestamp>
-					</container>
-					<to>
-						<tags>
-							<tag>${project.version}</tag>
-						</tags>
-					</to>
-				</configuration>
-			</plugin>			
 		</plugins>
 	</build>
 	<dependencies>
