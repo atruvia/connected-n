@@ -1,6 +1,7 @@
 package org.ase.fourwins.database;
 
 import static java.util.Arrays.asList;
+import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
@@ -81,6 +82,15 @@ class MysqlListenerIT {
 		scoresAre(players, 0.5, 0.5);
 	}
 
+	@Test
+	void canAccumulateValues() throws SQLException {
+		List<Player> players = players(2);
+		whenEnded(aGameOf(players, WIN, 1));
+		whenEnded(aGameOf(players, WIN, 1));
+		whenEnded(aGameOf(players, DRAW, 1));
+		scoresAre(players, 0.5, 2.5);
+	}
+
 	private void scoresAre(List<Player> players, double... scores) throws SQLException {
 		assertThat("Players size must match scores length", players.size(), is(scores.length));
 		for (int i = 0; i < players.size(); i++) {
@@ -118,7 +128,8 @@ class MysqlListenerIT {
 	}
 
 	private double scoreOf(Player player) throws SQLException {
-		return rows(player).stream().mapToDouble(MysqlDBRow::getValue).sum();
+		return rows(player).stream().max(comparing(MysqlDBRow::getValue)).map(MysqlDBRow::getValue)
+				.orElse(0.0);
 	}
 
 	private List<MysqlDBRow> rows(Player player) throws SQLException {

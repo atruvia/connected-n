@@ -4,7 +4,7 @@ import static java.util.function.Predicate.isEqual;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.*;
 import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_VALUE;
 import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.TABLE_NAME;
 
@@ -48,7 +48,8 @@ public class MysqlDBListener implements TournamentListener {
 
 	private static final QueryRunner runner = new QueryRunner();
 	private static final String insertSQL = "INSERT INTO " + TABLE_NAME + " (" + COLUMNNAME_PLAYER_ID + ","
-			+ COLUMNNAME_VALUE + ") VALUES (?, ?)";
+			+ COLUMNNAME_VALUE + ") SELECT ?,COALESCE(MAX(value),0)+? FROM " + TABLE_NAME + " WHERE "
+			+ COLUMNNAME_PLAYER_ID + "=?";
 
 	@Override
 	public void gameEnded(Game game) {
@@ -57,7 +58,7 @@ public class MysqlDBListener implements TournamentListener {
 
 	private void insertRow(MysqlDBRow row) {
 		try {
-			runner.update(connection, insertSQL, row.getPlayerId(), row.getValue());
+			runner.update(connection, insertSQL, row.getPlayerId(), row.getValue(), row.getPlayerId());
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
