@@ -1,8 +1,6 @@
 package org.ase.fourwins.tournament.listener.database;
 
-import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.Accessors;
 
 @Data
 public class MysqlDBRow {

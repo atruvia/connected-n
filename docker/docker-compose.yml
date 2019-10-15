@@ -8,21 +8,13 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: anafarg
     ports:
       - "3000:3000"
+    volumes:
+      - "./grafana/datasources:/etc/grafana/provisioning/datasources"
 
-  influx:
-    image: influxdb
+  mysql:
+    image: mysql
     container_name: "db"
     environment:
-      INFLUXDB_GRAPHITE_ENABLED: "true"
-      INFLUXDB_DB: "fourWins"
-      INFLUXDB_USER: "fourWins"
+      MYSQL_ROOT_PASSWORD: "fourWinsPwd"
     ports:
-      - "8086:8086"
-
-  influx-data-creator:
-    image: influxdb
-    container_name: "data_creator"
-    volumes:
-      - "./create-data.sh:/create-data.sh"
-    entrypoint: "/bin/bash"
-    command: "/create-data.sh"
+            - "3306:3306"
