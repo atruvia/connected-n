@@ -1,6 +1,13 @@
 version: "2"
 
 services:
+  db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "fourWinsPwd"
+    ports:
+      - "3306:3306"
+
   grafana:
     image: grafana/grafana
     environment:
@@ -13,10 +20,8 @@ services:
       - "./grafana/dashboards:/etc/grafana/provisioning/dashboards"
       - "./grafana/dashboards:/var/lib/grafana/dashboards"
 
-  mysql:
-    image: mysql
-    container_name: "db"
-    environment:
-      MYSQL_ROOT_PASSWORD: "fourWinsPwd"
-    ports:
-            - "3306:3306"
+  fourwinsserver: 
+    image: fiduciagad/fourwins
+    ports: 
+      - "4446:4446/udp"
+
