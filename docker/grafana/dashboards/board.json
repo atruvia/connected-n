@@ -141,7 +141,7 @@
       "legend": {
         "percentage": true,
         "show": true,
-        "sort": "total",
+        "sort": "current",
         "sortDesc": true,
         "values": true
       },
@@ -188,7 +188,7 @@
       "timeShift": null,
       "title": "Kuchendiagramm",
       "type": "grafana-piechart-panel",
-      "valueName": "total"
+      "valueName": "current"
     },
     {
       "cacheTimeout": null,
@@ -428,5 +428,5 @@
   "timezone": "",
   "title": "4WINS",
   "uid": "ULnVYcTZz",
-  "version": 1
+  "version": 2
 }
