@@ -1,6 +1,15 @@
 version: "2"
 
 services:
+  db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "fourWinsPwd"
+    volumes:
+      - "./mysql:/docker-entrypoint-initdb.d"
+    ports:
+      - "3306:3306"
+
   grafana:
     image: grafana/grafana
     environment:
@@ -14,13 +23,8 @@ services:
       - "./grafana/dashboards:/var/lib/grafana/dashboards"
       - "./grafana/plugins:/var/lib/grafana/plugins"
 
-  mysql:
-    image: mysql
-    container_name: "db"
-    environment:
-      MYSQL_USER: "root"
-      MYSQL_ROOT_PASSWORD: "fourWinsPwd"
-    ports:
-            - "3306:3306"
-    volumes:
-      - "./mysql:/docker-entrypoint-initdb.d"
+  fourwinsserver: 
+    image: fiduciagad/fourwins
+    ports: 
+      - "4446:4446/udp"
+
