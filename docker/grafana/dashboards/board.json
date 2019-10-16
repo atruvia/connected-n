@@ -31,7 +31,7 @@
         "displayMode": "basic",
         "fieldOptions": {
           "calcs": [
-            "first"
+            "lastNotNull"
           ],
           "defaults": {
             "links": [
@@ -59,8 +59,16 @@
                 "value": null
               },
               {
+                "color": "#E24D42",
+                "value": 20
+              },
+              {
                 "color": "#EAB839",
-                "value": 100
+                "value": 28
+              },
+              {
+                "color": "#1F78C1",
+                "value": 60
               },
               {
                 "color": "#6ED0E0",
@@ -183,6 +191,92 @@
       "valueName": "total"
     },
     {
+      "cacheTimeout": null,
+      "datasource": "FourWinsDB",
+      "gridPos": {
+        "h": 15,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "links": [],
+      "options": {
+        "fieldOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 50
+              },
+              {
+                "color": "#E24D42",
+                "value": 80
+              }
+            ]
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "6.4.2",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  ts AS \"time\",\n  player_id,\n  value\nFROM games\nWHERE\n  $__timeFilter(ts)\nORDER BY ts",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "player_id"
+                ],
+                "type": "column"
+              }
+            ],
+            [
+              {
+                "params": [
+                  "value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "games",
+          "timeColumn": "ts",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Tacho pro Spieler",
+      "type": "gauge"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "cacheTimeout": null,
@@ -195,9 +289,9 @@
         "h": 15,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 23
       },
-      "id": 2,
+      "id": 6,
       "legend": {
         "alignAsTable": true,
         "avg": false,
