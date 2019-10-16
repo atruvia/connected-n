@@ -10,6 +10,8 @@ services:
       - "3000:3000"
     volumes:
       - "./grafana/datasources:/etc/grafana/provisioning/datasources"
+      - "./grafana/dashboards:/etc/grafana/provisioning/dashboards"
+      - "./grafana/dashboards:/var/lib/grafana/dashboards"
 
   mysql:
     image: mysql
