@@ -5,6 +5,8 @@ services:
     image: mysql
     environment:
       MYSQL_ROOT_PASSWORD: "fourWinsPwd"
+    volumes:
+      - "./mysql:/docker-entrypoint-initdb.d"
     ports:
       - "3306:3306"
 
@@ -19,6 +21,7 @@ services:
       - "./grafana/datasources:/etc/grafana/provisioning/datasources"
       - "./grafana/dashboards:/etc/grafana/provisioning/dashboards"
       - "./grafana/dashboards:/var/lib/grafana/dashboards"
+      - "./grafana/plugins:/var/lib/grafana/plugins"
 
   fourwinsserver: 
     image: fiduciagad/fourwins
