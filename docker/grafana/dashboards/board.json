@@ -15,9 +15,101 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
   "links": [],
   "panels": [
+    {
+      "datasource": "FourWinsDB",
+      "description": "Wer zuerst 100 Punkte erreicht, gewinnt.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "displayMode": "basic",
+        "fieldOptions": {
+          "calcs": [
+            "first"
+          ],
+          "defaults": {
+            "links": [
+              {
+                "title": "",
+                "url": ""
+              }
+            ],
+            "mappings": [
+              {
+                "from": "",
+                "id": 1,
+                "operator": "",
+                "text": "Sieger",
+                "to": "",
+                "type": 1,
+                "value": "100"
+              }
+            ],
+            "max": 100,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 100
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 100
+              }
+            ]
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "vertical"
+      },
+      "pluginVersion": "6.4.2",
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "hide": false,
+          "metricColumn": "none",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  ts AS \"time\",\n  player_id,\n  value\nFROM games\nWHERE\n  $__timeFilter(ts) ORDER BY ts",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "player_id, value"
+                ],
+                "type": "column"
+              }
+            ]
+          ],
+          "table": "games",
+          "timeColumn": "ts",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Simuliertes Pferderennen",
+      "type": "bargauge"
+    },
     {
       "aliasColors": {},
       "bars": false,
@@ -31,7 +123,7 @@
         "h": 15,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 8
       },
       "id": 2,
       "legend": {
@@ -150,7 +242,7 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -170,5 +262,5 @@
   "timezone": "",
   "title": "4WINS",
   "uid": "ULnVYcTZz",
-  "version": 3
+  "version": 1
 }
