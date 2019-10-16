@@ -15,84 +15,76 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "panels": [
     {
-      "columns": [],
-      "datasource": null,
-      "fontSize": "100%",
+      "aliasColors": {},
+      "bars": false,
+      "cacheTimeout": null,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "FourWinsDB",
+      "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
-        "h": 9,
-        "w": 12,
+        "h": 15,
+        "w": 24,
         "x": 0,
         "y": 0
       },
       "id": 2,
-      "options": {},
-      "pageSize": null,
-      "pluginVersion": "6.4.2",
-      "showHeader": true,
-      "sort": {
-        "col": 1,
-        "desc": true
+      "legend": {
+        "alignAsTable": true,
+        "avg": false,
+        "current": false,
+        "hideEmpty": false,
+        "max": true,
+        "min": false,
+        "rightSide": true,
+        "show": true,
+        "total": false,
+        "values": true
       },
-      "styles": [
-        {
-          "alias": "Time",
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "Time",
-          "type": "date"
-        },
-        {
-          "alias": "",
-          "colorMode": null,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "decimals": 2,
-          "pattern": "/.*/",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        }
-      ],
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pluginVersion": "6.4.2",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
       "targets": [
         {
-          "format": "table",
-          "group": [
-            {
-              "params": [
-                "player_id"
-              ],
-              "type": "column"
-            }
-          ],
+          "format": "time_series",
+          "group": [],
           "metricColumn": "none",
-          "rawQuery": true,
-          "rawSql": "SELECT\n  player_id AS \"Player\", \n  sum(value) AS \"Points\"\nFROM games\nWHERE\n  $__timeFilter(ts)\nGROUP BY player_id\nORDER BY Points\n",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  ts AS \"time\",\n  player_id,\n  value\nFROM games\nWHERE\n  $__timeFilter(ts)\nORDER BY ts",
           "refId": "A",
           "select": [
+            [
+              {
+                "params": [
+                  "player_id"
+                ],
+                "type": "column"
+              }
+            ],
             [
               {
                 "params": [
                   "value"
                 ],
                 "type": "column"
-              },
-              {
-                "params": [
-                  "avg"
-                ],
-                "type": "aggregate"
-              },
-              {
-                "params": [
-                  "value"
-                ],
-                "type": "alias"
               }
             ]
           ],
@@ -108,11 +100,46 @@
           ]
         }
       ],
+      "thresholds": [],
       "timeFrom": null,
+      "timeRegions": [],
       "timeShift": null,
       "title": "Panel Title",
-      "transform": "table",
-      "type": "table"
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": false
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     }
   ],
   "refresh": "5s",
@@ -123,24 +150,25 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {
     "refresh_intervals": [
-      "1s",
-      "2s",
       "5s",
       "10s",
       "30s",
       "1m",
       "5m",
       "15m",
-      "30m"
+      "30m",
+      "1h",
+      "2h",
+      "1d"
     ]
   },
   "timezone": "",
-  "title": "Points",
-  "uid": "xsxfNHTWz",
-  "version": 2
+  "title": "4WINS",
+  "uid": "ULnVYcTZz",
+  "version": 3
 }
