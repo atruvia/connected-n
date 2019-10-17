@@ -31,7 +31,7 @@ class MysqlDBWithEnvListenerIT {
 	private ScoresDatabase scores;
 
 	@BeforeEach
-	public void setup() throws ClassNotFoundException, SQLException {
+	public void setup() throws Exception {
 		mysql.start();
 		System.out.println("MySQL database url " + mysql.getJdbcUrl());
 		Connection connection = DriverManager.getConnection(mysql.getJdbcUrl(), mysql.getUsername(),
