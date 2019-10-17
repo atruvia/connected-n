@@ -27,8 +27,8 @@ services:
     image: fiduciagad/fourwins
     environment:
       DATABASE_URL: "jdbc:mysql://db:3306/4WINS"
-      DATABASE_USER: "root"
-      DATABASE_PASSWORD: "fourWinsPwd"
+      DATABASE_USER: "forwins_write"
+      DATABASE_PASSWORD: "fourwinswrite"
     ports: 
       - "4446:4446/udp"
 

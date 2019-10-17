@@ -15,5 +15,7 @@ insert into games (player_id, value) values
  ("Alex", 82);
 
 create user fourwins_read identified by "fourwinsread";
+create user fourwins_write identified by "fourwinswrite";
 
 grant select on 4WINS.games to fourwins_read;
+grant all privileges on 4WINS.games to fourwins_write;
