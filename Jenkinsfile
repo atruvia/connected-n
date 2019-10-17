@@ -9,7 +9,9 @@ pipeline {
 
     stages {
         stage('Run Tests') {
-            sh 'mvn verify'
+            steps {
+                sh 'mvn verify'
+            }
         }
     }
 }
