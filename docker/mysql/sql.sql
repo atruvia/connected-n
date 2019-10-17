@@ -13,3 +13,7 @@ insert into games (player_id, value) values
  ("Peter", 26),
  ("Andy", 2),
  ("Alex", 82);
+
+create user fourwins_read identified by "fourwinsread";
+
+grant select on 4WINS.games to fourwins_read;

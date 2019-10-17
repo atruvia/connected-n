@@ -6,10 +6,10 @@ datasources:
     type: mysql
     url: db:3306
     database: 4WINS
-    user: root
+    user: fourwins_read
     jsonData:
       maxOpenConns: 0         # Grafana v5.4+
       maxIdleConns: 2         # Grafana v5.4+
       connMaxLifetime: 14400  # Grafana v5.4+
     secureJsonData:
-      password: fourWinsPwd
+      password: fourwinsread
