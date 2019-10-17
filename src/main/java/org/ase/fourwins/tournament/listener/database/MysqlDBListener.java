@@ -4,14 +4,13 @@ import static java.util.function.Predicate.isEqual;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.*;
+import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_PLAYER_ID;
 import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_VALUE;
 import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.TABLE_NAME;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.stream.Stream;
 
 import org.apache.commons.dbutils.QueryRunner;
@@ -29,27 +28,14 @@ public class MysqlDBListener implements TournamentListener {
 
 	private final Connection connection;
 
-	public MysqlDBListener(String url, String user, String password) throws ClassNotFoundException, SQLException {
-		connection = DriverManager.getConnection(url, user, password);
-		Statement statement = connection.createStatement();
-		statement.executeUpdate("CREATE DATABASE IF NOT EXISTS " + database(url));
-		statement.executeUpdate("" + //
-				"CREATE TABLE IF NOT EXISTS games(" + //
-//				"	id int NOT NULL PRIMARY KEY auto_increment," + //
-				"	ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," + //
-				"	player_id varchar(255)," + //
-				"	value double" + //
-				")");
-	}
-
-	private String database(String uri) {
-		return uri.substring(uri.lastIndexOf('/') + 1);
-	}
-
 	private static final QueryRunner runner = new QueryRunner();
 	private static final String insertSQL = "INSERT INTO " + TABLE_NAME + " (" + COLUMNNAME_PLAYER_ID + ","
 			+ COLUMNNAME_VALUE + ") SELECT ?,COALESCE(MAX(value),0)+? FROM " + TABLE_NAME + " WHERE "
 			+ COLUMNNAME_PLAYER_ID + "=?";
+
+	public MysqlDBListener(String url, String user, String password) throws ClassNotFoundException, SQLException {
+		this.connection = DriverManager.getConnection(url, user, password);
+	}
 
 	@Override
 	public void gameEnded(Game game) {

@@ -1,37 +1,28 @@
-package org.ase.fourwins.database;
+package org.ase.fourwins.tournament.listener.database;
 
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_PLAYER_ID;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.TABLE_NAME;
+import static org.ase.fourwins.tournament.listener.database.Games.aGameOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.IntStream;
 
-import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
-import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
-import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.listener.database.MysqlDBListener;
-import org.ase.fourwins.tournament.listener.database.MysqlDBRow;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -45,46 +36,53 @@ class MysqlListenerIT {
 
 	private MysqlDBListener sut;
 
-	private Connection connection;
+	private ScoresDatabase scores;
 
 	@BeforeEach
 	public void setup() throws ClassNotFoundException, SQLException {
 		mysql.start();
 		System.out.println("MySQL database url " + mysql.getJdbcUrl());
+		Connection connection = DriverManager.getConnection(mysql.getJdbcUrl(), mysql.getUsername(),
+				mysql.getPassword());
+		this.scores = new ScoresDatabase(connection);
+		this.scores.init(database(mysql.getJdbcUrl()));
 		this.sut = new MysqlDBListener(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword());
-		this.connection = DriverManager.getConnection(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword());
+	}
+
+	private String database(String uri) {
+		return uri.substring(uri.lastIndexOf('/') + 1);
 	}
 
 	@AfterEach
-	public void tearDown() {
-		DbUtils.closeQuietly(connection);
+	public void tearDown() throws IOException {
+		this.scores.close();
 		mysql.stop();
 	}
 
 	@Test
 	void testOneGameEndingIsInsertedToDatabase() throws SQLException {
-		List<Player> givenPlayers = players(2);
+		List<Player> givenPlayers = Games.players(2);
 		whenEnded(aGameOf(givenPlayers, WIN, 0));
 		scoresAre(givenPlayers, 1.0, 0.0);
 	}
 
 	@Test
 	void testPlayerMakesIllegalMoveAndOpponentGetsAFullPoint() throws SQLException {
-		List<Player> players = players(2);
+		List<Player> players = Games.players(2);
 		whenEnded(aGameOf(players, LOSE, 0));
 		scoresAre(players, 0.0, 1.0);
 	}
 
 	@Test
 	void testBothPlayersGetAHalfPointForADraw() throws SQLException {
-		List<Player> players = players(2);
+		List<Player> players = Games.players(2);
 		whenEnded(aGameOf(players, DRAW, 0));
 		scoresAre(players, 0.5, 0.5);
 	}
 
 	@Test
 	void canAccumulateValues() throws SQLException {
-		List<Player> players = players(2);
+		List<Player> players = Games.players(2);
 		whenEnded(aGameOf(players, WIN, 1));
 		whenEnded(aGameOf(players, WIN, 1));
 		whenEnded(aGameOf(players, DRAW, 1));
@@ -105,7 +103,7 @@ class MysqlListenerIT {
 		Random random = new Random(startTime);
 		List<Score> scores = validGameEndScores();
 		do {
-			List<Player> players = players(6 + random.nextInt(6));
+			List<Player> players = Games.players(6 + random.nextInt(6));
 			Score score = scores.get(random.nextInt(scores.size()));
 			int lastPlayer = random.nextInt(players.size());
 			sut.gameEnded(aGameOf(players, score, lastPlayer));
@@ -119,48 +117,16 @@ class MysqlListenerIT {
 		return scores;
 	}
 
-	private void whenEnded(Game buildGame) {
-		sut.gameEnded(buildGame);
-	}
-
-	private List<Player> players(int count) {
-		return IntStream.range(1, 1 + count).mapToObj(i -> new PlayerMock("P" + i)).collect(toList());
+	private void whenEnded(Game game) {
+		sut.gameEnded(game);
 	}
 
 	private double scoreOf(Player player) throws SQLException {
-		return rows(player).stream().max(comparing(MysqlDBRow::getValue)).map(MysqlDBRow::getValue)
-				.orElse(0.0);
+		return rows(player).stream().max(comparing(MysqlDBRow::getValue)).map(MysqlDBRow::getValue).orElse(0.0);
 	}
 
 	private List<MysqlDBRow> rows(Player player) throws SQLException {
-		return scoreQuery(player);
-	}
-
-	private List<MysqlDBRow> scoreQuery(Player player) throws SQLException {
-		QueryRunner runner = new QueryRunner();
-		BeanListHandler<MysqlDBRow> handler = new BeanListHandler<>(MysqlDBRow.class);
-		String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMNNAME_PLAYER_ID + " = ?";
-		return runner.query(connection, query, handler, player.getToken());
-	}
-
-	private Game aGameOf(List<Player> players, Score score, int lastPlayer) {
-		return new Game() {
-
-			@Override
-			public Game runGame() {
-				throw new UnsupportedOperationException();
-			}
-
-			@Override
-			public GameState gameState() {
-				return GameState.builder().token(players.get(lastPlayer).getToken()).score(score).build();
-			}
-
-			@Override
-			public List<Player> getPlayers() {
-				return players;
-			}
-		};
+		return this.scores.scores(player);
 	}
 
 }
