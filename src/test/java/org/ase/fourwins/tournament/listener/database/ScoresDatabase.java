@@ -3,11 +3,15 @@ package org.ase.fourwins.tournament.listener.database;
 import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_PLAYER_ID;
 import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.TABLE_NAME;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
@@ -21,15 +25,19 @@ public final class ScoresDatabase implements AutoCloseable {
 		this.connection = connection;
 	}
 
-	public void init(String database) throws SQLException {
+	public void init(String database) throws SQLException, IOException {
 		Statement statement = connection.createStatement();
-		statement.executeUpdate("CREATE DATABASE IF NOT EXISTS " + database);
-		statement.executeUpdate("" + //
-				"CREATE TABLE IF NOT EXISTS games(" + //
-				"       ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," + //
-				"       player_id varchar(255)," + //
-				"       value double" + //
-				")");
+		for (String line : content("docker/mysql/sql.sql")) {
+			if (!line.toUpperCase().startsWith("CREATE USER ") && !line.toUpperCase().startsWith("GRANT ")) {
+				statement.executeUpdate(line);
+			}
+		}
+	}
+
+	private List<String> content(String script) throws IOException, FileNotFoundException {
+		try (BufferedReader br = new BufferedReader(new FileReader(script))) {
+			return br.lines().collect(Collectors.toList());
+		}
 	}
 
 	public List<MysqlDBRow> scores(Player player) throws SQLException {
