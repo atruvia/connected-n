@@ -7,6 +7,23 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
     }
 
+    triggers {
+        GenericTrigger(
+            token: '4wins-ci-token',
+
+            genericVariables: [
+                [ key: 'ref', value: '$.ref' ]
+            ],
+
+            printContributedVariables: true,
+            printPostContent: true,
+
+            regexpFilterText: '$ref',
+            regexpFilterExpression: 'refs/heads/' + BRANCH_NAME
+        )
+        pollSCM('*/5 * * * *')
+    }
+
     stages {
         stage('Run Tests') {
             steps {
