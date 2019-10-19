@@ -13,10 +13,6 @@ public class MysqlDBWithEnvListener implements TournamentListener {
 		delegate = new MysqlDBListener(env("DATABASE_URL"), env("DATABASE_USER"), env("DATABASE_PASSWORD"));
 	}
 
-	protected MysqlDBListener getDelegate() {
-		return delegate;
-	}
-
 	private static String env(String name) {
 		return System.getenv(name);
 	}
