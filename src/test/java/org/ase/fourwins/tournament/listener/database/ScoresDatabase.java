@@ -25,21 +25,6 @@ public final class ScoresDatabase implements AutoCloseable {
 		this.connection = connection;
 	}
 
-	public void init(String database) throws SQLException, IOException {
-		Statement statement = connection.createStatement();
-		for (String line : content("docker/mysql/sql.sql")) {
-			if (!line.toUpperCase().startsWith("CREATE USER ") && !line.toUpperCase().startsWith("GRANT ")) {
-				statement.executeUpdate(line);
-			}
-		}
-	}
-
-	private List<String> content(String script) throws IOException, FileNotFoundException {
-		try (BufferedReader br = new BufferedReader(new FileReader(script))) {
-			return br.lines().collect(Collectors.toList());
-		}
-	}
-
 	public List<MysqlDBRow> scores(Player player) throws SQLException {
 		QueryRunner runner = new QueryRunner();
 		BeanListHandler<MysqlDBRow> handler = new BeanListHandler<>(MysqlDBRow.class);

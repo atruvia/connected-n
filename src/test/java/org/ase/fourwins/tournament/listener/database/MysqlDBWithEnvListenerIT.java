@@ -6,6 +6,7 @@ import static org.ase.fourwins.tournament.listener.database.Games.aGameOf;
 import static org.ase.fourwins.tournament.listener.database.Games.players;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.testcontainers.containers.BindMode.READ_ONLY;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -21,12 +22,11 @@ import org.testcontainers.containers.MySQLContainer;
 
 class MysqlDBWithEnvListenerIT {
 
-	private static final String DATABASE_NAME = "foobar";
-	private static final String DATABASE_USER = "foo";
-	private static final String DATABASE_PASSWORD = "bar";
+	private static final String DATABASE_NAME = "4WINS";
 
-	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(DATABASE_NAME).withUsername(DATABASE_USER)
-			.withPassword(DATABASE_PASSWORD);
+	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(DATABASE_NAME) //
+			.withFileSystemBind("docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
+	;
 
 	private ScoresDatabase scores;
 
@@ -37,11 +37,6 @@ class MysqlDBWithEnvListenerIT {
 		Connection connection = DriverManager.getConnection(mysql.getJdbcUrl(), mysql.getUsername(),
 				mysql.getPassword());
 		this.scores = new ScoresDatabase(connection);
-		this.scores.init(database(mysql.getJdbcUrl()));
-	}
-
-	private String database(String uri) {
-		return uri.substring(uri.lastIndexOf('/') + 1);
 	}
 
 	@AfterEach
@@ -52,8 +47,8 @@ class MysqlDBWithEnvListenerIT {
 
 	@Test
 	void canReadEnvVars() throws Exception {
-		withEnvironmentVariable("DATABASE_URL", mysql.getJdbcUrl()).and("DATABASE_USER", DATABASE_USER)
-				.and("DATABASE_PASSWORD", DATABASE_PASSWORD).execute(() -> {
+		withEnvironmentVariable("DATABASE_URL", mysql.getJdbcUrl()).and("DATABASE_USER", "fourwins_write")
+				.and("DATABASE_PASSWORD", "fourwinswrite").execute(() -> {
 					MysqlDBWithEnvListener sut = new MysqlDBWithEnvListener();
 					List<Player> players = players(2);
 					sut.gameEnded(aGameOf(players, DRAW, 1));

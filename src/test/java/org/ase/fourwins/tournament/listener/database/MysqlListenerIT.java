@@ -9,8 +9,10 @@ import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.tournament.listener.database.Games.aGameOf;
+import static org.ase.fourwins.tournament.listener.database.Games.players;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.testcontainers.containers.BindMode.READ_ONLY;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -31,8 +33,11 @@ import org.testcontainers.containers.MySQLContainer;
 
 class MysqlListenerIT {
 
-	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(MysqlDBListener.DEFAULT_DATABASE_NAME)
-			.withUsername("foo").withPassword("bar");
+	private static final String DATABASE_NAME = "4WINS";
+
+	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(DATABASE_NAME) //
+			.withFileSystemBind("docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
+	;
 
 	private MysqlDBListener sut;
 
@@ -42,15 +47,9 @@ class MysqlListenerIT {
 	public void setup() throws Exception {
 		mysql.start();
 		System.out.println("MySQL database url " + mysql.getJdbcUrl());
-		Connection connection = DriverManager.getConnection(mysql.getJdbcUrl(), mysql.getUsername(),
-				mysql.getPassword());
+		Connection connection = DriverManager.getConnection(mysql.getJdbcUrl(), "fourwins_read", "fourwinsread");
 		this.scores = new ScoresDatabase(connection);
-		this.scores.init(database(mysql.getJdbcUrl()));
-		this.sut = new MysqlDBListener(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword());
-	}
-
-	private String database(String uri) {
-		return uri.substring(uri.lastIndexOf('/') + 1);
+		this.sut = new MysqlDBListener(mysql.getJdbcUrl(), "fourwins_write", "fourwinswrite");
 	}
 
 	@AfterEach
@@ -61,28 +60,28 @@ class MysqlListenerIT {
 
 	@Test
 	void testOneGameEndingIsInsertedToDatabase() throws SQLException {
-		List<Player> givenPlayers = Games.players(2);
+		List<Player> givenPlayers = players(2);
 		whenEnded(aGameOf(givenPlayers, WIN, 0));
 		scoresAre(givenPlayers, 1.0, 0.0);
 	}
 
 	@Test
 	void testPlayerMakesIllegalMoveAndOpponentGetsAFullPoint() throws SQLException {
-		List<Player> players = Games.players(2);
+		List<Player> players = players(2);
 		whenEnded(aGameOf(players, LOSE, 0));
 		scoresAre(players, 0.0, 1.0);
 	}
 
 	@Test
 	void testBothPlayersGetAHalfPointForADraw() throws SQLException {
-		List<Player> players = Games.players(2);
+		List<Player> players = players(2);
 		whenEnded(aGameOf(players, DRAW, 0));
 		scoresAre(players, 0.5, 0.5);
 	}
 
 	@Test
 	void canAccumulateValues() throws SQLException {
-		List<Player> players = Games.players(2);
+		List<Player> players = players(2);
 		whenEnded(aGameOf(players, WIN, 1));
 		whenEnded(aGameOf(players, WIN, 1));
 		whenEnded(aGameOf(players, DRAW, 1));
@@ -103,7 +102,7 @@ class MysqlListenerIT {
 		Random random = new Random(startTime);
 		List<Score> scores = validGameEndScores();
 		do {
-			List<Player> players = Games.players(6 + random.nextInt(6));
+			List<Player> players = players(6 + random.nextInt(6));
 			Score score = scores.get(random.nextInt(scores.size()));
 			int lastPlayer = random.nextInt(players.size());
 			sut.gameEnded(aGameOf(players, score, lastPlayer));
