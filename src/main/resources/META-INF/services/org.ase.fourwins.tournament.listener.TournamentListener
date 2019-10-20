@@ -1,2 +1,0 @@
-org.ase.fourwins.tournament.listener.TournamentScoreListener
-org.ase.fourwins.tournament.listener.database.MysqlDBWithEnvListener
