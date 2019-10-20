@@ -12,10 +12,7 @@
 		<testcontainers.version>1.11.3</testcontainers.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-<!--
-		<image>docker.io/fiduciagad/${project.artifactId}:latest</image>
--->
-		<image>docker.io/fiduciagad/fourwins:latest</image>
+		<image>docker.io/fiduciagad/fourwins-${project.artifactId}:latest</image>
 	</properties>
 
 	<modules>
@@ -38,18 +35,19 @@
 				<artifactId>jib-maven-plugin</artifactId>
 				<version>1.5.1</version>
 				<configuration>
+					<skip>true</skip>
 					<container>
 						<mainClass>org.ase.fourwins.udp.server.Main</mainClass>
-						<useCurrentTimestamp>true</useCurrentTimestamp>
+						<creationTime>USE_CURRENT_TIMESTAMP</creationTime>
 					</container>
-                                        <allowInsecureRegistries>true</allowInsecureRegistries>
+					<allowInsecureRegistries>true</allowInsecureRegistries>
 					<to>
 						<tags>
 							<tag>${project.version}</tag>
 						</tags>
 					</to>
 				</configuration>
-			</plugin>			
+			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
