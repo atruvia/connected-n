@@ -4,7 +4,7 @@ services:
   db:
     image: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: "fourWinsPwd"
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
     volumes:
       - "./mysql:/docker-entrypoint-initdb.d"
     ports:
@@ -24,10 +24,10 @@ services:
       - "./grafana/plugins:/var/lib/grafana/plugins"
 
   fourwinsserver: 
-    image: fiduciagad/fourwins
+    image: fiduciagad/fourwins-mysql
     environment:
       DATABASE_URL: "jdbc:mysql://db:3306/4WINS"
-      DATABASE_USER: "forwins_write"
+      DATABASE_USER: "fourwins_write"
       DATABASE_PASSWORD: "fourwinswrite"
     ports: 
       - "4446:4446/udp"
