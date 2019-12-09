@@ -70,3 +70,17 @@ Das ```ergebnis``` hat die Ausprägungen LOSE|WIN|DRAW
 
 ### Timeouts
 Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er das Spiel
+
+## Setup des Servers
+Um das Docker-Image mit dem Connected4-Server zu bauen, muss einmal 
+```
+mvn jib:dockerBuild
+```
+
+ausgeführt werden.
+Anschließend kann mit 
+```
+cd docker
+docker-compose up 
+```
+der Server gestartet werden.
