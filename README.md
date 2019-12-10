@@ -74,7 +74,7 @@ Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er das S
 ## Setup des Servers
 Um das Docker-Image mit dem Connected4-Server zu bauen, muss einmal 
 ```
-mvn jib:dockerBuild
+sh build.sh
 ```
 
 ausgeführt werden.
