@@ -1,5 +1,0 @@
-Introduce spectators (and remove listeners)
-BoardTest -> GameTest
-Cheating possible: Register multiple bots. The bot plays normal if the opposite is not the main bot but will insert -1 when the opposite is the main bot
-some chars in names should be forbidden: ; ,
-
