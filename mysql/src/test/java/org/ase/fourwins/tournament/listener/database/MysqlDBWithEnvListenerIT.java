@@ -25,7 +25,7 @@ class MysqlDBWithEnvListenerIT {
 	private static final String DATABASE_NAME = "4WINS";
 
 	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(DATABASE_NAME) //
-			.withFileSystemBind("docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
+			.withFileSystemBind("../docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
 	;
 
 	private ScoresDatabase scores;
