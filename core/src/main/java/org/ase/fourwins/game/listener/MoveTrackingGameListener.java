@@ -27,20 +27,8 @@ public class MoveTrackingGameListener implements GameListener {
 
   @Override
   public void gameEnded(GameId gameId, GameState gameState) {
-    ObservedGame observedGame = gameList.get(gameId);
-    switch (gameState.getScore()) {
-      case DRAW:
-        observedGame.setResult(Result.DRAW);
-        break;
-      case WIN:
-        observedGame.setResult(Result.PLAYER_ONE_WINS);
-        break;
-      case LOSE:
-        observedGame.setResult(Result.PLAYER_TWO_WINS);
-        break;
-      default:
-        throw new RuntimeException("Game has not ended!");
-    }
+    gameList.get(gameId).setResult(gameState.getScore());;
+    
   }
 
   public List<ObservedGame> getObservedGames() {

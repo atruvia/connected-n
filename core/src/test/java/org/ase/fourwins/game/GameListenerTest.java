@@ -7,6 +7,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import org.ase.fourwins.board.Board;
+import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.listener.ObservedGame;
 import org.ase.fourwins.game.listener.MoveTrackingGameListener;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +30,8 @@ class GameListenerTest {
     runGame(sut, PLAYER_X, PLAYER_O);
     ObservedGame observedGame = sut.getObservedGames()
         .get(0);
-    assertThat(observedGame.getFirstPlayer(), is(PLAYER_X));
-    assertThat(observedGame.getSecondPlayer(), is(PLAYER_O));
+    assertThat(observedGame.getFirstPlayerName(), is(PLAYER_X));
+    assertThat(observedGame.getSecondPlayerName(), is(PLAYER_O));
   }
 
   @Test
@@ -39,10 +40,10 @@ class GameListenerTest {
     runGame(sut, PLAYER_A, PLAYER_B);
     ObservedGame gameAB = sut.getObservedGames()
         .stream()
-        .filter(game -> PLAYER_A.equals(game.getFirstPlayer()))
+        .filter(game -> PLAYER_A.equals(game.getFirstPlayerName()))
         .findFirst()
         .get();
-    assertThat(gameAB.getSecondPlayer(), is(PLAYER_B));
+    assertThat(gameAB.getSecondPlayerName(), is(PLAYER_B));
 
     assertThat(sut.getObservedGames()
         .size(), is(2));
@@ -64,7 +65,7 @@ class GameListenerTest {
     ObservedGame observedGame = sut.getObservedGames()
         .get(0);
 
-    assertThat(observedGame.getResult(), is(DRAW));
+    assertThat(observedGame.getResult(), is(Score.DRAW));
   }
 
   private void runGame(MoveTrackingGameListener sut, String firstPlayerName, String secondPlayerName) {
