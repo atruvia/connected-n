@@ -1,0 +1,43 @@
+{
+  "consumer": {
+    "name": "ui"
+  },
+  "provider": {
+    "name": "gamesservice"
+  },
+  "interactions": [
+    {
+      "description": "a request to GET all games",
+      "providerState": "provider lists all games",
+      "request": {
+        "method": "GET",
+        "path": "/api/games",
+        "headers": {
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": [
+
+          ]
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type"
+          }
+        }
+      },
+      "metadata": null
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}

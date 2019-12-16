@@ -4,13 +4,14 @@
 module.exports = function (config) {
   config.set({
     basePath: '',
-    frameworks: ['jasmine', '@angular-devkit/build-angular'],
+    frameworks: ['jasmine', '@angular-devkit/build-angular', 'pact'],
     plugins: [
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage-istanbul-reporter'),
-      require('@angular-devkit/build-angular/plugins/karma')
+      require('@angular-devkit/build-angular/plugins/karma'),
+      require('@pact-foundation/karma-pact'),
     ],
     client: {
       clearContext: false // leave Jasmine Spec Runner output visible in browser
@@ -32,12 +33,12 @@ module.exports = function (config) {
       cors: true,
       port: 1234,
       consumer: "ui",
-      provider: "gameservice",
+      provider: "gamesservice",
       dir: "pacts",
       spec: 2
     }],
     proxies: {
-      '/games/': 'http://127.0.0.1:1234/games/'
+      '/api/': 'http://127.0.0.1:1234/api/'
     }
   });
 };
