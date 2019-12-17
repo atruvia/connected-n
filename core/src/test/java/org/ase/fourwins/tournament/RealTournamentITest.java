@@ -23,7 +23,6 @@ import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
-import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;

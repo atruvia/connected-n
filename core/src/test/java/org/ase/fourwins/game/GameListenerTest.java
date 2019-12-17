@@ -2,14 +2,14 @@ package org.ase.fourwins.game;
 
 import static org.ase.fourwins.game.GameTestUtil.player;
 import static org.ase.fourwins.game.GameTestUtil.withMoves;
-import static org.ase.fourwins.game.listener.Result.DRAW;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.Score;
-import org.ase.fourwins.game.listener.ObservedGame;
 import org.ase.fourwins.game.listener.MoveTrackingGameListener;
+import org.ase.fourwins.game.listener.ObservedGame;
+import org.ase.fourwins.game.listener.RecordedMove;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +57,9 @@ class GameListenerTest {
 
     assertThat(observedGame.getMoves()
         .size(), is(4));
+
+    assertThat(observedGame.getMoves()
+        .get(0), is(new RecordedMove(0, PLAYER_X)));
   }
 
   @Test
@@ -68,7 +71,8 @@ class GameListenerTest {
     assertThat(observedGame.getResult(), is(Score.DRAW));
   }
 
-  private void runGame(MoveTrackingGameListener sut, String firstPlayerName, String secondPlayerName) {
+  private void runGame(MoveTrackingGameListener sut, String firstPlayerName,
+      String secondPlayerName) {
     Player firstPlayer = player(firstPlayerName, withMoves(0, 0));
     Player secondPlayer = player(secondPlayerName, withMoves(1, 1));
     Game game = new DefaultGame(Board.newBoard(2, 2), firstPlayer, secondPlayer);

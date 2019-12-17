@@ -1,9 +1,10 @@
-package org.ase.fourwins.tournament.listener;
+package org.ase.fourwins.tournament;
 
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.ScoreSheet;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 
 import lombok.Getter;
 

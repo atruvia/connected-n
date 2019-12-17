@@ -27,8 +27,9 @@ public class MoveTrackingGameListener implements GameListener {
 
   @Override
   public void gameEnded(GameId gameId, GameState gameState) {
-    gameList.get(gameId).setResult(gameState.getScore());;
-    
+    gameList.get(gameId)
+        .setResult(gameState.getScore());
+
   }
 
   public List<ObservedGame> getObservedGames() {
