@@ -15,9 +15,9 @@ REGISTER;yourname
 
 ### Ablauf des Turniers
 Solange mindestens zwei Spieler registriert sind, wird Saison für Saion gespielt.
-Innerhalb einer Sasion spielt jeder Spieler, Spiel für Spiel, gegen alle anderen Spieler (=Spieltag).
+Innerhalb einer Sasion spielt jeder Spieler, Partie für Partie, gegen alle anderen Spieler (=Spieltag).
 Hierbei gibt es Hin- und Rückrunde, so dass jeder Spieler einmal Heimrecht (=erster Zug) hat.
-Die Spiele eines Spieltags finden parallel statt.
+Alle Partien eines Spieltags finden parallel statt. 
 
 ### Teilnahme an einer Saison
 Wenn der Server eine neue Saison startet, schickt er eine Benachrichtung an alle
@@ -36,7 +36,7 @@ JOIN;58ca8b44
 Der Teil ```58ca8b44``` ist ein variabler Token, der je nach Saison variiert.
 
 ### Einen Zug machen
-Der Server schickt eine Nachricht an den Spieler, wenn ein neues Spiel beginnt:
+Der Server schickt eine Nachricht an den Spieler, wenn ein neue Partie beginnt:
 ```
 NEW GAME;gegner_name
 ```
@@ -56,20 +56,20 @@ Der Server informiert beide Spieler über alle gemachten Züge via:
 TOKEN INSERTED;spieler_name;spalte
 ```
 
-### Ende eines Spiels
-Ein Spiel kann
+### Ende einer Partie
+Eine Partie kann
 - verloren werden (ungültiger Zug)
 - gewonnen werden (vier Steine in einer vertikalen, horizontalen oder diagonalen Reihe)
 - unentschieden enden (Spielbrett gefüllt aber kein Spieler hat vier Steine in Reihe)
 
-Über das Ende jedes Spiels informiert der Server beide Spieler via:
+Über das Ende jeder Partie informiert der Server beide Spieler via:
 ```
 RESULT;ergebnis;spieler_name;grund
 ```
 Das ```ergebnis``` hat die Ausprägungen LOSE|WIN|DRAW
 
 ### Timeouts
-Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er das Spiel
+Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er die Partie
 
 ## Setup des Servers
 Um das Docker-Image mit dem Connected4-Server zu bauen, muss einmal 
