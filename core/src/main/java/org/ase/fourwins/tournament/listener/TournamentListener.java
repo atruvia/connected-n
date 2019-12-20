@@ -13,4 +13,7 @@ public interface TournamentListener {
 	default void seasonEnded() {
 	}
 
+	default void newTokenAt(Object token, int column, int row) {
+	}
+
 }

@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.Board.MoveListener;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.DefaultGame;
 import org.ase.fourwins.game.Game;
@@ -110,7 +111,11 @@ public class DefaultTournament implements Tournament {
 	}
 
 	protected Board makeBoard() {
-		return Board.newBoard(boardInfo);
+		return Board.newBoard(boardInfo, new MoveListener() {
+			public void newTokenAt(Object token, int columnIdx, int rowIdx) {
+				tournamentListenerList.forEach(listener -> listener.newTokenAt(token, columnIdx, rowIdx));
+			}
+		});
 	}
 
 	protected void gameStarted(Game game) {

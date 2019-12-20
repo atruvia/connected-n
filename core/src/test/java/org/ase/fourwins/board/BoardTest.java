@@ -5,14 +5,19 @@ import static org.ase.fourwins.board.BoardMatcher.isGameError;
 import static org.ase.fourwins.board.BoardMatcher.isStillInGame;
 import static org.ase.fourwins.board.BoardMatcher.winnerIs;
 import static org.ase.fourwins.board.BoardTest.BoardBuilder.boardOfSize;
+import static org.ase.fourwins.board.Move.column;
 import static org.ase.fourwins.board.Move.moveToColumn;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.ase.fourwins.board.Board.MoveListener;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -151,6 +156,18 @@ public class BoardTest {
 		fail("what should the winning combination look alike?"); // TODO FR
 	}
 
+	@Test
+	void testMoveListenerIsCalled() {
+		MoveListener moveListener = mock(MoveListener.class);
+		a(boardOfSize(3, 2, moveListener)) //
+				.insertToken(moveToColumn('B'), "X") //
+				.insertToken(moveToColumn('C'), "O") //
+				.insertToken(moveToColumn('C'), "X");
+		verify(moveListener, times(1)).newTokenAt("X", column('B'), 0);
+		verify(moveListener, times(1)).newTokenAt("O", column('C'), 0);
+		verify(moveListener, times(1)).newTokenAt("X", column('C'), 1);
+	}
+
 	public static class BoardBuilder {
 
 		private Board board;
@@ -174,8 +191,12 @@ public class BoardTest {
 			return lines;
 		}
 
+		public static BoardBuilder boardOfSize(int cols, int rows, MoveListener moveListener) {
+			return new BoardBuilder(Board.newBoard(new BoardInfo(cols, rows), moveListener));
+		}
+
 		public static BoardBuilder boardOfSize(int cols, int rows) {
-			return new BoardBuilder(Board.newBoard(cols, rows));
+			return new BoardBuilder(Board.newBoard(new BoardInfo(cols, rows)));
 		}
 
 		public Board build() {

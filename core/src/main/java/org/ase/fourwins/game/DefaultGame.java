@@ -125,7 +125,6 @@ public class DefaultGame implements Game {
 	private void makeMove(Player player) {
 		int column = player.nextColumn();
 		String token = player.getToken();
-		// TODO log
 		board = board.insertToken(moveToColumn(column), token);
 		this.players.stream().forEach(p -> p.tokenWasInserted(token, column));
 	}
