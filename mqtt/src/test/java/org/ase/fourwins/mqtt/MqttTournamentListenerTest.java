@@ -5,6 +5,7 @@ import static io.moquette.BrokerConstants.HOST_PROPERTY_NAME;
 import static io.moquette.BrokerConstants.PORT_PROPERTY_NAME;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -192,9 +193,17 @@ class MqttTournamentListenerTest {
 	@Test
 	void doesPublishGameStart() {
 		String id = "someId";
+		String player1 = "P1";
+		String player2 = "P2";
+		String player3 = "P3";
 		assertTimeoutPreemptively(timeout, () -> {
-			sut.gameStarted(game(id));
-			await().until(() -> payloads(id + "/state/start"), is(anEmptyPayload()));
+			sut.gameStarted(game(id, player1, player2, player3));
+//			await().until(() -> payload(id + "/board/height"), is("-1"));
+//			await().until(() -> payload(id + "/board/width"), is("-1"));
+			await().until(() -> payload(id + "/player/1"), is(player1));
+			await().until(() -> payload(id + "/player/2"), is(player2));
+			await().until(() -> payload(id + "/player/3"), is(player3));
+			await().until(() -> payload(id + "/state/start"), is(emptyPayload()));
 		});
 	}
 
@@ -203,7 +212,7 @@ class MqttTournamentListenerTest {
 		String id = "someId";
 		assertTimeoutPreemptively(timeout, () -> {
 			sut.gameEnded(game("someId"));
-			await().until(() -> payloads(id + "/state/end"), is(anEmptyPayload()));
+			await().until(() -> payload(id + "/state/end"), is(emptyPayload()));
 		});
 	}
 
@@ -215,12 +224,18 @@ class MqttTournamentListenerTest {
 			sut.newTokenAt(game(id), "O", 1);
 			sut.newTokenAt(game(id), "X", -1);
 			await().until(() -> payloads(id + "/action/tokeninserted/X"), is(asList("0", "-1")));
-			await().until(() -> payloads(id + "/action/tokeninserted/O"), is(asList("1")));
+			await().until(() -> payload(id + "/action/tokeninserted/O"), is("1"));
 		});
 	}
 
-	private static List<String> anEmptyPayload() {
-		return asList("");
+	private static String emptyPayload() {
+		return "";
+	}
+
+	private String payload(String topic) {
+		return messagesWithTopic(secondClient.getReceived(), topic).map(Message::getPayload).reduce((t, u) -> {
+			throw new IllegalStateException("Multiple messages with topic " + topic + ": " + t + ", " + u);
+		}).orElseThrow(() -> new IllegalStateException("No message with topic " + topic));
 	}
 
 	private List<String> payloads(String topic) {
@@ -231,7 +246,13 @@ class MqttTournamentListenerTest {
 		return messages.stream().filter(m -> m.getTopic().equals(topic));
 	}
 
-	private Game game(String id) {
+	private Game game(String id, String... playerNames) {
+		List<Player> players = stream(playerNames).map(n -> new Player(n) {
+			@Override
+			protected int nextColumn() {
+				throw new IllegalStateException();
+			}
+		}).collect(toList());
 		return new Game() {
 
 			@Override
@@ -246,7 +267,7 @@ class MqttTournamentListenerTest {
 
 			@Override
 			public List<Player> getPlayers() {
-				throw new IllegalStateException();
+				return players;
 			}
 
 			@Override

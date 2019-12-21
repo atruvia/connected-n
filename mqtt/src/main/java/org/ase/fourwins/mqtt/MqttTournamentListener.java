@@ -3,8 +3,10 @@ package org.ase.fourwins.mqtt;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.ase.fourwins.game.Game;
+import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -34,6 +36,10 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 
 	@Override
 	public void gameStarted(Game game) {
+		List<Player> players = game.getPlayers();
+		for (int i = 0; i < players.size(); i++) {
+			publish(game.getId() + "/player/" + (i + 1), players.get(i).getToken());
+		}
 		publish(game.getId() + "/state/start", "");
 	}
 
