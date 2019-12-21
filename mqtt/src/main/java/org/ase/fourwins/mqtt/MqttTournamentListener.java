@@ -37,15 +37,18 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 	@Override
 	public void gameStarted(Game game) {
 		List<Player> players = game.getPlayers();
+		String gameId = game.getId();
+		publish(gameId + "/board/height", game.getBoardInfo().getRows());
+		publish(gameId + "/board/width", game.getBoardInfo().getColumns());
 		for (int i = 0; i < players.size(); i++) {
-			publish(game.getId() + "/player/" + (i + 1), players.get(i).getToken());
+			publish(gameId + "/player/" + (i + 1), players.get(i).getToken());
 		}
-		publish(game.getId() + "/state/start", "");
+		publish(gameId + "/state/start", "");
 	}
 
 	@Override
 	public void newTokenAt(Game game, String token, int column) {
-		publish(game.getId() + "/action/tokeninserted/" + token, String.valueOf(column));
+		publish(game.getId() + "/action/tokeninserted/" + token, column);
 	}
 
 	@Override
@@ -53,9 +56,9 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 		publish(game.getId() + "/state/end", "");
 	}
 
-	private void publish(String topic, String payload) {
+	private void publish(String topic, Object payload) {
 		try {
-			mqttClient.publish(topic, new MqttMessage(payload.getBytes()));
+			mqttClient.publish(topic, new MqttMessage(String.valueOf(payload).getBytes()));
 		} catch (MqttException e) {
 			throw new RuntimeException(e);
 		}

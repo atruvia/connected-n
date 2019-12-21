@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -45,6 +46,8 @@ import io.moquette.server.Server;
 import io.moquette.server.config.MemoryConfig;
 
 class MqttTournamentListenerTest {
+
+	private static final BoardInfo boardInfo = BoardInfo.builder().rows(42).columns(21).build();
 
 	private static class Message {
 
@@ -196,10 +199,11 @@ class MqttTournamentListenerTest {
 		String player1 = "P1";
 		String player2 = "P2";
 		String player3 = "P3";
+		Game game = game(id, boardInfo, player1, player2, player3);
 		assertTimeoutPreemptively(timeout, () -> {
-			sut.gameStarted(game(id, player1, player2, player3));
-//			await().until(() -> payload(id + "/board/height"), is("-1"));
-//			await().until(() -> payload(id + "/board/width"), is("-1"));
+			sut.gameStarted(game);
+			await().until(() -> payload(id + "/board/height"), is(String.valueOf(boardInfo.getRows())));
+			await().until(() -> payload(id + "/board/width"), is(String.valueOf(boardInfo.getColumns())));
 			await().until(() -> payload(id + "/player/1"), is(player1));
 			await().until(() -> payload(id + "/player/2"), is(player2));
 			await().until(() -> payload(id + "/player/3"), is(player3));
@@ -210,8 +214,9 @@ class MqttTournamentListenerTest {
 	@Test
 	void doesPublishGameEnd() {
 		String id = "someId";
+		Game game = game("someId", boardInfo);
 		assertTimeoutPreemptively(timeout, () -> {
-			sut.gameEnded(game("someId"));
+			sut.gameEnded(game);
 			await().until(() -> payload(id + "/state/end"), is(emptyPayload()));
 		});
 	}
@@ -219,10 +224,11 @@ class MqttTournamentListenerTest {
 	@Test
 	void doesPublishInsertedTokens() {
 		String id = "someId";
+		Game game = game(id, boardInfo);
 		assertTimeoutPreemptively(timeout, () -> {
-			sut.newTokenAt(game(id), "X", 0);
-			sut.newTokenAt(game(id), "O", 1);
-			sut.newTokenAt(game(id), "X", -1);
+			sut.newTokenAt(game, "X", 0);
+			sut.newTokenAt(game, "O", 1);
+			sut.newTokenAt(game, "X", -1);
 			await().until(() -> payloads(id + "/action/tokeninserted/X"), is(asList("0", "-1")));
 			await().until(() -> payload(id + "/action/tokeninserted/O"), is("1"));
 		});
@@ -246,7 +252,7 @@ class MqttTournamentListenerTest {
 		return messages.stream().filter(m -> m.getTopic().equals(topic));
 	}
 
-	private Game game(String id, String... playerNames) {
+	private Game game(String id, BoardInfo boardInfo, String... playerNames) {
 		List<Player> players = stream(playerNames).map(n -> new Player(n) {
 			@Override
 			protected int nextColumn() {
@@ -259,6 +265,10 @@ class MqttTournamentListenerTest {
 			public String getId() {
 				return id;
 			}
+
+			public BoardInfo getBoardInfo() {
+				return boardInfo;
+			};
 
 			@Override
 			public Game runGame() {
