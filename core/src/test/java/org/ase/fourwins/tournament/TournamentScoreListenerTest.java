@@ -108,6 +108,11 @@ class TournamentScoreListenerTest {
 			public Game runGame() {
 				throw new UnsupportedOperationException();
 			}
+			
+			@Override
+			public String getId() {
+				throw new UnsupportedOperationException();
+			}
 
 			@Override
 			public List<Player> getPlayers() {
