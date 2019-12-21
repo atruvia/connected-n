@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.BoardInfo;
 
 public interface Game {
 
@@ -14,6 +15,8 @@ public interface Game {
 	List<Player> getPlayers();
 	
 	String getId();
+	
+	BoardInfo getBoardInfo();
 	
 	default Player getPlayerForToken(Object token) {
 		return getPlayers().stream()

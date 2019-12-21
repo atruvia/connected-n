@@ -35,11 +35,13 @@ public class DefaultGame implements Game {
 
 	private static class GameLostDueToException implements Game {
 
+		private final BoardInfo boardInfo;
 		private final GameState state;
 		private final List<Player> players;
 		private final String id = UUID.randomUUID().toString();
 
-		public GameLostDueToException(Player lostBy, String reason, List<Player> players) {
+		public GameLostDueToException(BoardInfo boardInfo, Player lostBy, String reason, List<Player> players) {
+			this.boardInfo = boardInfo;
 			this.players = players;
 			this.state = GameState.builder().score(LOSE).token(lostBy.getToken()).reason(reason).build();
 		}
@@ -47,6 +49,11 @@ public class DefaultGame implements Game {
 		@Override
 		public String getId() {
 			return id;
+		}
+		
+		@Override
+		public BoardInfo getBoardInfo() {
+			return boardInfo;
 		}
 
 		@Override
@@ -113,6 +120,11 @@ public class DefaultGame implements Game {
 	public String getId() {
 		return this.id;
 	}
+	
+	@Override
+	public BoardInfo getBoardInfo() {
+		return board.boardInfo();
+	}
 
 	private boolean informPlayer(BoardInfo boardInfo, Player player, List<Player> opposites) {
 		return player.joinGame(opposites.stream().map(Player::getToken).collect(joining(",")), boardInfo);
@@ -142,7 +154,7 @@ public class DefaultGame implements Game {
 			try {
 				makeMove(player);
 			} catch (Exception e) {
-				return new GameLostDueToException(player, e.getMessage(), players);
+				return new GameLostDueToException(board.boardInfo(), player, e.getMessage(), players);
 			}
 		}
 		return this;

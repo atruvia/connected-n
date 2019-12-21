@@ -43,6 +43,11 @@ public class DefaultTournament implements Tournament {
 		public String getId() {
 			return "-coffee-break-";
 		}
+		
+		@Override
+		public BoardInfo getBoardInfo() {
+			return BoardInfo.builder().columns(0).rows(0).build();
+		}
 
 		@Override
 		public GameState gameState() {
