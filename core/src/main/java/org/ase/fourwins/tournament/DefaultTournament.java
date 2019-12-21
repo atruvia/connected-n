@@ -13,9 +13,9 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.Board.MoveListener;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.DefaultGame;
+import org.ase.fourwins.game.DefaultGame.MoveListener;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.season.Match;
@@ -40,6 +40,11 @@ public class DefaultTournament implements Tournament {
 		}
 
 		@Override
+		public String getId() {
+			return "-coffee-break-";
+		}
+
+		@Override
 		public GameState gameState() {
 			return GameState.builder().score(WIN).token(other.getToken()).reason(COFFEE_BREAK_WIN_MESSAGE).build();
 		}
@@ -56,6 +61,7 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
+	private final MoveListener moveListener = (game, token, column) -> tournamentListenerList.forEach(listener -> listener.newTokenAt(game, token, column));
 
 	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
 		@Override
@@ -107,15 +113,11 @@ public class DefaultTournament implements Tournament {
 		} else if (match.getTeam2() == coffeeBreakPlayer) {
 			return new CoffeebreakGame(match.getTeam1());
 		}
-		return new DefaultGame(makeBoard(), match.getTeam1(), match.getTeam2());
+		return new DefaultGame(moveListener, makeBoard(), match.getTeam1(), match.getTeam2());
 	}
 
 	protected Board makeBoard() {
-		return Board.newBoard(boardInfo, new MoveListener() {
-			public void newTokenAt(Object token, int columnIdx, int rowIdx) {
-				tournamentListenerList.forEach(listener -> listener.newTokenAt(token, columnIdx, rowIdx));
-			}
-		});
+		return Board.newBoard(boardInfo);
 	}
 
 	protected void gameStarted(Game game) {

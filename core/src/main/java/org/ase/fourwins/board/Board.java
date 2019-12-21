@@ -29,16 +29,6 @@ import lombok.Builder;
 import lombok.Value;
 
 public abstract class Board {
-	
-	public interface MoveListener {
-		MoveListener NULL = new MoveListener() {
-			@Override
-			public void newTokenAt(Object token, int columnIdx, int rowIdx) {
-			}
-		};
-
-		void newTokenAt(Object token, int columnIdx, int rowIdx);
-	}
 
   @Value
   @Builder(toBuilder = true)
@@ -268,19 +258,13 @@ public abstract class Board {
 
     private final Object[] values;
     private final BoardInfo boardInfo;
-	private final MoveListener moveListener;
 
 	private PlayableBoard(BoardInfo boardInfo) {
-		this(boardInfo, MoveListener.NULL);
-	}
-
-    private PlayableBoard(BoardInfo boardInfo, MoveListener moveListener) {
       this.boardInfo = boardInfo;
       this.height = boardInfo.getRows();
       this.values = new Object[boardInfo.getColumns() * boardInfo.getRows()];
       this.columns = range(0, boardInfo.getColumns()).mapToObj(Column::new)
           .collect(toList());
-      this.moveListener = moveListener;
     }
 
     private boolean allAre(Predicate<? super Column> predicate) {
@@ -381,10 +365,8 @@ public abstract class Board {
       if (column.isFilledUp()) {
         return new LoserBoard(token, "COLUMN_IS_FULL", boardInfo);
       } else {
-        int rowIdx = column.insert(token);
-        this.moveListener.newTokenAt(token, columnIdx, rowIdx);
-		List<WinningCombination> winningCombinatios =
-            getWinningCombinatios(token, 4, new Position(columnIdx, rowIdx));
+        List<WinningCombination> winningCombinatios =
+            getWinningCombinatios(token, 4, new Position(columnIdx, column.insert(token)));
         if (winningCombinatios.size() > 0) {
           return new WinnerBoard(token, winningCombinatios, boardInfo);
         } else if (column.isFilledUp() && allAre(Column::isFilledUp)) {
@@ -421,10 +403,6 @@ public abstract class Board {
 
   public static Board newBoard(int columnCount, int rowCount) {
     return new DelegateBoard(new PlayableBoard(new BoardInfo(columnCount, rowCount)));
-  }
-
-  public static Board newBoard(BoardInfo boardInfo, MoveListener moveListener) {
-	  return new DelegateBoard(new PlayableBoard(boardInfo, moveListener));
   }
 
   public static Board newBoard(BoardInfo boardInfo) {

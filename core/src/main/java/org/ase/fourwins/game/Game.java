@@ -12,6 +12,8 @@ public interface Game {
 	GameState gameState();
 
 	List<Player> getPlayers();
+	
+	String getId();
 
 	default Player getPlayerForToken(Object token) {
 		return getPlayers().stream()
