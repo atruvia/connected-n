@@ -108,12 +108,16 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private Game newGame(Match<Player> match) {
-		if (match.getTeam1() == coffeeBreakPlayer) {
+		if (isCoffeBreak(match.getTeam1())) {
 			return new CoffeebreakGame(match.getTeam2());
-		} else if (match.getTeam2() == coffeeBreakPlayer) {
+		} else if (isCoffeBreak(match.getTeam2())) {
 			return new CoffeebreakGame(match.getTeam1());
 		}
 		return new DefaultGame(moveListener, makeBoard(), match.getTeam1(), match.getTeam2());
+	}
+
+	private static boolean isCoffeBreak(Player player) {
+		return player == coffeeBreakPlayer;
 	}
 
 	protected Board makeBoard() {
