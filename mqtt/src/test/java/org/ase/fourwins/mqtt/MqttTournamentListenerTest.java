@@ -1,5 +1,6 @@
 package org.ase.fourwins.mqtt;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static io.moquette.BrokerConstants.HOST_PROPERTY_NAME;
 import static io.moquette.BrokerConstants.PORT_PROPERTY_NAME;
 import static java.time.Duration.ofSeconds;
@@ -151,7 +152,7 @@ class MqttTournamentListenerTest {
 	private Server broker;
 	private int brokerPort;
 	private MqttClientForTest secondClient;
-	private MqttTournamentListener sut;
+	private MqttTournamentListenerWithEnv sut;
 
 	@BeforeEach
 	void setup() throws Exception {
@@ -161,7 +162,8 @@ class MqttTournamentListenerTest {
 		broker = newMqttServer(LOCALHOST, brokerPort);
 		secondClient = new MqttClientForTest(LOCALHOST, brokerPort, "client2");
 
-		sut = new MqttTournamentListener(LOCALHOST, brokerPort);
+		withEnvironmentVariable("MQTT_HOST", "localhost").and("MQTT_PORT", String.valueOf(brokerPort))
+				.execute(() -> sut = new MqttTournamentListenerWithEnv());
 		await().until(sut::isConnected);
 	}
 

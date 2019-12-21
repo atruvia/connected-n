@@ -31,4 +31,12 @@ public class MqttTournamentListenerWithEnv implements TournamentListener {
 		delegate.gameEnded(game);
 	}
 
+	public boolean isConnected() {
+		return delegate.isConnected();
+	}
+
+	public void close() throws IOException {
+		delegate.close();
+	}
+
 }
