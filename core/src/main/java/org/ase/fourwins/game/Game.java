@@ -14,7 +14,7 @@ public interface Game {
 	List<Player> getPlayers();
 	
 	String getId();
-
+	
 	default Player getPlayerForToken(Object token) {
 		return getPlayers().stream()
 				.filter(player -> player.getToken().equals(token)).findFirst()
