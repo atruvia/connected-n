@@ -18,7 +18,7 @@
 	<modules>
 		<module>core</module>
 		<module>mysql</module>
-		<module>webserver</module>
+		<module>mqtt</module>
 	</modules>
 
 	<build>

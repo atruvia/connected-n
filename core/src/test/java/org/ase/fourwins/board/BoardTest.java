@@ -175,7 +175,7 @@ public class BoardTest {
 		}
 
 		public static BoardBuilder boardOfSize(int cols, int rows) {
-			return new BoardBuilder(Board.newBoard(cols, rows));
+			return new BoardBuilder(Board.newBoard(new BoardInfo(cols, rows)));
 		}
 
 		public Board build() {
