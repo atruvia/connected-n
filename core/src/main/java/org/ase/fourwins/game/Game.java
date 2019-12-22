@@ -28,7 +28,4 @@ public interface Game {
 
 	}
 
-	default void registerGameListener(GameListener gameListener) {
-	}
-
 }
