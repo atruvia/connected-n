@@ -259,7 +259,7 @@ public abstract class Board {
     private final Object[] values;
     private final BoardInfo boardInfo;
 
-	private PlayableBoard(BoardInfo boardInfo) {
+    private PlayableBoard(BoardInfo boardInfo) {
       this.boardInfo = boardInfo;
       this.height = boardInfo.getRows();
       this.values = new Object[boardInfo.getColumns() * boardInfo.getRows()];

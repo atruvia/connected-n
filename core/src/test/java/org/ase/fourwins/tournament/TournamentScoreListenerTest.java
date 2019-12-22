@@ -9,7 +9,6 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.List;
 
-import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
@@ -106,16 +105,6 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public Game runGame() {
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public String getId() {
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public BoardInfo getBoardInfo() {
 				throw new UnsupportedOperationException();
 			}
 

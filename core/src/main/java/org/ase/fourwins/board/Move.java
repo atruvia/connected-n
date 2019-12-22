@@ -20,11 +20,7 @@ public interface Move {
 	}
 
 	public static Move moveToColumn(char columnName) {
-		return new DefaultMove(column(columnName));
-	}
-
-	public static int column(char columnName) {
-		return index(columnName).getAsInt();
+		return new DefaultMove(index(columnName).getAsInt());
 	}
 
 	public static Move moveToColumn(int columnIndex) {

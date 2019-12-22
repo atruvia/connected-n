@@ -1,20 +1,6 @@
 version: "2"
 
 services:
-  mqttbroker:
-    image: eclipse-mosquitto
-    hostname: mqttbroker
-    expose:
-      - "1883"
-      - "9001"
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
-    networks:
-      - default
-
   db:
     image: mysql
     environment:
