@@ -196,18 +196,18 @@ class MqttTournamentListenerTest {
 	@Test
 	void doesPublishGameStart() {
 		String gameId = "someId";
-		String player1 = "P1";
-		String player2 = "P2";
-		String player3 = "P3";
-		Game game = game(gameId, boardInfo, player1, player2, player3);
+		String playerName1 = "P1";
+		String playerName2 = "P2";
+		String playerName3 = "P3";
+		Game game = game(gameId, boardInfo, playerName1, playerName2, playerName3);
 		assertTimeoutPreemptively(timeout, () -> {
 			sut.gameStarted(game);
 			await().until(() -> payload(gameId + "/board/height"), is(String.valueOf(boardInfo.getRows())));
 			await().until(() -> payload(gameId + "/board/width"), is(String.valueOf(boardInfo.getColumns())));
 			await().until(() -> payload(gameId + "/players"), is("3"));
-			await().until(() -> payload(gameId + "/player/1"), is(player1));
-			await().until(() -> payload(gameId + "/player/2"), is(player2));
-			await().until(() -> payload(gameId + "/player/3"), is(player3));
+			await().until(() -> payload(gameId + "/player/1"), is(playerName1));
+			await().until(() -> payload(gameId + "/player/2"), is(playerName2));
+			await().until(() -> payload(gameId + "/player/3"), is(playerName3));
 			await().until(() -> payload(gameId + "/state/start"), is(emptyPayload()));
 		});
 	}
