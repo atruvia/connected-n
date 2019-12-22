@@ -23,6 +23,7 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 			mqttClient = new MqttClient("tcp://" + host + ":" + port, getClass().getName(), new MemoryPersistence());
 			mqttClient.setTimeToWait(SECONDS.toMillis(1));
 			mqttClient.connect(connectOptions());
+			System.out.println("MQTT connected to " + host + ":" + port);
 		} catch (MqttException e) {
 			throw new IOException(e);
 		}
