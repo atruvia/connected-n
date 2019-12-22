@@ -195,42 +195,43 @@ class MqttTournamentListenerTest {
 
 	@Test
 	void doesPublishGameStart() {
-		String id = "someId";
+		String gameId = "someId";
 		String player1 = "P1";
 		String player2 = "P2";
 		String player3 = "P3";
-		Game game = game(id, boardInfo, player1, player2, player3);
+		Game game = game(gameId, boardInfo, player1, player2, player3);
 		assertTimeoutPreemptively(timeout, () -> {
 			sut.gameStarted(game);
-			await().until(() -> payload(id + "/board/height"), is(String.valueOf(boardInfo.getRows())));
-			await().until(() -> payload(id + "/board/width"), is(String.valueOf(boardInfo.getColumns())));
-			await().until(() -> payload(id + "/player/1"), is(player1));
-			await().until(() -> payload(id + "/player/2"), is(player2));
-			await().until(() -> payload(id + "/player/3"), is(player3));
-			await().until(() -> payload(id + "/state/start"), is(emptyPayload()));
+			await().until(() -> payload(gameId + "/board/height"), is(String.valueOf(boardInfo.getRows())));
+			await().until(() -> payload(gameId + "/board/width"), is(String.valueOf(boardInfo.getColumns())));
+			await().until(() -> payload(gameId + "/players"), is("3"));
+			await().until(() -> payload(gameId + "/player/1"), is(player1));
+			await().until(() -> payload(gameId + "/player/2"), is(player2));
+			await().until(() -> payload(gameId + "/player/3"), is(player3));
+			await().until(() -> payload(gameId + "/state/start"), is(emptyPayload()));
 		});
 	}
 
 	@Test
 	void doesPublishGameEnd() {
-		String id = "someId";
+		String gameId = "someId";
 		Game game = game("someId", boardInfo);
 		assertTimeoutPreemptively(timeout, () -> {
 			sut.gameEnded(game);
-			await().until(() -> payload(id + "/state/end"), is(emptyPayload()));
+			await().until(() -> payload(gameId + "/state/end"), is(emptyPayload()));
 		});
 	}
 
 	@Test
 	void doesPublishInsertedTokens() {
-		String id = "someId";
-		Game game = game(id, boardInfo);
+		String gameId = "someId";
+		Game game = game(gameId, boardInfo);
 		assertTimeoutPreemptively(timeout, () -> {
 			sut.newTokenAt(game, "X", 0);
 			sut.newTokenAt(game, "O", 1);
 			sut.newTokenAt(game, "X", -1);
-			await().until(() -> payloads(id + "/action/tokeninserted/X"), is(asList("0", "-1")));
-			await().until(() -> payload(id + "/action/tokeninserted/O"), is("1"));
+			await().until(() -> payloads(gameId + "/action/tokeninserted/X"), is(asList("0", "-1")));
+			await().until(() -> payload(gameId + "/action/tokeninserted/O"), is("1"));
 		});
 	}
 

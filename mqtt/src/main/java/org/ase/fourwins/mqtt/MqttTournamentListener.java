@@ -40,6 +40,7 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 		String gameId = game.getId();
 		publish(gameId + "/board/height", game.getBoardInfo().getRows());
 		publish(gameId + "/board/width", game.getBoardInfo().getColumns());
+		publish(gameId + "/players", players.size());
 		for (int i = 0; i < players.size(); i++) {
 			publish(gameId + "/player/" + (i + 1), players.get(i).getToken());
 		}
