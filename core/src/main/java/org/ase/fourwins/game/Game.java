@@ -19,16 +19,16 @@ public interface Game {
 	BoardInfo getBoardInfo();
 	
 	default Player getPlayerForToken(Object token) {
-		return getPlayers().stream()
-				.filter(player -> player.getToken().equals(token)).findFirst()
-				.orElseThrow(() -> new RuntimeException(
-						"Token " + token + " not part of the game."));
+		return getPlayers().stream().filter(player -> player.getToken().equals(token)).findFirst()
+				.orElseThrow(() -> new RuntimeException("Token " + token + " not part of the game."));
 	}
 
 	default Optional<Player> getOpponentForToken(Object token) {
-		return getPlayers().stream()
-				.filter(player -> !player.getToken().equals(token)).findFirst();
+		return getPlayers().stream().filter(player -> !player.getToken().equals(token)).findFirst();
 
+	}
+
+	default void registerGameListener(GameListener gameListener) {
 	}
 
 }

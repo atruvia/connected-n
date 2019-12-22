@@ -21,6 +21,8 @@ import java.util.stream.Stream;
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.BoardInfo;
+import org.ase.fourwins.game.listener.GameId;
+import org.ase.fourwins.game.listener.GameListener;
 
 import lombok.Getter;
 

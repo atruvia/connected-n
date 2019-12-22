@@ -1,6 +1,5 @@
 package org.ase.fourwins.udp.server;
 
-import java.sql.SQLException;
 import java.util.ServiceLoader;
 
 import org.ase.fourwins.tournament.DefaultTournament;
@@ -9,7 +8,7 @@ import org.ase.fourwins.tournament.listener.TournamentListener;
 
 public class Main {
 
-	public static void main(String[] args) throws ClassNotFoundException, SQLException {
+	public static void main(String[] args) {
 		new UdpServer(4446, addListeners(new DefaultTournament())).startServer();
 	}
 
