@@ -1,3 +1,5 @@
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 ## Connected n
 Eine Umgebung zur Ausführung von Spielen, bei welchem es das Ziel ist, Steine in einer vertikalen, horizontalen oder diagonalen Reihe zu platzieren. Das Spiel wird von dem hier bereitgestellten Server ausgeführt. Die Spieler kommunizieren mit dem Server unter Verwendung eines einfachen textbasierten Protokolls über UDP.
 
