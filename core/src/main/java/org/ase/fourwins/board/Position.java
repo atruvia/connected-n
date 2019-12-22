@@ -7,12 +7,12 @@ public class Position {
 
 	private final int column, row;
 
-	public Position addColumn(int modby) {
-		return xy(column + modby, row);
+	public Position increaseColumn(int increaseBy) {
+		return xy(column + increaseBy, row);
 	}
 
-	public Position addRow(int modby) {
-		return xy(column, row + modby);
+	public Position increaseRow(int increaseBy) {
+		return xy(column, row + increaseBy);
 	}
 
 }

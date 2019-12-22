@@ -149,10 +149,10 @@ public abstract class Board {
 
 		}
 
-		private static final Modifier columnLeft = c -> c.addColumn(-1);
-		private static final Modifier columnRight = c -> c.addColumn(+1);
-		private static final Modifier rowDown = c -> c.addRow(-1);
-		private static final Modifier rowUp = c -> c.addRow(+1);
+		private static final Modifier columnLeft = p -> p.increaseColumn(-1);
+		private static final Modifier columnRight = p -> p.increaseColumn(+1);
+		private static final Modifier rowDown = p -> p.increaseRow(-1);
+		private static final Modifier rowUp = p -> p.increaseRow(+1);
 
 		public static enum Direction {
 			NORTH(rowUp), //
