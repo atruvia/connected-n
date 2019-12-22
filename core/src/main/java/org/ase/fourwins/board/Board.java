@@ -12,6 +12,7 @@ import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
+import static org.ase.fourwins.board.Position.xy;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -349,7 +350,7 @@ public abstract class Board {
 				return new LoserBoard(token, "COLUMN_IS_FULL", boardInfo);
 			} else {
 				List<WinningCombination> winningCombinatios = getWinningCombinatios(token, 4,
-						new Position(columnIdx, column.insert(token)));
+						xy(columnIdx, column.insert(token)));
 				if (winningCombinatios.size() > 0) {
 					return new WinnerBoard(token, winningCombinatios, boardInfo);
 				} else if (column.isFilledUp() && allAre(Column::isFilledUp)) {
