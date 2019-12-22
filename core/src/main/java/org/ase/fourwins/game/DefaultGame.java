@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
@@ -24,15 +25,35 @@ import org.ase.fourwins.board.BoardInfo;
 import lombok.Getter;
 
 public class DefaultGame implements Game {
+	
+	public interface MoveListener {
+		MoveListener NULL = (game, token, column) -> {
+		};
+
+		void newTokenAt(Game game, String token, int column);
+	}
 
 	private static class GameLostDueToException implements Game {
 
+		private final BoardInfo boardInfo;
 		private final GameState state;
 		private final List<Player> players;
+		private final String id = UUID.randomUUID().toString();
 
-		public GameLostDueToException(Player lostBy, String reason, List<Player> players) {
+		public GameLostDueToException(BoardInfo boardInfo, Player lostBy, String reason, List<Player> players) {
+			this.boardInfo = boardInfo;
 			this.players = players;
 			this.state = GameState.builder().score(LOSE).token(lostBy.getToken()).reason(reason).build();
+		}
+		
+		@Override
+		public String getId() {
+			return id;
+		}
+		
+		@Override
+		public BoardInfo getBoardInfo() {
+			return boardInfo;
 		}
 
 		@Override
@@ -75,17 +96,34 @@ public class DefaultGame implements Game {
 	@Getter
 	private final List<Player> players;
 	private final Iterator<Player> nextPlayer;
+	private final MoveListener moveListener;
 	private Board board;
 	private int moves;
+	private final String id = UUID.randomUUID().toString();
 
 	public DefaultGame(Board board, Player... players) {
+		this(MoveListener.NULL, board,players);
+	}
+	
+	public DefaultGame(MoveListener moveListener, Board board, Player... players) {
 		validateTokens(players);
 		List<Player> playerList = asList(players);
 		playerList.forEach(p -> informPlayer(board.boardInfo(), p,
 				playerList.stream().filter(isEqual(p).negate()).collect(toList())));
+		this.moveListener = moveListener;
 		this.board = board;
 		this.players = unmodifiableList(new ArrayList<>(playerList));
 		this.nextPlayer = new InfiniteIterator<Player>(asList(players));
+	}
+
+	@Override
+	public String getId() {
+		return this.id;
+	}
+	
+	@Override
+	public BoardInfo getBoardInfo() {
+		return board.boardInfo();
 	}
 
 	private boolean informPlayer(BoardInfo boardInfo, Player player, List<Player> opposites) {
@@ -116,7 +154,7 @@ public class DefaultGame implements Game {
 			try {
 				makeMove(player);
 			} catch (Exception e) {
-				return new GameLostDueToException(player, e.getMessage(), players);
+				return new GameLostDueToException(board.boardInfo(), player, e.getMessage(), players);
 			}
 		}
 		return this;
@@ -125,8 +163,8 @@ public class DefaultGame implements Game {
 	private void makeMove(Player player) {
 		int column = player.nextColumn();
 		String token = player.getToken();
-		// TODO log
-		board = board.insertToken(moveToColumn(column), token);
+		this.moveListener.newTokenAt(this, token, column);
+		this.board = this.board.insertToken(moveToColumn(column), token);
 		this.players.stream().forEach(p -> p.tokenWasInserted(token, column));
 	}
 

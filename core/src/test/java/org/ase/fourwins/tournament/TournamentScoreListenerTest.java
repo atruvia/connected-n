@@ -9,12 +9,12 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import java.util.List;
 
+import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.junit.jupiter.api.Test;
 
 class TournamentScoreListenerTest {
@@ -106,6 +106,16 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public Game runGame() {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public String getId() {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public BoardInfo getBoardInfo() {
 				throw new UnsupportedOperationException();
 			}
 

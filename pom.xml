@@ -18,6 +18,7 @@
 	<modules>
 		<module>core</module>
 		<module>mysql</module>
+		<module>mqtt</module>
 	</modules>
 
 	<build>
@@ -27,7 +28,7 @@
 				<version>2.22.2</version>
 				<configuration>
 					<useSystemClassLoader>false</useSystemClassLoader>
-				
+					<argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
 				</configuration>
 			</plugin>
 			<plugin>

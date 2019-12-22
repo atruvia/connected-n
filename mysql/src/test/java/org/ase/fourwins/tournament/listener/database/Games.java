@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toList;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
@@ -33,6 +34,16 @@ public final class Games {
 			@Override
 			public List<Player> getPlayers() {
 				return players;
+			}
+			
+			@Override
+			public String getId() {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public BoardInfo getBoardInfo() {
+				throw new UnsupportedOperationException();
 			}
 		};
 	}

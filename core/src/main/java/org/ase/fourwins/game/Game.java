@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.BoardInfo;
 
 public interface Game {
 
@@ -12,17 +13,18 @@ public interface Game {
 	GameState gameState();
 
 	List<Player> getPlayers();
-
+	
+	String getId();
+	
+	BoardInfo getBoardInfo();
+	
 	default Player getPlayerForToken(Object token) {
-		return getPlayers().stream()
-				.filter(player -> player.getToken().equals(token)).findFirst()
-				.orElseThrow(() -> new RuntimeException(
-						"Token " + token + " not part of the game."));
+		return getPlayers().stream().filter(player -> player.getToken().equals(token)).findFirst()
+				.orElseThrow(() -> new RuntimeException("Token " + token + " not part of the game."));
 	}
 
 	default Optional<Player> getOpponentForToken(Object token) {
-		return getPlayers().stream()
-				.filter(player -> !player.getToken().equals(token)).findFirst();
+		return getPlayers().stream().filter(player -> !player.getToken().equals(token)).findFirst();
 
 	}
 

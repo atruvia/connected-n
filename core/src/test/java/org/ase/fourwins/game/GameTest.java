@@ -5,18 +5,15 @@ import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.BoardInfo.sevenColsSixRows;
 import static org.ase.fourwins.board.GameStateMatcher.winnerIs;
+import static org.ase.fourwins.game.GameTestUtil.player;
+import static org.ase.fourwins.game.GameTestUtil.withMoves;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
 public class GameTest {
@@ -104,20 +101,6 @@ public class GameTest {
 			new DefaultGame(Board.newBoard(1, 1), firstPlayer, secondPlayer);
 		});
 		assertThat(exception.getMessage(), containsString("same tokens X"));
-	}
-
-	private static List<Integer> withMoves(Integer... moves) {
-		return Arrays.asList(moves);
-	}
-
-	protected Player player(String token, List<Integer> columns) {
-		Iterator<Integer> moves = columns.iterator();
-		return new Player(token) {
-			@Override
-			protected int nextColumn() {
-				return moves.next();
-			}
-		};
 	}
 
 }

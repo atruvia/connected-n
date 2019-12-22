@@ -25,8 +25,8 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.ScoreSheet;
+import org.ase.fourwins.tournament.TournamentScoreListener;
 import org.ase.fourwins.tournament.listener.TournamentListener;
-import org.ase.fourwins.tournament.listener.TournamentScoreListener;
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
 import org.junit.jupiter.api.Test;
 
