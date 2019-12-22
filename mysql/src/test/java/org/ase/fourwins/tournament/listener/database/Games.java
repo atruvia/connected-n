@@ -5,9 +5,9 @@ import static java.util.stream.Collectors.toList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
+import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;

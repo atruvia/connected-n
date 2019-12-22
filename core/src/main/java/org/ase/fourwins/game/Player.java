@@ -1,7 +1,7 @@
 package org.ase.fourwins.game;
 
-import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.BoardInfo;
 
 import lombok.Getter;
 import lombok.ToString;

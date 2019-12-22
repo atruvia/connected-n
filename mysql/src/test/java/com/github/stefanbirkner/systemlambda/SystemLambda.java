@@ -1,18 +1,35 @@
 package com.github.stefanbirkner.systemlambda;
 
-import java.io.*;
+import static java.lang.Class.forName;
+import static java.lang.System.err;
+import static java.lang.System.getProperties;
+import static java.lang.System.getProperty;
+import static java.lang.System.getSecurityManager;
+import static java.lang.System.getenv;
+import static java.lang.System.lineSeparator;
+import static java.lang.System.out;
+import static java.lang.System.setErr;
+import static java.lang.System.setIn;
+import static java.lang.System.setOut;
+import static java.lang.System.setProperties;
+import static java.lang.System.setSecurityManager;
+import static java.nio.charset.Charset.defaultCharset;
+import static java.util.Arrays.stream;
+import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.joining;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import static java.lang.Class.forName;
-import static java.lang.System.*;
-import static java.nio.charset.Charset.defaultCharset;
-import static java.util.Arrays.stream;
-import static java.util.Collections.singletonMap;
-import static java.util.stream.Collectors.joining;
 
 /**
  * {@code SystemLambda} is a collection of functions for testing code that uses
