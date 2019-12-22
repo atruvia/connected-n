@@ -43,7 +43,7 @@ class TournamentListenerTest {
 		public int getCount(String gameId) {
 			return moveCounter.getOrDefault(gameId, 0);
 		}
-		
+
 	}
 
 	@Test
@@ -71,11 +71,11 @@ class TournamentListenerTest {
 		for (int i = 0; i < seasons; i++) {
 			sut.playSeason(players, noop());
 		}
-		
+
 		Set<String> games = tournamentListener.getGames();
 		assertThat(games.size(), is(6 * seasons));
 		for (String gameId : games) {
-			assertThat(tournamentListener.getCount(gameId), is(sut.getBoardInfo().getRows()+1));
+			assertThat(tournamentListener.getCount(gameId), is(sut.getBoardInfo().getRows() + 1));
 		}
 	}
 

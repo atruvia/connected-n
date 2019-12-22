@@ -43,7 +43,7 @@ public class DefaultTournament implements Tournament {
 		public String getId() {
 			return "-coffee-break-";
 		}
-		
+
 		@Override
 		public BoardInfo getBoardInfo() {
 			return BoardInfo.builder().columns(0).rows(0).build();
@@ -66,7 +66,8 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
-	private final MoveListener moveListener = (game, token, column) -> tournamentListenerList.forEach(listener -> listener.newTokenAt(game, token, column));
+	private final MoveListener moveListener = (game, token, column) -> tournamentListenerList
+			.forEach(listener -> listener.newTokenAt(game, token, column));
 
 	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
 		@Override

@@ -6,10 +6,10 @@ package com.github.stefanbirkner.systemlambda;
  * {@link Runnable}.
  */
 public interface Statement {
-    /**
-     * Execute the statement.
-     *
-     * @throws Exception the statement may throw an arbitrary exception.
-     */
-    void execute() throws Exception;
+	/**
+	 * Execute the statement.
+	 *
+	 * @throws Exception the statement may throw an arbitrary exception.
+	 */
+	void execute() throws Exception;
 }

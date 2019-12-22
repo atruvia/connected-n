@@ -20,27 +20,27 @@ public final class Games {
 
 	static Game aGameOf(List<Player> players, Score score, int lastPlayer) {
 		return new Game() {
-	
+
 			@Override
 			public Game runGame() {
 				throw new UnsupportedOperationException();
 			}
-	
+
 			@Override
 			public GameState gameState() {
 				return GameState.builder().token(players.get(lastPlayer).getToken()).score(score).build();
 			}
-	
+
 			@Override
 			public List<Player> getPlayers() {
 				return players;
 			}
-			
+
 			@Override
 			public String getId() {
 				throw new UnsupportedOperationException();
 			}
-			
+
 			@Override
 			public BoardInfo getBoardInfo() {
 				throw new UnsupportedOperationException();

@@ -25,7 +25,7 @@ import org.ase.fourwins.board.BoardInfo;
 import lombok.Getter;
 
 public class DefaultGame implements Game {
-	
+
 	public interface MoveListener {
 		MoveListener NULL = (game, token, column) -> {
 		};
@@ -45,12 +45,12 @@ public class DefaultGame implements Game {
 			this.players = players;
 			this.state = GameState.builder().score(LOSE).token(lostBy.getToken()).reason(reason).build();
 		}
-		
+
 		@Override
 		public String getId() {
 			return id;
 		}
-		
+
 		@Override
 		public BoardInfo getBoardInfo() {
 			return boardInfo;
@@ -102,9 +102,9 @@ public class DefaultGame implements Game {
 	private final String id = UUID.randomUUID().toString();
 
 	public DefaultGame(Board board, Player... players) {
-		this(MoveListener.NULL, board,players);
+		this(MoveListener.NULL, board, players);
 	}
-	
+
 	public DefaultGame(MoveListener moveListener, Board board, Player... players) {
 		validateTokens(players);
 		List<Player> playerList = asList(players);
@@ -120,7 +120,7 @@ public class DefaultGame implements Game {
 	public String getId() {
 		return this.id;
 	}
-	
+
 	@Override
 	public BoardInfo getBoardInfo() {
 		return board.boardInfo();

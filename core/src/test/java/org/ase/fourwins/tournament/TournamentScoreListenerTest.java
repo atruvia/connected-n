@@ -92,28 +92,26 @@ class TournamentScoreListenerTest {
 		TournamentScoreListener listener = new TournamentScoreListener();
 		PlayerMock player1 = new PlayerMock("P1");
 
-		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(
-				player1);
+		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(player1);
 		listener.gameEnded(coffeebreakGame);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
 		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
 	}
 
-	private Game buildGame(Player player1, Player player2, Score score,
-			Player lastMoveBy) {
+	private Game buildGame(Player player1, Player player2, Score score, Player lastMoveBy) {
 		return new Game() {
 
 			@Override
 			public Game runGame() {
 				throw new UnsupportedOperationException();
 			}
-			
+
 			@Override
 			public String getId() {
 				throw new UnsupportedOperationException();
 			}
-			
+
 			@Override
 			public BoardInfo getBoardInfo() {
 				throw new UnsupportedOperationException();
@@ -126,8 +124,7 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().score(score)
-						.token(lastMoveBy.getToken()).build();
+				return GameState.builder().score(score).token(lastMoveBy.getToken()).build();
 			}
 		};
 	}

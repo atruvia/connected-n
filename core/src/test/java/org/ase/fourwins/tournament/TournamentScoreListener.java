@@ -22,15 +22,12 @@ public class TournamentScoreListener implements TournamentListener {
 		Score score = game.gameState().getScore();
 		if (score.equals(Score.WIN)) {
 			addPointForPlayer(game.getPlayerForToken(lastToken), FULL_POINT);
-			game.getOpponentForToken(lastToken)
-					.ifPresent(p -> addPointForPlayer(p, ZERO));
+			game.getOpponentForToken(lastToken).ifPresent(p -> addPointForPlayer(p, ZERO));
 		} else if (score.equals(Score.DRAW)) {
 			addPointForPlayer(game.getPlayerForToken(lastToken), HALF_POINT);
-			game.getOpponentForToken(lastToken)
-					.ifPresent(p -> addPointForPlayer(p, HALF_POINT));
+			game.getOpponentForToken(lastToken).ifPresent(p -> addPointForPlayer(p, HALF_POINT));
 		} else if (score.equals(Score.LOSE)) {
-			game.getOpponentForToken(lastToken)
-					.ifPresent(p -> addPointForPlayer(p, FULL_POINT));
+			game.getOpponentForToken(lastToken).ifPresent(p -> addPointForPlayer(p, FULL_POINT));
 			addPointForPlayer(game.getPlayerForToken(lastToken), ZERO);
 		}
 	}
