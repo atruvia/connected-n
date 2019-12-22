@@ -4,8 +4,11 @@ import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -147,8 +150,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
-		List<String> received = client.waitUntilReceived(1);
-		assertThat(received.toString(), received.get(0), is("Welcome " + client.getName()));
+		await().until(() -> client.getReceived(), contains("Welcome " + client.getName()));
 	}
 
 	@Test
@@ -237,8 +239,8 @@ public class UdpServerRealTournamentIT {
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
 
-			client1.waitUntilReceived(1);
-			client2.waitUntilReceived(1);
+			await().until(() -> client1.getReceived().size(), greaterThan(0));
+			await().until(() -> client2.getReceived().size(), greaterThan(0));
 
 			client1.unregister();
 			client2.unregister();

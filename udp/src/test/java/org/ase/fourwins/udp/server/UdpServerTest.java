@@ -7,7 +7,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +34,7 @@ import java.util.stream.Stream;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,16 +48,13 @@ public class UdpServerTest {
 
 	private static class BaseClient {
 
+		@Getter
 		protected final String name;
 		protected final UdpCommunicator communicator;
 
 		public BaseClient(String name, String remoteHost, int remotePort) throws IOException {
 			this.name = name;
 			this.communicator = new UdpCommunicator(remoteHost, remotePort);
-		}
-
-		public String getName() {
-			return name;
 		}
 
 		void send(String message) throws IOException {
@@ -101,19 +102,7 @@ public class UdpServerTest {
 		}
 
 		void assertReceived(String... messages) throws InterruptedException {
-			List<String> expected = asList(messages);
-			while (getReceived().size() < expected.size()) {
-				MILLISECONDS.sleep(25);
-			}
-			assertThat(getReceived(), is(expected));
-		}
-
-		List<String> waitUntilReceived(int expectedSize) throws InterruptedException {
-			List<String> received;
-			while ((received = getReceived()).size() < expectedSize) {
-				MILLISECONDS.sleep(25);
-			}
-			return received;
+			await().until(() -> getReceived(), is(asList(messages)));
 		}
 
 	}
@@ -262,13 +251,8 @@ public class UdpServerTest {
 			assertWelcomed(client3);
 			assertWelcomed(client2);
 
-			List<String> waitUntilReceived3 = client3.waitUntilReceived(3);
-			List<String> waitUntilReceived2 = client2.waitUntilReceived(3);
-
-			assertThat(waitUntilReceived3.get(0), is("Welcome 3"));
-			assertThat(waitUntilReceived3.get(waitUntilReceived3.size() - 1), is("UNREGISTERED"));
-			assertThat(waitUntilReceived2.get(0), is("Welcome 2"));
-			assertThat(waitUntilReceived2.get(waitUntilReceived2.size() - 1), is("UNREGISTERED"));
+			await().until(() -> client3.getReceived(), hasItems("Welcome 3", "UNREGISTERED"));
+			await().until(() -> client2.getReceived(), hasItems("Welcome 2", "UNREGISTERED"));
 
 			int seasonsStartedBeforeUnregister = seasonsStarted.get();
 
@@ -277,7 +261,6 @@ public class UdpServerTest {
 			// TODO eliminate wait
 			SECONDS.sleep(3);
 			assertThat(seasonsStarted.get(), is(seasonsStartedBeforeUnregister));
-
 		});
 	}
 
@@ -301,8 +284,7 @@ public class UdpServerTest {
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
-		List<String> received = client.waitUntilReceived(1);
-		assertThat(received.toString(), received.get(0), is("Welcome " + client.getName()));
+		await().until(() -> client.getReceived(), hasItem("Welcome " + client.getName()));
 	}
 
 	private void infiniteSeason(Tournament mock) {
