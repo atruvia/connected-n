@@ -12,7 +12,6 @@ import java.util.List;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
-import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.junit.jupiter.api.Test;
@@ -22,8 +21,8 @@ class TournamentScoreListenerTest {
 	@Test
 	void testStatisticForOneGameWithPlayer1Winning() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		PlayerMock player1 = new PlayerMock("P1");
-		PlayerMock player2 = new PlayerMock("P2");
+		Player player1 = dummyPlayer("P1");
+		Player player2 = dummyPlayer("P2");
 
 		Game game = buildGame(player1, player2, WIN, player1);
 		listener.gameEnded(game);
@@ -36,8 +35,8 @@ class TournamentScoreListenerTest {
 	@Test
 	void testStatisticForThreeGamesWith3Draws() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		PlayerMock player1 = new PlayerMock("P1");
-		PlayerMock player2 = new PlayerMock("P2");
+		Player player1 = dummyPlayer("P1");
+		Player player2 = dummyPlayer("P2");
 
 		Game game = buildGame(player1, player2, DRAW, player1);
 		listener.gameEnded(game);
@@ -53,8 +52,8 @@ class TournamentScoreListenerTest {
 	@Test
 	void testStatisticForOneLossAnd1Draw() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		PlayerMock player1 = new PlayerMock("P1");
-		PlayerMock player2 = new PlayerMock("P2");
+		Player player1 = dummyPlayer("P1");
+		Player player2 = dummyPlayer("P2");
 
 		Game gameDraw = buildGame(player1, player2, DRAW, player1);
 		Game gameLost = buildGame(player1, player2, LOSE, player2);
@@ -69,8 +68,8 @@ class TournamentScoreListenerTest {
 	@Test
 	void testPlayerWins4GamesInARow() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		PlayerMock player1 = new PlayerMock("P1");
-		PlayerMock player2 = new PlayerMock("P2");
+		Player player1 = dummyPlayer("P1");
+		Player player2 = dummyPlayer("P2");
 
 		Game gameDraw = buildGame(player1, player2, DRAW, player1);
 		Game gameLost = buildGame(player1, player2, LOSE, player2);
@@ -90,13 +89,22 @@ class TournamentScoreListenerTest {
 	@Test
 	void testStatisticForCoffeebreakGame() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		PlayerMock player1 = new PlayerMock("P1");
+		Player player1 = dummyPlayer("P1");
 
 		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(player1);
 		listener.gameEnded(coffeebreakGame);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
 		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
+	}
+
+	private Player dummyPlayer(String token) {
+		return new Player(token) {
+			@Override
+			protected int nextColumn() {
+				throw new UnsupportedOperationException();
+			}
+		};
 	}
 
 	private Game buildGame(Player player1, Player player2, Score score, Player lastMoveBy) {

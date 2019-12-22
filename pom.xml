@@ -17,6 +17,7 @@
 
 	<modules>
 		<module>core</module>
+		<module>udp</module>
 		<module>mysql</module>
 		<module>mqtt</module>
 	</modules>

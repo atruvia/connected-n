@@ -23,6 +23,7 @@ import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
@@ -44,7 +45,7 @@ public class RealTournamentITest {
 	static final Predicate<GameState> isCoffeeBreak = s -> CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE
 			.equals(s.getReason());
 
-	private TournamentScoreListener scoreListener;
+	private TournamentListener scoreListener;
 
 	private AtomicInteger seasonEndedCalls;
 
@@ -67,14 +68,6 @@ public class RealTournamentITest {
 		List<String> players = Arrays.asList(playersNames);
 		verifyGameState(players, seasons);
 		verifyPlayers(players, seasons);
-		verifySumOfPoints(players, seasons);
-	}
-
-	@Property
-	void verifySumOfPoints(@ForAll(PLAYERS_NAMES_INCLUDING_COFFEE_BREAK) List<String> playersNames,
-			@ForAll @IntRange(min = 0, max = MAX_SEASONS) int seasons) {
-		playSeasons(seasons, players(playersNames));
-		assertThat(sumPoints(scoreListener.getScoreSheet()), is(expectedSum(playersNames.size(), seasons)));
 	}
 
 	@Property
@@ -105,10 +98,6 @@ public class RealTournamentITest {
 		return playersNames.stream().map(ColumnTrackingMockPlayer::new).collect(toList());
 	}
 
-	private double sumPoints(ScoreSheet scoreSheet) {
-		return scoreSheet.values().stream().mapToDouble(Double::valueOf).sum();
-	}
-
 	void checkGameState(GameState gameState) {
 		String gameStateString = String.valueOf(gameState);
 		if (gameState.getScore() == WIN) {
@@ -125,10 +114,9 @@ public class RealTournamentITest {
 	Stream<GameState> playSeasons(int seasons, List<PlayerMock> players) {
 		Tournament tournament = new DefaultTournament();
 		seasonEndedCalls = new AtomicInteger(0);
-		scoreListener = new TournamentScoreListener() {
+		scoreListener = new TournamentListener() {
 			@Override
 			public void seasonEnded() {
-				super.seasonEnded();
 				seasonEndedCalls.incrementAndGet();
 			}
 		};
