@@ -4,15 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 
-import org.ase.fourwins.udp.udphelper.UdpCommunicator;
+import org.ase.fourwins.client.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import lombok.RequiredArgsConstructor;
-
 public class UdpClientTest {
 
-	@RequiredArgsConstructor
 	public static class FourWinsBot {
 
 		private UdpCommunicator udpCommunicator;
@@ -24,12 +21,8 @@ public class UdpClientTest {
 			return this;
 		}
 
-		private static UdpCommunicator addShutdownHook(final UdpCommunicator communicator) {
-			Runtime.getRuntime().addShutdownHook(new Thread() {
-				public void run() {
-					communicator.stop();
-				}
-			});
+		private static UdpCommunicator addShutdownHook(UdpCommunicator communicator) {
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> communicator.stop()));
 			return communicator;
 		}
 
