@@ -5,6 +5,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.io.IOException;
 import java.util.List;
 
+import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.TournamentListener;
@@ -55,7 +56,10 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 
 	@Override
 	public void gameEnded(Game game) {
-		publish(game.getId() + "/state/end", "");
+		GameState gameState = game.gameState();
+		publish(game.getId() + "/state/end/score", gameState.getScore());
+		publish(game.getId() + "/state/end/reason", gameState.getReason());
+		publish(game.getId() + "/state/end/token", gameState.getToken());
 	}
 
 	private void publish(String topic, Object payload) {

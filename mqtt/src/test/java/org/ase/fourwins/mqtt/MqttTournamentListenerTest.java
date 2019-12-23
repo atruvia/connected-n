@@ -9,6 +9,7 @@ import static java.util.Arrays.stream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
+import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.awaitility.Awaitility.await;
 import static org.awaitility.Awaitility.setDefaultPollInterval;
 import static org.awaitility.Awaitility.setDefaultTimeout;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
@@ -215,10 +217,13 @@ class MqttTournamentListenerTest {
 	@Test
 	void doesPublishGameEnd() {
 		String gameId = "someId";
-		Game game = game("someId", boardInfo);
+		GameState gameState = GameState.builder().score(WIN).token("someToken").reason("someReason").build();
+		Game game = game("someId", boardInfo, gameState);
 		assertTimeoutPreemptively(timeout, () -> {
 			sut.gameEnded(game);
-			await().until(() -> payload(gameId + "/state/end"), is(emptyPayload()));
+			await().until(() -> payload(gameId + "/state/end/score"), is(gameState.getScore().toString()));
+			await().until(() -> payload(gameId + "/state/end/reason"), is(gameState.getReason()));
+			await().until(() -> payload(gameId + "/state/end/token"), is(gameState.getToken()));
 		});
 	}
 
@@ -254,6 +259,12 @@ class MqttTournamentListenerTest {
 	}
 
 	private Game game(String id, BoardInfo boardInfo, String... playerNames) {
+		return game(id, boardInfo, GameState.builder().score(Score.WIN).token("someToken").reason("someReason").build(),
+				playerNames);
+	}
+
+	private Game game(String id, BoardInfo boardInfo, GameState gameState, String... playerNames) {
+		GameState build = gameState;
 		List<Player> players = stream(playerNames).map(n -> new Player(n) {
 			@Override
 			protected int nextColumn() {
@@ -283,7 +294,7 @@ class MqttTournamentListenerTest {
 
 			@Override
 			public GameState gameState() {
-				throw new IllegalStateException();
+				return build;
 			}
 		};
 	}
