@@ -36,19 +36,21 @@ public class DefaultGame implements Game {
 	private static class GameLostDueToException implements Game {
 
 		private final BoardInfo boardInfo;
+		private final String gameId;
 		private final GameState state;
 		private final List<Player> players;
-		private final String id = UUID.randomUUID().toString();
 
-		public GameLostDueToException(BoardInfo boardInfo, Player lostBy, String reason, List<Player> players) {
+		public GameLostDueToException(BoardInfo boardInfo, String gameId, Player lostBy, String reason,
+				List<Player> players) {
 			this.boardInfo = boardInfo;
+			this.gameId = gameId;
 			this.players = players;
 			this.state = GameState.builder().score(LOSE).token(lostBy.getToken()).reason(reason).build();
 		}
 
 		@Override
 		public String getId() {
-			return id;
+			return gameId;
 		}
 
 		@Override
@@ -154,7 +156,7 @@ public class DefaultGame implements Game {
 			try {
 				makeMove(player);
 			} catch (Exception e) {
-				return new GameLostDueToException(board.boardInfo(), player, e.getMessage(), players);
+				return new GameLostDueToException(board.boardInfo(), getId(), player, e.getMessage(), players);
 			}
 		}
 		return this;
@@ -165,7 +167,15 @@ public class DefaultGame implements Game {
 		String token = player.getToken();
 		this.moveListener.newTokenAt(this, token, column);
 		this.board = this.board.insertToken(moveToColumn(column), token);
-		this.players.stream().forEach(p -> p.tokenWasInserted(token, column));
+		this.players.stream().forEach(p -> sendTokenWasInserted(p, token, column));
+	}
+
+	private void sendTokenWasInserted(Player player, String token,int column) {
+		try {
+			player.tokenWasInserted(token, column);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
