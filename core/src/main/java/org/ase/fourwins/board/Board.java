@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import com.codepoetics.protonpack.TakeWhileSpliterator;
 
 import lombok.Builder;
 import lombok.Value;
@@ -237,11 +234,6 @@ public abstract class Board {
 
 		}
 
-		public static <T> Stream<T> takeWhile(Stream<T> source, Predicate<T> condition) {
-			return StreamSupport.stream(TakeWhileSpliterator.over(source.spliterator(), condition), false)
-					.onClose(source::close);
-		}
-
 		private final List<Column> columns;
 		private final int height;
 		private GameState gameState = GameState.builder().score(IN_GAME).build();
@@ -366,8 +358,7 @@ public abstract class Board {
 		}
 
 		private Stream<Position> tokens(Iterator<Position> iterator, Object token) {
-			// Java9 takeWhile backport
-			return takeWhile(stream(spliteratorUnknownSize(iterator, ORDERED), false), c -> token.equals(tokenAt(c)));
+			return stream(spliteratorUnknownSize(iterator, ORDERED), false).takeWhile(c -> token.equals(tokenAt(c)));
 		}
 
 		private Object tokenAt(Position position) {
