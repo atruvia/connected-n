@@ -99,9 +99,8 @@ public class DefaultGame implements Game {
 	private final List<Player> players;
 	private final Iterator<Player> nextPlayer;
 	private final MoveListener moveListener;
-	private Board board;
-	private int moves;
 	private final String id = UUID.randomUUID().toString();
+	private Board board;
 
 	public DefaultGame(Board board, Player... players) {
 		this(MoveListener.NULL, board, players);
@@ -151,7 +150,6 @@ public class DefaultGame implements Game {
 
 	private Game executeGame() {
 		while (gameState().getScore() == IN_GAME) {
-			moves++;
 			Player player = nextPlayer.next();
 			try {
 				makeMove(player);
@@ -183,14 +181,5 @@ public class DefaultGame implements Game {
 		return board.gameState();
 	}
 
-	public int getMoves() {
-		return moves;
-	}
-
-	public String getStateString() {
-		return gameState().getScore() + " " + gameState().getToken() + " (moves " + getMoves()
-				+ ", winning combination: " + board.gameState().getWinningCombinations() + ")";
-
-	}
 
 }

@@ -175,7 +175,6 @@ public class UdpServer {
 	public UdpServer(int port, Tournament tournament) {
 		try {
 			socket = new DatagramSocket(port);
-			System.out.println("Socket created");
 			System.out.println("Listening on " + port);
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
