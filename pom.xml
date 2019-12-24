@@ -8,10 +8,11 @@
 	<packaging>pom</packaging>
 
 	<properties>
-		<junit.jupiter.version>5.5.2</junit.jupiter.version>
-		<testcontainers.version>1.12.4</testcontainers.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.9</maven.compiler.source>
 		<maven.compiler.target>1.9</maven.compiler.target>
+		<junit.jupiter.version>5.5.2</junit.jupiter.version>
+		<testcontainers.version>1.12.4</testcontainers.version>
 		<image>docker.io/fiduciagad/fourwins-${project.artifactId}:latest</image>
 	</properties>
 
