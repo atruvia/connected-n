@@ -3,7 +3,6 @@ package org.ase.fourwins.game;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.board.BoardInfo.builder;
 import static org.ase.fourwins.board.GameStateMatcher.winnerIs;
 import static org.ase.fourwins.game.Game.GameId.random;
 import static org.ase.fourwins.game.GameTestUtil.player;
@@ -15,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.BoardInfo;
+import org.ase.fourwins.board.BoardInfo.BoardInfoBuilder;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class GameTest {
@@ -36,7 +35,7 @@ public class GameTest {
 	void bothPlayersCanInsertTokensTwoTokensEach() {
 		Player firstPlayer = player("X", withMoves(0, 0));
 		Player secondPlayer = player("O", withMoves(1, 1));
-		Game game = runGame(builder().columns(2).rows(2), firstPlayer, secondPlayer);
+		Game game = runGame(aBoard().columns(2).rows(2), firstPlayer, secondPlayer);
 		assertThat(game.gameState().getScore(), is(DRAW));
 	}
 
@@ -44,7 +43,7 @@ public class GameTest {
 	void firstPlayerWins() {
 		Player firstPlayer = player("X", withMoves(0, 0, 0, 0));
 		Player secondPlayer = player("O", withMoves(1, 1, 1, 1));
-		Game game = runGame(builder().columns(2).rows(4), firstPlayer, secondPlayer);
+		Game game = runGame(aBoard().columns(2).rows(4), firstPlayer, secondPlayer);
 		assertThat(game.gameState().getScore(), is(WIN));
 		assertThat(game.gameState().getToken(), is("X"));
 	}
@@ -52,8 +51,8 @@ public class GameTest {
 	@Test
 	void secondPlayerWins() {
 		Player firstPlayer = player("X", withMoves(0, 0, 0, 2));
-		Player player2 = player("O", withMoves(1, 1, 1, 1));
-		Game game = runGame(builder().columns(3).rows(4), firstPlayer, player2);
+		Player secondPlayer = player("O", withMoves(1, 1, 1, 1));
+		Game game = runGame(aBoard().columns(3).rows(4), firstPlayer, secondPlayer);
 		assertThat(game.gameState().getScore(), is(WIN));
 		assertThat(game.gameState().getToken(), is("O"));
 	}
@@ -63,10 +62,10 @@ public class GameTest {
 		String token = "someToken";
 		Player firstPlayer = new NoMovePlayer(token);
 		Player secondPlayer = new NoMovePlayer(token);
-		RuntimeException rte = assertThrows(RuntimeException.class, () -> {
-			makeGame(BoardInfo.builder().columns(2).rows(2), firstPlayer, secondPlayer);
+		Exception exception = assertThrows(RuntimeException.class, () -> {
+			makeGame(aBoard().columns(2).rows(2), firstPlayer, secondPlayer);
 		});
-		assertThat(rte.getMessage(), containsString(token));
+		assertThat(exception.getMessage(), containsString(token));
 	}
 
 	@Test
@@ -84,27 +83,31 @@ public class GameTest {
 
 	@Test
 	void aPlayerThrowingAnExceptionWillLoseTheGame() {
-		String message = "the exception text";
+		String exceptionMessage = "the exception text";
 		Player firstPlayer = new Player("X") {
 			@Override
 			protected int nextColumn() {
-				throw new RuntimeException(message);
+				throw new RuntimeException(exceptionMessage);
 			}
 		};
 		Player secondPlayer = player("O", withMoves());
-		Game game = runGame(builder().columns(2).rows(2), firstPlayer, secondPlayer);
+		Game game = runGame(aBoard().columns(2).rows(2), firstPlayer, secondPlayer);
 		assertThat(game.gameState().getScore(), is(LOSE));
-		assertThat(game.gameState().getReason(), is(message));
+		assertThat(game.gameState().getReason(), is(exceptionMessage));
 	}
 
 	@Test
 	void cantHaveTwoPlayersWithSameToken() {
 		Player firstPlayer = player("X", withMoves());
 		Player secondPlayer = player("X", withMoves());
-		RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-			makeGame(BoardInfo.builder().columns(1).rows(1), firstPlayer, secondPlayer);
+		Exception exception = assertThrows(RuntimeException.class, () -> {
+			makeGame(aBoard().columns(1).rows(1), firstPlayer, secondPlayer);
 		});
 		assertThat(exception.getMessage(), containsString("same tokens X"));
+	}
+
+	private BoardInfoBuilder aBoard() {
+		return BoardInfo.builder();
 	}
 
 	private Game runGame(BoardInfo.BoardInfoBuilder boardInfo, Player... players) {
