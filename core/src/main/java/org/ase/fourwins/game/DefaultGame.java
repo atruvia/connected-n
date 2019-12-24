@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
@@ -36,11 +35,11 @@ public class DefaultGame implements Game {
 	private static class GameLostDueToException implements Game {
 
 		private final BoardInfo boardInfo;
-		private final String gameId;
+		private final GameId gameId;
 		private final GameState state;
 		private final List<Player> players;
 
-		public GameLostDueToException(BoardInfo boardInfo, String gameId, Player lostBy, String reason,
+		public GameLostDueToException(BoardInfo boardInfo, GameId gameId, Player lostBy, String reason,
 				List<Player> players) {
 			this.boardInfo = boardInfo;
 			this.gameId = gameId;
@@ -49,7 +48,7 @@ public class DefaultGame implements Game {
 		}
 
 		@Override
-		public String getId() {
+		public GameId getId() {
 			return gameId;
 		}
 
@@ -95,18 +94,19 @@ public class DefaultGame implements Game {
 		}
 	}
 
+	private final MoveListener moveListener;
+	private Board board;
 	@Getter
 	private final List<Player> players;
 	private final Iterator<Player> nextPlayer;
-	private final MoveListener moveListener;
-	private final String id = UUID.randomUUID().toString();
-	private Board board;
+	private final GameId gameId;
 
-	public DefaultGame(Board board, Player... players) {
-		this(MoveListener.NULL, board, players);
+	public DefaultGame(Board board, GameId gameId, Player... players) {
+		this(MoveListener.NULL, board, gameId, players);
 	}
-
-	public DefaultGame(MoveListener moveListener, Board board, Player... players) {
+	
+	public DefaultGame(MoveListener moveListener, Board board, GameId gameId, Player... players) {
+		this.gameId = gameId;
 		validateTokens(players);
 		List<Player> playerList = asList(players);
 		playerList.forEach(p -> informPlayer(board.boardInfo(), p,
@@ -118,8 +118,8 @@ public class DefaultGame implements Game {
 	}
 
 	@Override
-	public String getId() {
-		return this.id;
+	public GameId getId() {
+		return this.gameId;
 	}
 
 	@Override

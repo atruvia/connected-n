@@ -116,7 +116,7 @@ class TournamentScoreListenerTest {
 			}
 
 			@Override
-			public String getId() {
+			public GameId getId() {
 				throw new UnsupportedOperationException();
 			}
 

@@ -274,8 +274,8 @@ class MqttTournamentListenerTest {
 		return new Game() {
 
 			@Override
-			public String getId() {
-				return id;
+			public GameId getId() {
+				return new GameId(id);
 			}
 
 			public BoardInfo getBoardInfo() {

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -17,6 +18,7 @@ import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.DefaultGame;
 import org.ase.fourwins.game.DefaultGame.MoveListener;
 import org.ase.fourwins.game.Game;
+import org.ase.fourwins.game.Game.GameId;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.season.Match;
 import org.ase.fourwins.season.Matchday;
@@ -34,14 +36,15 @@ public class DefaultTournament implements Tournament {
 
 		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
 		private final Player other;
+		private final GameId gameId = new GameId("-coffee-break-");
 
 		CoffeebreakGame(Player other) {
 			this.other = other;
 		}
 
 		@Override
-		public String getId() {
-			return "-coffee-break-";
+		public GameId getId() {
+			return gameId;
 		}
 
 		@Override
@@ -119,7 +122,8 @@ public class DefaultTournament implements Tournament {
 		} else if (isCoffeBreak(match.getTeam2())) {
 			return new CoffeebreakGame(match.getTeam1());
 		}
-		return new DefaultGame(moveListener, makeBoard(), match.getTeam1(), match.getTeam2());
+		// TODO change gameId to "<season>/<gameNo>"
+		return new DefaultGame(moveListener, makeBoard(), GameId.random(), match.getTeam1(), match.getTeam2());
 	}
 
 	private static boolean isCoffeBreak(Player player) {

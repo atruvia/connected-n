@@ -2,11 +2,30 @@ package org.ase.fourwins.game;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.BoardInfo;
 
+import lombok.Value;
+
 public interface Game {
+
+	@Value
+	public class GameId {
+
+		private final String gameId;
+
+		public static GameId random() {
+			return new GameId(UUID.randomUUID().toString());
+		}
+		
+		@Override
+		public String toString() {
+			return gameId;
+		}
+
+	}
 
 	Game runGame();
 
@@ -14,7 +33,7 @@ public interface Game {
 
 	List<Player> getPlayers();
 
-	String getId();
+	GameId getId();
 
 	BoardInfo getBoardInfo();
 

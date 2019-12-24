@@ -18,30 +18,31 @@ import java.util.function.Consumer;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
+import org.ase.fourwins.game.Game.GameId;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.junit.jupiter.api.Test;
 
 class TournamentListenerTest {
 
 	private final class TournamentListenerForTest implements TournamentListener {
-		private final Map<String, Integer> moveCounter = new HashMap<>();
+		private final Map<GameId, Integer> moveCounter = new HashMap<>();
 
 		@Override
 		public void newTokenAt(Game game, String token, int column) {
-			String key = key(game);
+			GameId key = key(game);
 			moveCounter.put(key, getCount(key) + 1);
 		}
 
-		private String key(Game game) {
+		private GameId key(Game game) {
 			return game.getId();
 		}
 
-		public Set<String> getGames() {
+		public Set<GameId> getGames() {
 			return moveCounter.keySet();
 		}
 
-		public int getCount(String gameId) {
-			return moveCounter.getOrDefault(gameId, 0);
+		public int getCount(GameId key) {
+			return moveCounter.getOrDefault(key, 0);
 		}
 
 	}
@@ -72,9 +73,9 @@ class TournamentListenerTest {
 			sut.playSeason(players, noop());
 		}
 
-		Set<String> games = tournamentListener.getGames();
+		Set<GameId> games = tournamentListener.getGames();
 		assertThat(games.size(), is(6 * seasons));
-		for (String gameId : games) {
+		for (GameId gameId : games) {
 			assertThat(tournamentListener.getCount(gameId), is(sut.getBoardInfo().getRows() + 1));
 		}
 	}

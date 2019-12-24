@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
+import org.ase.fourwins.game.Game.GameId;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -39,7 +40,7 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 	@Override
 	public void gameStarted(Game game) {
 		List<Player> players = game.getPlayers();
-		String gameId = game.getId();
+		GameId gameId = game.getId();
 		publish(gameId + "/board/height", game.getBoardInfo().getRows());
 		publish(gameId + "/board/width", game.getBoardInfo().getColumns());
 		publish(gameId + "/players", players.size());
