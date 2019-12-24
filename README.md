@@ -71,12 +71,7 @@ RESULT;ergebnis;spieler_name;grund
 Das ```ergebnis``` hat die Ausprägungen LOSE|WIN|DRAW
 
 ### Gründe, warum eine Partie beendet wurde
-Der Wert ```grund``` kann folgende Ausprägungen haben:
-
-COLUMN_IS_FULL
-FOUR_IN_A_ROW
-ILLEGAL_COLUMN_ANNOUNCED
-TIMEOUT
+Der Wert ```grund``` kann folgende Ausprägungen haben: COLUMN_IS_FULL|FOUR_IN_A_ROW|ILLEGAL_COLUMN_ANNOUNCED|TIMEOUT
 
 ### Timeouts
 Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er die Partie
