@@ -107,6 +107,17 @@ public class UdpServer {
 			return pos < 0 ? uuid : uuid.substring(0, pos);
 		}
 
+		@Override
+		public int hashCode() {
+			return name == null ? 0 : name.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return this == obj || ((obj != null && obj.getClass() == getClass())
+					&& Objects.equals(name, ((UdpPlayerInfo) obj).name));
+		}
+
 	}
 
 	private final class UdpPlayer extends Player {
@@ -265,12 +276,10 @@ public class UdpServer {
 
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
 		Player player = newPlayer(playerInfo, playerInfo.getName());
-
-		if (findBy(i -> Objects.equals(i.getName(), playerInfo.getName())).isPresent()) {
+		if (players.putIfAbsent(playerInfo, player) != null) {
 			playerInfo.send("NAME_ALREADY_TAKEN");
 			return;
 		}
-		players.put(playerInfo, player);
 
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
