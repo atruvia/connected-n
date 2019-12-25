@@ -135,8 +135,6 @@ public abstract class Board {
 
 	private static class PlayableBoard extends Board {
 
-		private static final int CONNECT_N = 4;
-
 		@FunctionalInterface
 		private static interface Modifier {
 
@@ -343,7 +341,7 @@ public abstract class Board {
 			if (column.isFilledUp()) {
 				return new LoserBoard(token, "COLUMN_IS_FULL", boardInfo);
 			} else {
-				List<WinningCombination> winningCombinatios = getWinningCombinatios(token, CONNECT_N,
+				List<WinningCombination> winningCombinatios = getWinningCombinatios(token, boardInfo().getToConnect(),
 						xy(columnIdx, column.insert(token)));
 				if (winningCombinatios.size() > 0) {
 					return new WinnerBoard(token, winningCombinatios, boardInfo);
@@ -375,10 +373,6 @@ public abstract class Board {
 
 	public enum Score {
 		DRAW, IN_GAME, LOSE, WIN;
-	}
-
-	public static Board newBoard(int columnCount, int rowCount) {
-		return new DelegateBoard(new PlayableBoard(new BoardInfo(columnCount, rowCount)));
 	}
 
 	public static Board newBoard(BoardInfo boardInfo) {
