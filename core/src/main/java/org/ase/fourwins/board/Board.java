@@ -12,7 +12,7 @@ import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.board.Position.xy;
+import static org.ase.fourwins.board.Coordinate.xy;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,8 +45,8 @@ public abstract class Board {
 	@Value
 	public class WinningCombination {
 		private final Object token;
-		private final Position positionTokenInserted;
-		private final Set<Position> positions;
+		private final Coordinate coordinateTokenInserted;
+		private final Set<Coordinate> coordinates;
 		private final String directions;
 	}
 
@@ -142,7 +142,7 @@ public abstract class Board {
 				return (c) -> other.modify(modify(c));
 			}
 
-			Position modify(Position position);
+			Coordinate modify(Coordinate coordinate);
 
 		}
 
@@ -187,7 +187,7 @@ public abstract class Board {
 			}
 
 			public int insert(Object token) {
-				PlayableBoard.this.values[position(columnIdx, currentRow)] = token;
+				PlayableBoard.this.values[coordinate(columnIdx, currentRow)] = token;
 				return currentRow++;
 			}
 
@@ -197,20 +197,20 @@ public abstract class Board {
 
 		}
 
-		private class PositionIterator implements Iterator<Position> {
+		private class CoordinateIterator implements Iterator<Coordinate> {
 
-			private Position position;
+			private Coordinate coordinate;
 			private final Direction direction;
 
-			public PositionIterator(Position position, Direction direction) {
+			public CoordinateIterator(Coordinate coordinate, Direction direction) {
 				this.direction = direction;
-				this.position = direction.modifier.modify(position);
+				this.coordinate = direction.modifier.modify(coordinate);
 			}
 
 			@Override
-			public Position next() {
-				Position old = this.position;
-				this.position = direction.modifier.modify(old);
+			public Coordinate next() {
+				Coordinate old = this.coordinate;
+				this.coordinate = direction.modifier.modify(old);
 				return old;
 			}
 
@@ -220,16 +220,16 @@ public abstract class Board {
 			}
 
 			private boolean columnInRange() {
-				return position.getColumn() >= 0 && position.getColumn() < columns.size();
+				return coordinate.getColumn() >= 0 && coordinate.getColumn() < columns.size();
 			}
 
 			private boolean rowInRange() {
-				return position.getRow() >= 0 && position.getRow() < height;
+				return coordinate.getRow() >= 0 && coordinate.getRow() < height;
 			}
 
 			@Override
 			public String toString() {
-				return "PositionIterator [position=" + position + ", direction=" + direction + "]";
+				return "CoordinateIterator [coordinate=" + coordinate + ", direction=" + direction + "]";
 			}
 
 		}
@@ -252,7 +252,7 @@ public abstract class Board {
 			return this.columns.stream().allMatch(predicate);
 		}
 
-		private int position(int columnIdx, int row) {
+		private int coordinate(int columnIdx, int row) {
 			return columnIdx * height + row;
 		}
 
@@ -280,23 +280,23 @@ public abstract class Board {
 			return boardInfo;
 		}
 
-		private List<WinningCombination> getWinningCombinatios(Object token, int atLeast, Position startAt) {
+		private List<WinningCombination> getWinningCombinatios(Object token, int atLeast, Coordinate startAt) {
 			return evaluators.stream().filter(e -> e.neighboursOfSameToken(startAt, token).count() + 1 >= atLeast) //
 					.map(e -> toWinningCombination(token, startAt, e)) //
 					.collect(toList());
 		}
 
-		private WinningCombination toWinningCombination(Object token, Position startAt,
+		private WinningCombination toWinningCombination(Object token, Coordinate startAt,
 				CombinationEvaluator evaluator) {
 			return new WinningCombination(token, startAt,
-					winningPositionAndNeighbours(token, startAt, evaluator)
-							.sorted(comparing(Position::getColumn).thenComparing(Position::getRow))
+					winningCoordinateAndNeighbours(token, startAt, evaluator)
+							.sorted(comparing(Coordinate::getColumn).thenComparing(Coordinate::getRow))
 							.collect(toCollection(LinkedHashSet::new)),
 					evaluator.getDirections());
 
 		}
 
-		protected Stream<Position> winningPositionAndNeighbours(Object token, Position startAt,
+		protected Stream<Coordinate> winningCoordinateAndNeighbours(Object token, Coordinate startAt,
 				CombinationEvaluator evaluator) {
 			return Stream.concat(evaluator.neighboursOfSameToken(startAt, token).collect(toList()).stream(),
 					Stream.of(startAt));
@@ -308,11 +308,11 @@ public abstract class Board {
 			private final Direction from;
 			private final Direction to;
 
-			private Stream<Position> neighboursOfSameToken(Position startAt, Object token) {
+			private Stream<Coordinate> neighboursOfSameToken(Coordinate startAt, Object token) {
 				return Stream.concat(stream(startAt, token, from), stream(startAt, token, to));
 			}
 
-			private Stream<Position> stream(Position startAt, Object token, Direction direction) {
+			private Stream<Coordinate> stream(Coordinate startAt, Object token, Direction direction) {
 				return connectedTokens(iter(startAt, direction), token);
 			}
 
@@ -353,20 +353,20 @@ public abstract class Board {
 			}
 		}
 
-		private PositionIterator iter(Position position, Direction direction) {
-			return new PositionIterator(position, direction);
+		private CoordinateIterator iter(Coordinate coordinate, Direction direction) {
+			return new CoordinateIterator(coordinate, direction);
 		}
 
-		private Stream<Position> connectedTokens(Iterator<Position> iterator, Object token) {
+		private Stream<Coordinate> connectedTokens(Iterator<Coordinate> iterator, Object token) {
 			return stream(spliteratorUnknownSize(iterator, ORDERED), false).takeWhile(c -> token.equals(tokenAt(c)));
 		}
 
-		private Object tokenAt(Position position) {
-			return tokenAt(position.getColumn(), position.getRow());
+		private Object tokenAt(Coordinate coordinate) {
+			return tokenAt(coordinate.getColumn(), coordinate.getRow());
 		}
 
 		private Object tokenAt(int col, int row) {
-			return values[position(col, row)];
+			return values[coordinate(col, row)];
 		}
 
 	}
