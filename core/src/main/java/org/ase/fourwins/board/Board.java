@@ -135,6 +135,8 @@ public abstract class Board {
 
 	private static class PlayableBoard extends Board {
 
+		private static final int CONNECT_N = 4;
+
 		@FunctionalInterface
 		private static interface Modifier {
 
@@ -313,7 +315,7 @@ public abstract class Board {
 			}
 
 			private Stream<Position> stream(Position startAt, Object token, Direction direction) {
-				return tokens(iter(startAt, direction), token);
+				return connectedTokens(iter(startAt, direction), token);
 			}
 
 			public String getDirections() {
@@ -341,7 +343,7 @@ public abstract class Board {
 			if (column.isFilledUp()) {
 				return new LoserBoard(token, "COLUMN_IS_FULL", boardInfo);
 			} else {
-				List<WinningCombination> winningCombinatios = getWinningCombinatios(token, 4,
+				List<WinningCombination> winningCombinatios = getWinningCombinatios(token, CONNECT_N,
 						xy(columnIdx, column.insert(token)));
 				if (winningCombinatios.size() > 0) {
 					return new WinnerBoard(token, winningCombinatios, boardInfo);
@@ -357,7 +359,7 @@ public abstract class Board {
 			return new PositionIterator(position, direction);
 		}
 
-		private Stream<Position> tokens(Iterator<Position> iterator, Object token) {
+		private Stream<Position> connectedTokens(Iterator<Position> iterator, Object token) {
 			return stream(spliteratorUnknownSize(iterator, ORDERED), false).takeWhile(c -> token.equals(tokenAt(c)));
 		}
 
