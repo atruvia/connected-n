@@ -1,0 +1,10 @@
+language: java
+services:
+  - docker
+
+script:
+  - mvn package jib:dockerBuild
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
