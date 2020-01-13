@@ -1,13 +1,27 @@
 package org.ase.fourwins.board;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Comparator.comparing;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.IntStream.range;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Stream.concat;
 import static java.util.stream.StreamSupport.stream;
+import static org.ase.fourwins.board.Board.Direction.EAST;
+import static org.ase.fourwins.board.Board.Direction.NORTH;
+import static org.ase.fourwins.board.Board.Direction.NORTHEAST;
+import static org.ase.fourwins.board.Board.Direction.NORTHWEST;
+import static org.ase.fourwins.board.Board.Direction.SOUTH;
+import static org.ase.fourwins.board.Board.Direction.SOUTHEAST;
+import static org.ase.fourwins.board.Board.Direction.SOUTHWEST;
+import static org.ase.fourwins.board.Board.Direction.WEST;
+import static org.ase.fourwins.board.Board.Line.fromTo;
+import static org.ase.fourwins.board.Board.Mutator.DOWN;
+import static org.ase.fourwins.board.Board.Mutator.LEFT;
+import static org.ase.fourwins.board.Board.Mutator.RIGHT;
+import static org.ase.fourwins.board.Board.Mutator.UP;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
@@ -15,18 +29,59 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.Coordinate.xy;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 public abstract class Board {
+
+	@RequiredArgsConstructor
+	enum Mutator {
+		LEFT(-1, 0), RIGHT(+1, 0), DOWN(0, +1), UP(0, -1);
+
+		private final int mutX, mutY;
+
+		public Coordinate mutate(Coordinate coordinate) {
+			return coordinate.mutate(mutX, mutY);
+		}
+	}
+
+	enum Direction {
+		NORTH(UP), SOUTH(DOWN), WEST(LEFT), EAST(RIGHT), //
+		NORTHEAST(UP, RIGHT), SOUTHWEST(DOWN, LEFT), NORTHWEST(UP, LEFT), SOUTHEAST(DOWN, RIGHT);
+
+		private final Mutator[] mutators;
+
+		private Direction(Mutator... mutators) {
+			this.mutators = mutators;
+		}
+
+		public Coordinate mutate(Coordinate coordinate) {
+			for (Mutator mutator : mutators) {
+				coordinate = mutator.mutate(coordinate);
+			}
+			return coordinate;
+		}
+	}
+
+	@Value
+	static class Line {
+
+		private final Direction from, to;
+
+		public static Line fromTo(Direction from, Direction to) {
+			return new Line(from, to);
+		}
+
+	}
 
 	@Value
 	@Builder(toBuilder = true)
@@ -47,7 +102,6 @@ public abstract class Board {
 		private final Object token;
 		private final Coordinate coordinateTokenInserted;
 		private final Set<Coordinate> coordinates;
-		private final String directions;
 	}
 
 	private static final class DelegateBoard extends Board {
@@ -137,137 +191,47 @@ public abstract class Board {
 
 		@FunctionalInterface
 		private static interface Modifier {
-
-			default Modifier and(Modifier other) {
-				return (c) -> other.modify(modify(c));
-			}
-
 			Coordinate modify(Coordinate coordinate);
-
 		}
 
-		private static final Modifier columnLeft = c -> c.increaseColumn(-1);
-		private static final Modifier columnRight = c -> c.increaseColumn(+1);
-		private static final Modifier rowDown = c -> c.increaseRow(-1);
-		private static final Modifier rowUp = c -> c.increaseRow(+1);
+		private static class Column {
 
-		public static enum Direction {
-			NORTH(rowUp), //
-			NORTHEAST(rowUp.and(columnRight)), //
-			EAST(columnRight), //
-			SOUTHEAST(rowDown.and(columnRight)), //
-			SOUTH(rowDown), //
-			SOUTHWEST(rowDown.and(columnLeft)), //
-			WEST(columnLeft), //
-			NORTHWEST(rowUp.and(columnLeft)), //
-			;
+			private Object[] content;
+			private int fillY;
 
-			private final Modifier modifier;
-
-			private Direction(Modifier modifier) {
-				this.modifier = modifier;
+			public Column(int height) {
+				content = new String[height];
+				fillY = content.length - 1;
 			}
 
-		}
-
-		private final CombinationEvaluator sn = new CombinationEvaluator(Direction.SOUTH, Direction.NORTH);
-		private final CombinationEvaluator we = new CombinationEvaluator(Direction.WEST, Direction.EAST);
-		private final CombinationEvaluator swne = new CombinationEvaluator(Direction.SOUTHWEST, Direction.NORTHEAST);
-		private final CombinationEvaluator senw = new CombinationEvaluator(Direction.SOUTHEAST, Direction.NORTHWEST);
-		private final List<CombinationEvaluator> evaluators = Collections
-				.unmodifiableList(Arrays.asList(sn, we, swne, senw));
-
-		private class Column {
-
-			private final int columnIdx;
-			private int currentRow;
-
-			public Column(int columnIdx) {
-				this.columnIdx = columnIdx;
+			private String getTokenAt(int y) {
+				return content[y] == null ? " " : String.valueOf(content[y]);
 			}
 
-			public int insert(Object token) {
-				PlayableBoard.this.values[coordinate(columnIdx, currentRow)] = token;
-				return currentRow++;
+			public int insertToken(Object token) {
+				content[fillY] = token;
+				int cur = fillY;
+				fillY--;
+				return cur;
 			}
 
-			private boolean isFilledUp() {
-				return currentRow == height;
+			public boolean isFull() {
+				return fillY < 0;
 			}
 
 		}
 
-		private class CoordinateIterator implements Iterator<Coordinate> {
+		private static final List<Line> lines = asList(fromTo(NORTH, SOUTH), fromTo(WEST, EAST),
+				fromTo(SOUTHWEST, NORTHEAST), fromTo(NORTHWEST, SOUTHEAST));
 
-			private Coordinate coordinate;
-			private final Direction direction;
-
-			public CoordinateIterator(Coordinate coordinate, Direction direction) {
-				this.direction = direction;
-				this.coordinate = direction.modifier.modify(coordinate);
-			}
-
-			@Override
-			public Coordinate next() {
-				Coordinate old = this.coordinate;
-				this.coordinate = direction.modifier.modify(old);
-				return old;
-			}
-
-			@Override
-			public boolean hasNext() {
-				return columnInRange() && rowInRange();
-			}
-
-			private boolean columnInRange() {
-				return coordinate.getColumn() >= 0 && coordinate.getColumn() < columns.size();
-			}
-
-			private boolean rowInRange() {
-				return coordinate.getRow() >= 0 && coordinate.getRow() < height;
-			}
-
-			@Override
-			public String toString() {
-				return "CoordinateIterator [coordinate=" + coordinate + ", direction=" + direction + "]";
-			}
-
-		}
-
-		private final List<Column> columns;
-		private final int height;
-		private GameState gameState = GameState.builder().score(IN_GAME).build();
-
-		private final Object[] values;
 		private final BoardInfo boardInfo;
+		private final Column[] columns;
+		private GameState gameState = GameState.builder().score(IN_GAME).build();
 
 		private PlayableBoard(BoardInfo boardInfo) {
 			this.boardInfo = boardInfo;
-			this.height = boardInfo.getRows();
-			this.values = new Object[boardInfo.getColumns() * boardInfo.getRows()];
-			this.columns = range(0, boardInfo.getColumns()).mapToObj(Column::new).collect(toList());
-		}
-
-		private boolean allAre(Predicate<? super Column> predicate) {
-			return this.columns.stream().allMatch(predicate);
-		}
-
-		private int coordinate(int columnIdx, int row) {
-			return columnIdx * height + row;
-		}
-
-		@Deprecated
-		private String dumpBoard() {
-			StringBuilder sb = new StringBuilder();
-			for (int row = height - 1; row >= 0; row--) {
-				for (int col = 0; col < columns.size(); col++) {
-					Object object = tokenAt(col, row);
-					sb = sb.append(object == null ? " " : object);
-				}
-				sb.append("\n");
-
-			}
-			return sb.toString();
+			this.columns = IntStream.range(0, boardInfo.getColumns()).mapToObj(i -> new Column(boardInfo.getRows()))
+					.toArray(Column[]::new);
 		}
 
 		@Override
@@ -280,93 +244,89 @@ public abstract class Board {
 			return boardInfo;
 		}
 
-		private List<WinningCombination> getWinningCombinatios(Object token, int atLeast, Coordinate startAt) {
-			return evaluators.stream().filter(e -> e.neighboursOfSameToken(startAt, token).count() + 1 >= atLeast) //
-					.map(e -> toWinningCombination(token, startAt, e)) //
-					.collect(toList());
-		}
-
-		private WinningCombination toWinningCombination(Object token, Coordinate startAt,
-				CombinationEvaluator evaluator) {
-			return new WinningCombination(token, startAt,
-					winningCoordinateAndNeighbours(token, startAt, evaluator)
-							.sorted(comparing(Coordinate::getColumn).thenComparing(Coordinate::getRow))
-							.collect(toCollection(LinkedHashSet::new)),
-					evaluator.getDirections());
-
-		}
-
-		protected Stream<Coordinate> winningCoordinateAndNeighbours(Object token, Coordinate startAt,
-				CombinationEvaluator evaluator) {
-			return Stream.concat(evaluator.neighboursOfSameToken(startAt, token).collect(toList()).stream(),
-					Stream.of(startAt));
-		}
-
-		@Value
-		private class CombinationEvaluator {
-
-			private final Direction from;
-			private final Direction to;
-
-			private Stream<Coordinate> neighboursOfSameToken(Coordinate startAt, Object token) {
-				return Stream.concat(stream(startAt, token, from), stream(startAt, token, to));
-			}
-
-			private Stream<Coordinate> stream(Coordinate startAt, Object token, Direction direction) {
-				return connectedTokens(iter(startAt, direction), token);
-			}
-
-			public String getDirections() {
-				return from + " -> " + to;
-			}
-
-			@Override
-			public String toString() {
-				return "CombinationEvaluator [from=" + from + ", to=" + to + "]";
-			}
-
-		}
-
 		/**
 		 * not thread-safe, has to be synchronized or synchronized by caller
 		 */
 		@Override
 		public Board insertToken(Move move, Object token) {
-			int columnIdx = move.getColumnIdx();
-			if (columnIdx < 0 || columnIdx >= columns.size()) {
+			int x = move.getColumnIdx();
+			if (x < 0 || x >= columns.length) {
 				return new LoserBoard(token, "ILLEGAL_COLUMN_ANNOUNCED", boardInfo);
 			}
-
-			Column column = this.columns.get(columnIdx);
-			if (column.isFilledUp()) {
+			Column column = columns[x];
+			if (column.isFull()) {
 				return new LoserBoard(token, "COLUMN_IS_FULL", boardInfo);
-			} else {
-				List<WinningCombination> winningCombinatios = getWinningCombinatios(token, boardInfo().getToConnect(),
-						xy(columnIdx, column.insert(token)));
-				if (winningCombinatios.size() > 0) {
-					return new WinnerBoard(token, winningCombinatios, boardInfo);
-				} else if (column.isFilledUp() && allAre(Column::isFilledUp)) {
-					return new DrawBoard(boardInfo());
-				} else {
-					return this;
-				}
 			}
+
+			int y = column.insertToken(token);
+			Coordinate posOfInsertedToken = xy(x, y);
+			Collection<Line> connected = lines.stream()
+					.filter(l -> connectedTokens(posOfInsertedToken, token, l).count() >= 4).collect(toList());
+			if (connected.isEmpty()) {
+				if (column.isFull() && allColumnsFull()) {
+					return new DrawBoard(boardInfo());
+				}
+			} else {
+				return new WinnerBoard(token, connected.stream()
+						.map(l -> new WinningCombination(token, posOfInsertedToken,
+								connectedTokens(posOfInsertedToken, token, l).collect(toSet())))
+						.collect(toList()), boardInfo);
+			}
+			return this;
 		}
 
-		private CoordinateIterator iter(Coordinate coordinate, Direction direction) {
-			return new CoordinateIterator(coordinate, direction);
+		private boolean allColumnsFull() {
+			return Arrays.stream(columns).allMatch(Column::isFull);
 		}
 
-		private Stream<Coordinate> connectedTokens(Iterator<Coordinate> iterator, Object token) {
-			return stream(spliteratorUnknownSize(iterator, ORDERED), false).takeWhile(c -> token.equals(tokenAt(c)));
+		private Stream<Coordinate> connectedTokens(Coordinate center, Object token, Line line) {
+			Stream<Coordinate> neighbours1 = reverse(neighboursOfSameToken(iterator(center, line.from), token));
+			Stream<Coordinate> self = Stream.of(center);
+			Stream<Coordinate> neighbours2 = neighboursOfSameToken(iterator(center, line.to), token);
+			return concat(concat(neighbours1, self), neighbours2);
 		}
 
-		private Object tokenAt(Coordinate coordinate) {
-			return tokenAt(coordinate.getColumn(), coordinate.getRow());
+		private static <T> Stream<T> reverse(Stream<T> stream) {
+			return stream(
+					spliteratorUnknownSize(stream.collect(toCollection(LinkedList::new)).descendingIterator(), ORDERED),
+					false);
 		}
 
-		private Object tokenAt(int col, int row) {
-			return values[coordinate(col, row)];
+		private Stream<Coordinate> neighboursOfSameToken(Iterator<Coordinate> iterator, Object token) {
+			return stream(spliteratorUnknownSize(iterator, ORDERED), false)
+					.takeWhile(c -> token.equals(columns[c.getColumn()].getTokenAt(c.getRow())));
+		}
+
+		private Iterator<Coordinate> iterator(Coordinate start, Direction direction) {
+			return new Iterator<Coordinate>() {
+
+				private Coordinate currentCoordinate = direction.mutate(start);
+
+				@Override
+				public boolean hasNext() {
+					return inBound(currentCoordinate);
+				}
+
+				@Override
+				public Coordinate next() {
+					Coordinate result = currentCoordinate;
+					currentCoordinate = direction.mutate(currentCoordinate);
+					return result;
+				}
+
+				private boolean inBound(Coordinate coordinate) {
+					return inBoundX(coordinate) && inBoundY(coordinate);
+				}
+
+				private boolean inBoundX(Coordinate coordinate) {
+					return coordinate.getColumn() >= 0 && coordinate.getColumn() < boardInfo.getColumns();
+				}
+
+				private boolean inBoundY(Coordinate coordinate) {
+					return coordinate.getRow() >= 0 && coordinate.getRow() < boardInfo.getRows();
+				}
+
+			};
 		}
 
 	}

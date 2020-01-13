@@ -11,6 +11,10 @@ class Coordinate {
 
 	private final int column, row;
 
+	public Coordinate mutate(int mutX, int mutY) {
+		return xy(column + mutX, row + mutY);
+	}
+
 	public Coordinate increaseColumn(int increaseBy) {
 		return xy(column + increaseBy, row);
 	}
