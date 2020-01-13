@@ -50,12 +50,7 @@ public class UdpCommunicator {
 	}
 
 	public MessageSender getMessageSender() {
-		return new MessageSender() {
-			public void send(String message) throws IOException {
-				InetSocketAddress destination = new InetSocketAddress(remoteHost, remotePort);
-				channel.send(utf8.encode(message), destination);
-			}
-		};
+		return m -> channel.send(utf8.encode(m), new InetSocketAddress(remoteHost, remotePort));
 	}
 
 	/**
