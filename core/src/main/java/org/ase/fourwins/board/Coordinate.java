@@ -9,22 +9,22 @@ import lombok.Value;
 @RequiredArgsConstructor(access = PRIVATE)
 class Coordinate {
 
-	private final int column, row;
+	private final int x, y;
 
 	public Coordinate mutate(int mutX, int mutY) {
-		return xy(column + mutX, row + mutY);
+		return xy(x + mutX, y + mutY);
 	}
 
-	public Coordinate increaseColumn(int increaseBy) {
-		return xy(column + increaseBy, row);
+	public Coordinate mutateX(int mutateX) {
+		return xy(x + mutateX, y);
 	}
 
-	public Coordinate increaseRow(int increaseBy) {
-		return xy(column, row + increaseBy);
+	public Coordinate mutateY(int mutateY) {
+		return xy(x, y + mutateY);
 	}
 
-	public static Coordinate xy(int column, int row) {
-		return new Coordinate(column, row);
+	public static Coordinate xy(int x, int y) {
+		return new Coordinate(x, y);
 	}
 
 }

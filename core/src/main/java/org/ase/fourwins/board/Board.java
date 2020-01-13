@@ -18,10 +18,6 @@ import static org.ase.fourwins.board.Board.Direction.SOUTHEAST;
 import static org.ase.fourwins.board.Board.Direction.SOUTHWEST;
 import static org.ase.fourwins.board.Board.Direction.WEST;
 import static org.ase.fourwins.board.Board.Line.fromTo;
-import static org.ase.fourwins.board.Board.Mutator.DOWN;
-import static org.ase.fourwins.board.Board.Mutator.LEFT;
-import static org.ase.fourwins.board.Board.Mutator.RIGHT;
-import static org.ase.fourwins.board.Board.Mutator.UP;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
@@ -34,42 +30,39 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import lombok.Builder;
-import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 public abstract class Board {
 
-	@RequiredArgsConstructor
-	enum Mutator {
-		LEFT(-1, 0), RIGHT(+1, 0), DOWN(0, +1), UP(0, -1);
-
-		private final int mutX, mutY;
-
-		public Coordinate mutate(Coordinate coordinate) {
-			return coordinate.mutate(mutX, mutY);
-		}
-	}
-
 	enum Direction {
-		NORTH(UP), SOUTH(DOWN), WEST(LEFT), EAST(RIGHT), //
-		NORTHEAST(UP, RIGHT), SOUTHWEST(DOWN, LEFT), NORTHWEST(UP, LEFT), SOUTHEAST(DOWN, RIGHT);
+		NORTH(c -> c.mutateY(-1)), //
+		SOUTH(c -> c.mutateY(+1)), //
+		WEST(c -> c.mutateX(-1)), //
+		EAST(c -> c.mutateX(+1)), //
+		NORTHEAST(NORTH, EAST), //
+		SOUTHWEST(SOUTH, WEST), //
+		NORTHWEST(NORTH, WEST), //
+		SOUTHEAST(SOUTH, EAST);
 
-		private final Mutator[] mutators;
+		private final Function<Coordinate, Coordinate> mutator;
 
-		private Direction(Mutator... mutators) {
-			this.mutators = mutators;
+		private Direction(Direction d1, Direction d2) {
+			this(d1.mutator.andThen(d2.mutator));
+		}
+
+		private Direction(Function<Coordinate, Coordinate> mutator) {
+			this.mutator = mutator;
 		}
 
 		public Coordinate mutate(Coordinate coordinate) {
-			for (Mutator mutator : mutators) {
-				coordinate = mutator.mutate(coordinate);
-			}
-			return coordinate;
+			return mutator.apply(coordinate);
 		}
+
 	}
 
 	@Value
@@ -189,11 +182,6 @@ public abstract class Board {
 
 	private static class PlayableBoard extends Board {
 
-		@FunctionalInterface
-		private static interface Modifier {
-			Coordinate modify(Coordinate coordinate);
-		}
-
 		private static class Column {
 
 			private Object[] content;
@@ -210,9 +198,7 @@ public abstract class Board {
 
 			public int insertToken(Object token) {
 				content[fillY] = token;
-				int cur = fillY;
-				fillY--;
-				return cur;
+				return fillY--;
 			}
 
 			public boolean isFull() {
@@ -262,17 +248,17 @@ public abstract class Board {
 			Coordinate posOfInsertedToken = xy(x, y);
 			Collection<Line> connected = lines.stream()
 					.filter(l -> connectedTokens(posOfInsertedToken, token, l).count() >= 4).collect(toList());
-			if (connected.isEmpty()) {
-				if (column.isFull() && allColumnsFull()) {
-					return new DrawBoard(boardInfo());
-				}
-			} else {
+			if (!connected.isEmpty()) {
 				return new WinnerBoard(token, connected.stream()
 						.map(l -> new WinningCombination(token, posOfInsertedToken,
 								connectedTokens(posOfInsertedToken, token, l).collect(toSet())))
 						.collect(toList()), boardInfo);
 			}
-			return this;
+			return isDraw(column) ? new DrawBoard(boardInfo()) : this;
+		}
+
+		private boolean isDraw(Column column) {
+			return column.isFull() && allColumnsFull();
 		}
 
 		private boolean allColumnsFull() {
@@ -294,7 +280,7 @@ public abstract class Board {
 
 		private Stream<Coordinate> neighboursOfSameToken(Iterator<Coordinate> iterator, Object token) {
 			return stream(spliteratorUnknownSize(iterator, ORDERED), false)
-					.takeWhile(c -> token.equals(columns[c.getColumn()].getTokenAt(c.getRow())));
+					.takeWhile(c -> token.equals(columns[c.getX()].getTokenAt(c.getY())));
 		}
 
 		private Iterator<Coordinate> iterator(Coordinate start, Direction direction) {
@@ -319,11 +305,11 @@ public abstract class Board {
 				}
 
 				private boolean inBoundX(Coordinate coordinate) {
-					return coordinate.getColumn() >= 0 && coordinate.getColumn() < boardInfo.getColumns();
+					return coordinate.getX() >= 0 && coordinate.getX() < boardInfo.getColumns();
 				}
 
 				private boolean inBoundY(Coordinate coordinate) {
-					return coordinate.getRow() >= 0 && coordinate.getRow() < boardInfo.getRows();
+					return coordinate.getY() >= 0 && coordinate.getY() < boardInfo.getRows();
 				}
 
 			};
