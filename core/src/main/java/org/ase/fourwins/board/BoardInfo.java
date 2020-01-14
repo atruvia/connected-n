@@ -11,6 +11,7 @@ public class BoardInfo {
 
 	private int columns, rows;
 
+	@Builder.Default
 	private int toConnect = 4;
 	
 }

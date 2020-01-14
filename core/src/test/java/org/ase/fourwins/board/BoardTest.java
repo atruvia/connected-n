@@ -6,14 +6,13 @@ import static org.ase.fourwins.board.BoardMatcher.isStillInGame;
 import static org.ase.fourwins.board.BoardMatcher.winnerIs;
 import static org.ase.fourwins.board.BoardTest.BoardBuilder.boardOfSize;
 import static org.ase.fourwins.board.Move.moveToColumn;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class BoardTest {
@@ -144,11 +143,18 @@ public class BoardTest {
 	}
 
 	@Test
-	@Disabled
-	void todo_fr_what_should_winning_combination_contain() {
-		Board board = a(boardOfSize(8, 1).filled("X X X   X X X"));
-		assertThat(board.insertToken(moveToColumn('D'), "X"), winnerIs("X"));
-		fail("what should the winning combination look alike?"); // TODO FR
+	void winningCombinationContainAllTokensLeftAndRight() {
+		Board board = a(boardOfSize(7, 1).filled("X X X   X X X")).insertToken(moveToColumn('D'), "X");
+		assertThat(board, winnerIs("X").withCombinations(1));
+		assertThat(board.gameState().getWinningCombinations().get(0).getCoordinates().size(), is(7));
+	}
+
+	@Test
+	void canPlayConnect5() {
+		Board board = a(new BoardBuilder(Board.newBoard(BoardInfo.builder().rows(1).columns(7).toConnect(5).build()))
+				.filled("X X X"));
+		board = board.insertToken(moveToColumn('D'), "X");
+		assertThat(board, isStillInGame());
 	}
 
 	public static class BoardBuilder {
@@ -175,7 +181,7 @@ public class BoardTest {
 		}
 
 		public static BoardBuilder boardOfSize(int cols, int rows) {
-			return new BoardBuilder(Board.newBoard(new BoardInfo(cols, rows)));
+			return new BoardBuilder(Board.newBoard(BoardInfo.builder().columns(cols).rows(rows).build()));
 		}
 
 		public Board build() {

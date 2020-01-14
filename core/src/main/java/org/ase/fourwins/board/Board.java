@@ -247,7 +247,8 @@ public abstract class Board {
 			int y = column.insertToken(token);
 			Coordinate posOfInsertedToken = xy(x, y);
 			Collection<Line> connected = lines.stream()
-					.filter(l -> connectedTokens(posOfInsertedToken, token, l).count() >= 4).collect(toList());
+					.filter(l -> connectedTokens(posOfInsertedToken, token, l).count() >= boardInfo.getToConnect())
+					.collect(toList());
 			if (!connected.isEmpty()) {
 				return new WinnerBoard(token, connected.stream()
 						.map(l -> new WinningCombination(token, posOfInsertedToken,
