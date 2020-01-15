@@ -4,7 +4,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
-import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
@@ -27,7 +26,6 @@ import static org.ase.fourwins.board.Coordinate.xy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
@@ -184,11 +182,11 @@ public abstract class Board {
 
 		private static class Column {
 
-			private Object[] content;
+			private final Object[] content;
 			private int fillY;
 
 			public Column(int height) {
-				content = new String[height];
+				content = new Object[height];
 				fillY = content.length - 1;
 			}
 
@@ -267,21 +265,22 @@ public abstract class Board {
 		}
 
 		private Stream<Coordinate> connectedTokens(Coordinate center, Object token, Line line) {
-			Stream<Coordinate> neighbours1 = reverse(neighboursOfSameToken(iterator(center, line.from), token));
+			Stream<Coordinate> neighbours1 = neighboursOfSameToken(center, token, line.from);
 			Stream<Coordinate> self = Stream.of(center);
-			Stream<Coordinate> neighbours2 = neighboursOfSameToken(iterator(center, line.to), token);
+			Stream<Coordinate> neighbours2 = neighboursOfSameToken(center, token, line.to);
 			return concat(concat(neighbours1, self), neighbours2);
 		}
 
-		private static <T> Stream<T> reverse(Stream<T> stream) {
-			return stream(
-					spliteratorUnknownSize(stream.collect(toCollection(LinkedList::new)).descendingIterator(), ORDERED),
-					false);
+		private Stream<Coordinate> neighboursOfSameToken(Coordinate center, Object token, Direction direction) {
+			return neighbours(iterator(center, direction)).takeWhile(c -> token.equals(tokenAt(c)));
 		}
 
-		private Stream<Coordinate> neighboursOfSameToken(Iterator<Coordinate> iterator, Object token) {
-			return stream(spliteratorUnknownSize(iterator, ORDERED), false)
-					.takeWhile(c -> token.equals(columns[c.getX()].getTokenAt(c.getY())));
+		private Stream<Coordinate> neighbours(Iterator<Coordinate> iterator) {
+			return stream(spliteratorUnknownSize(iterator, ORDERED), false);
+		}
+
+		private String tokenAt(Coordinate coordinate) {
+			return columns[coordinate.getX()].getTokenAt(coordinate.getY());
 		}
 
 		private Iterator<Coordinate> iterator(Coordinate start, Direction direction) {
