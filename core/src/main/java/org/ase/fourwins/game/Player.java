@@ -10,7 +10,7 @@ import lombok.ToString;
 public abstract class Player {
 
 	@Getter
-	private String token;
+	private final String token;
 
 	public Player(String token) {
 		this.token = token;
