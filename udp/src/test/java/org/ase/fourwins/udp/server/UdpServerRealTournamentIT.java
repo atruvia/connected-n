@@ -150,7 +150,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
-		await().until(() -> client.getReceived(), contains("Welcome " + client.getName()));
+		await().until(() -> client.getReceived(), contains("WELCOME:" + client.getName()));
 	}
 
 	@Test

@@ -136,7 +136,7 @@ public class UdpServerTest {
 		infiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = new DummyClient("1", "localhost", serverPort);
-			client1.assertReceived("Welcome 1");
+			client1.assertReceived("WELCOME:1");
 			verify(tournament, times(0)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
@@ -160,7 +160,7 @@ public class UdpServerTest {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
 			DummyClient client = new DummyClient(longName, "localhost", serverPort);
-			client.assertReceived("Welcome " + longName);
+			client.assertReceived("WELCOME:" + longName);
 			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
 		});
 	}
@@ -211,7 +211,7 @@ public class UdpServerTest {
 
 			// while season is running others can register
 			DummyClient client3 = new DummyClient("3", "localhost", serverPort);
-			client3.assertReceived("Welcome 3");
+			client3.assertReceived("WELCOME:3");
 		});
 	}
 
@@ -221,7 +221,7 @@ public class UdpServerTest {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client = new DummyClient("1", "localhost", serverPort);
 			client.unregister();
-			client.assertReceived("Welcome 1", "UNREGISTERED");
+			client.assertReceived("WELCOME:1", "UNREGISTERED");
 		});
 	}
 
@@ -251,8 +251,8 @@ public class UdpServerTest {
 			assertWelcomed(client3);
 			assertWelcomed(client2);
 
-			await().until(() -> client3.getReceived(), hasItems("Welcome 3", "UNREGISTERED"));
-			await().until(() -> client2.getReceived(), hasItems("Welcome 2", "UNREGISTERED"));
+			await().until(() -> client3.getReceived(), hasItems("WELCOME:3", "UNREGISTERED"));
+			await().until(() -> client2.getReceived(), hasItems("WELCOME:2", "UNREGISTERED"));
 
 			int seasonsStartedBeforeUnregister = seasonsStarted.get();
 
@@ -273,9 +273,9 @@ public class UdpServerTest {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String nameToReuse = "1";
 			DummyClient client = new DummyClient(nameToReuse, "localhost", serverPort);
-			client.assertReceived("Welcome " + nameToReuse);
+			client.assertReceived("WELCOME:" + nameToReuse);
 			DummyClient newClientWithSameTokenFromSameIP = new DummyClient(nameToReuse, "localhost", serverPort);
-			newClientWithSameTokenFromSameIP.assertReceived("Welcome " + nameToReuse);
+			newClientWithSameTokenFromSameIP.assertReceived("WELCOME:" + nameToReuse);
 
 			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
 			client.unregister();
@@ -284,7 +284,7 @@ public class UdpServerTest {
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
-		await().until(() -> client.getReceived(), hasItem("Welcome " + client.getName()));
+		await().until(() -> client.getReceived(), hasItem("WELCOME:" + client.getName()));
 	}
 
 	private void infiniteSeason(Tournament mock) {
