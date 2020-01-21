@@ -15,6 +15,10 @@ Um sich beim 4Gewinnt-Server anzumelden, ist eine Registrierung nötig:
 ```
 REGISTER;yourname
 ```
+Der Server antwortet daraufhin mit 
+```
+Welcome yourname
+```
 
 ### Ablauf des Turniers
 Solange mindestens zwei Spieler registriert sind, wird Saison für Saion gespielt.
