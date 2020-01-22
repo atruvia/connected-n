@@ -287,7 +287,7 @@ public class UdpServerTest {
 	}
 
 	private static String welcome(String name) {
-		return "WELCOME:" + name;
+		return "WELCOME;" + name;
 	}
 
 	private static String unregistered() {

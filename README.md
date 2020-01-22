@@ -17,7 +17,7 @@ REGISTER;yourname
 ```
 Der Server antwortet daraufhin mit 
 ```
-WELCOME:yourname
+WELCOME;yourname
 ```
 
 ### Ablauf des Turniers

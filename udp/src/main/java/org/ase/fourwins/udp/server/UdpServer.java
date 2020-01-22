@@ -295,7 +295,7 @@ public class UdpServer {
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
 		System.out.println(playerInfo.getName() + ":" + playerInfo.getPort());
-		playerInfo.send("WELCOME:" + playerInfo.getName());
+		playerInfo.send("WELCOME;" + playerInfo.getName());
 		try {
 			lock.lock();
 			playerRegistered.signal();

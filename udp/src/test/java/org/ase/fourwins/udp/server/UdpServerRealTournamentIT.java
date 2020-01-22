@@ -152,7 +152,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
-		await().until(client::getReceived, hasItem("WELCOME:" + client.getName()));
+		await().until(client::getReceived, hasItem("WELCOME;" + client.getName()));
 	}
 
 	@Test
