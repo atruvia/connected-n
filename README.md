@@ -17,7 +17,7 @@ REGISTER;yourname
 ```
 
 yourname darf aus beliebigen UTF-8 Zeichen bestehen aber maximal 30 Zeichen lang sein. 
-Der Server antwortet im ok-Fall daraufhin mit 
+Der Server antwortet im ok-Fall mit 
 ```
 WELCOME;yourname
 ```
