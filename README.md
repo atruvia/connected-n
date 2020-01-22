@@ -15,10 +15,13 @@ Um sich beim 4Gewinnt-Server anzumelden, ist eine Registrierung nötig:
 ```
 REGISTER;yourname
 ```
-Der Server antwortet daraufhin mit 
+
+yourname darf aus beliebigen UTF-8 Zeichen bestehen aber maximal 30 Zeichen lang sein. 
+Der Server antwortet im ok-Fall daraufhin mit 
 ```
 WELCOME;yourname
 ```
+bzw. mit entsprechender Fehlermeldung, falls der Name nicht den Vorgaben entspricht (bereits von andererem Bot genutzt, zu lang, etc.)
 
 ### Ablauf des Turniers
 Solange mindestens zwei Spieler registriert sind, wird Saison für Saion gespielt.
