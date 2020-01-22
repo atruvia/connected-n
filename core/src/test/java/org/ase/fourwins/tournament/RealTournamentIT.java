@@ -34,7 +34,7 @@ import net.jqwik.api.Provide;
 import net.jqwik.api.Tuple;
 import net.jqwik.api.constraints.IntRange;
 
-public class RealTournamentITest {
+public class RealTournamentIT {
 
 	private static final String PLAYERS_NAMES_INCLUDING_COFFEE_BREAK = "playersNames";
 
