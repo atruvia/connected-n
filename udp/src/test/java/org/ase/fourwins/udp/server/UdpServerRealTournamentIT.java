@@ -5,6 +5,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.contains;
@@ -31,6 +32,7 @@ import org.ase.fourwins.tournament.ScoreSheet;
 import org.ase.fourwins.tournament.TournamentScoreListener;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
 import lombok.Getter;
@@ -150,7 +152,7 @@ public class UdpServerRealTournamentIT {
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
-		await().until(() -> client.getReceived(), contains("WELCOME:" + client.getName()));
+		await().until(client::getReceived, hasItem("WELCOME:" + client.getName()));
 	}
 
 	@Test
@@ -239,8 +241,8 @@ public class UdpServerRealTournamentIT {
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
 
-			await().until(() -> client1.getReceived().size(), greaterThan(0));
-			await().until(() -> client2.getReceived().size(), greaterThan(0));
+			await().until(client1.getReceived()::size, greaterThan(0));
+			await().until(client2.getReceived()::size, greaterThan(0));
 
 			client1.unregister();
 			client2.unregister();
