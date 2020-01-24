@@ -160,7 +160,7 @@ public class UdpServer {
 
 		public void gameEnded(GameState state) {
 			Object reason = state.getReason() == null ? "" : state.getReason();
-			String message = Stream.of("RESULT", state.getScore(), state.getToken(), reason).map(Object::toString)
+			String message = Stream.of("RESULT", state.getScore(), state.getToken(), reason).map(String::valueOf)
 					.collect(joining(";"));
 			playerInfo.send(message);
 			super.gameEnded(state);
@@ -206,7 +206,7 @@ public class UdpServer {
 	}
 
 	private Consumer<GameState> sysout() {
-		return s -> System.out.println(s.getScore() + ";" + s.getToken() + " --" + s.getReason());
+		return s -> System.out.println(s.getScore() + ";" + s.getToken() + " -- " + s.getReason());
 	}
 
 	private Stream<Entry<UdpPlayerInfo, Player>> playersJoiningNextSeason() {

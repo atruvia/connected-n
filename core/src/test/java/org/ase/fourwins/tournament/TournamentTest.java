@@ -11,6 +11,7 @@ import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.GameStateMatcher.isGameError;
 import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.tournament;
+import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard.LOSE_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -30,7 +31,6 @@ import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
-import org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Disabled;
@@ -42,7 +42,7 @@ import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 import net.jqwik.api.arbitraries.IntegerArbitrary;
 
-public class TournamentTest {
+class TournamentTest {
 
 	static final class TournamentBuilder {
 
@@ -129,8 +129,8 @@ public class TournamentTest {
 		assertThat(p1.getMovesMade(), is(7));
 		assertThat(p2.getMovesMade(), is(7));
 
-		assertThat(states.get(0), isGameError(DummyBoard.LOSE_MESSAGE).withToken("P1"));
-		assertThat(states.get(1), isGameError(DummyBoard.LOSE_MESSAGE).withToken("P2"));
+		assertThat(states.get(0), isGameError(LOSE_MESSAGE).withToken("P1"));
+		assertThat(states.get(1), isGameError(LOSE_MESSAGE).withToken("P2"));
 	}
 
 	@Example
@@ -169,7 +169,7 @@ public class TournamentTest {
 	}
 
 	GameState lose(String token) {
-		return GameState.builder().score(LOSE).token(token).reason(DummyBoard.LOSE_MESSAGE).build();
+		return GameState.builder().score(LOSE).token(token).reason(LOSE_MESSAGE).build();
 	}
 
 	@Example

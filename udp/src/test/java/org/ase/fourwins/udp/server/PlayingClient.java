@@ -22,4 +22,5 @@ public class PlayingClient extends DummyClient {
 			trySend("INSERT;" + column + ";" + received.split(";")[1]);
 		}
 	}
+
 }

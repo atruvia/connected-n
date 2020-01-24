@@ -1,5 +1,6 @@
 package org.ase.fourwins.udp.server;
 
+import static java.lang.Long.MAX_VALUE;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -18,7 +19,6 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
@@ -132,43 +132,43 @@ public class UdpServerTest {
 
 	@Test
 	void clientCanConnectToServer() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1").assertReceived(welcome("1"));
-			verify(tournament, times(0)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentNotStartet();
 		});
 	}
 
 	@Test
 	void canHandleEmptyCorruptedRegisterMessage() throws IOException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			new DummyClient("1", "localhost", serverPort) {
 				protected void register() throws IOException {
 					send("REGISTER;");
 				}
 			}.assertReceived("NO_NAME_GIVEN");
-			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentNotStartet();
 		});
 	}
 
 	@Test
 	void acceptLongName() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longestAllowedName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
 			newClientWithName(longestAllowedName).assertReceived(welcome(longestAllowedName));
-			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentNotStartet();
 		});
 	}
 
 	@Test
 	void denyTooLongName() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
-			String toLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
-			newClientWithName(toLongName).assertReceived("NAME_TOO_LONG");
-			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
+			String tooLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
+			newClientWithName(tooLongName).assertReceived("NAME_TOO_LONG");
+			assertTournamentNotStartet();
 		});
 	}
 
@@ -176,37 +176,53 @@ public class UdpServerTest {
 		return new DummyClient(name, "localhost", serverPort);
 	}
 
+	private DummyClient newPlayingClientWithName(String name) throws IOException {
+		return new PlayingClient(name, "localhost", serverPort, -1);
+	}
+
 	@Test
 	void denyEmptyName() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String emptyName = "";
 			newClientWithName(emptyName).assertReceived("NO_NAME_GIVEN");
-			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentNotStartet();
 		});
 	}
 
 	@Test
 	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = newClientWithName("1");
 			DummyClient client2 = newClientWithName("2");
 
 			assertWelcomed(client1);
 			assertWelcomed(client2);
-			verify(tournament, timesWithTimeout(1)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentStartet();
 		});
+	}
+
+	private void assertTournamentNotStartet() {
+		verifySeasonsStarted(0);
+	}
+
+	private void assertTournamentStartet() {
+		verifySeasonsStarted(1);
+	}
+
+	private void verifySeasonsStarted(int times) {
+		verify(tournament, timesWithTimeout(times)).playSeason(anyCollection(), anyGameStateConsumer());
 	}
 
 	@Test
 	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreRegistered() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1");
 			newClientWithName("2");
 
-			verify(tournament, timesWithTimeout(1)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentStartet();
 
 			// while season is running others can register
 			newClientWithName("3").assertReceived(welcome("3"));
@@ -215,7 +231,7 @@ public class UdpServerTest {
 
 	@Test
 	void canUnregister() throws IOException, InterruptedException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client = newClientWithName("1");
 			client.unregister();
@@ -232,13 +248,13 @@ public class UdpServerTest {
 			return Stream.empty();
 		}).when(tournament).playSeason(anyCollection(), anyGameStateConsumer());
 		assertTimeoutPreemptively(TIMEOUT, () -> {
-			new PlayingClient("1", "localhost", serverPort, -1);
-			DummyClient client2 = new PlayingClient("2", "localhost", serverPort, -1);
+			newPlayingClientWithName("1");
+			DummyClient client2 = newPlayingClientWithName("2");
 
-			verify(tournament, timesWithTimeout(1)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentStartet();
 
 			// while season is running others can register
-			DummyClient client3 = new PlayingClient("3", "localhost", serverPort, -1);
+			DummyClient client3 = newPlayingClientWithName("3");
 			assertWelcomed(client3);
 
 			// TODO signal to Mockito answer to delay until...
@@ -267,7 +283,7 @@ public class UdpServerTest {
 
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {
-		infiniteSeason(tournament);
+		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String nameToReuse = "1";
 			DummyClient client = newClientWithName(nameToReuse);
@@ -275,7 +291,7 @@ public class UdpServerTest {
 			DummyClient newClientWithSameTokenFromSameIP = newClientWithName(nameToReuse);
 			newClientWithSameTokenFromSameIP.assertReceived(welcome(nameToReuse));
 
-			verify(tournament, timesWithTimeout(0)).playSeason(anyCollection(), anyGameStateConsumer());
+			assertTournamentNotStartet();
 			client.unregister();
 			newClientWithSameTokenFromSameIP.unregister();
 		});
@@ -293,28 +309,30 @@ public class UdpServerTest {
 		return "UNREGISTERED";
 	}
 
-	private void infiniteSeason(Tournament mock) {
+	private static void setupInfiniteSeason(Tournament mock) {
 		doAnswer(s -> {
 			while (true) {
-				DAYS.sleep(Long.MAX_VALUE);
+				DAYS.sleep(MAX_VALUE);
 			}
-		}).when(tournament).playSeason(anyCollection(), anyGameStateConsumer());
+		}).when(mock).playSeason(anyCollection(), anyGameStateConsumer());
 	}
 
-	private String nameOfLength(int len) {
-		return IntStream.range(0, len).mapToObj(i -> "X").collect(joining());
+	private static String nameOfLength(int length) {
+		String name = IntStream.range(0, length).mapToObj(i -> "X").collect(joining());
+		assert name.length() == length;
+		return name;
 	}
 
-	private VerificationMode timesWithTimeout(int times) {
+	private static VerificationMode timesWithTimeout(int times) {
 		return timeout(SECONDS.toMillis(5)).times(times);
 	}
 
-	private Consumer<GameState> anyGameStateConsumer() {
+	private static Consumer<GameState> anyGameStateConsumer() {
 		return anyConsumer(GameState.class);
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> Consumer<T> anyConsumer(Class<T> clazz) {
+	private static <T> Consumer<T> anyConsumer(Class<T> clazz) {
 		return any(Consumer.class);
 	}
 
