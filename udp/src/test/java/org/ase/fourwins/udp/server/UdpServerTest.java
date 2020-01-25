@@ -107,7 +107,7 @@ public class UdpServerTest {
 			send("UNREGISTER");
 		}
 
-		void assertReceived(String... messages) throws InterruptedException {
+		void assertReceived(String... messages) {
 			await().until(this::getReceived, is(asList(messages)));
 		}
 
@@ -138,7 +138,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void clientCanConnectToServer() throws IOException, InterruptedException {
+	void clientCanConnectToServer() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1").assertReceived(welcomed("1"));
@@ -160,7 +160,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void acceptLongName() throws IOException, InterruptedException {
+	void acceptLongName() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longestAllowedName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
@@ -170,7 +170,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void denyTooLongName() throws IOException, InterruptedException {
+	void denyTooLongName() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String tooLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
@@ -188,7 +188,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void denyEmptyName() throws IOException, InterruptedException {
+	void denyEmptyName() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String emptyName = "";
@@ -198,7 +198,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException, InterruptedException {
+	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = newClientWithName("1");
@@ -223,7 +223,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreRegistered() throws IOException, InterruptedException {
+	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreRegistered() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1");
@@ -237,7 +237,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void canUnregister() throws IOException, InterruptedException {
+	void canUnregister() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client = newClientWithName("1");
@@ -247,7 +247,7 @@ public class UdpServerTest {
 	}
 
 	@Test
-	void whenDeregisteringNoNextSeasonIsStarted() throws IOException, InterruptedException {
+	void whenDeregisteringNoNextSeasonIsStarted() throws IOException {
 		AtomicInteger seasonsStarted = new AtomicInteger(0);
 		doAnswer(s -> {
 			seasonsStarted.incrementAndGet();
@@ -374,7 +374,7 @@ public class UdpServerTest {
 		}).when(tournament).playSeason(playerCaptor.capture(), consumerCaptor.capture());
 	}
 
-	private void assertWelcomed(DummyClient client) throws InterruptedException {
+	private void assertWelcomed(DummyClient client) {
 		await().until(client::getReceived, hasItem(welcomed(client.getName())));
 	}
 
