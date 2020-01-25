@@ -1,5 +1,9 @@
 package org.ase.fourwins.tournament;
 
+import static org.ase.fourwins.board.Board.Score.DRAW;
+import static org.ase.fourwins.board.Board.Score.LOSE;
+import static org.ase.fourwins.board.Board.Score.WIN;
+
 import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
@@ -19,14 +23,14 @@ public class TournamentScoreListener implements TournamentListener {
 	public void gameEnded(Game game) {
 		Object lastToken = game.gameState().getToken();
 		Score score = game.gameState().getScore();
-		if (score.equals(Score.WIN)) {
+		if (score.equals(WIN)) {
 			addPointForPlayer(game.getPlayerForToken(lastToken), FULL_POINT);
-			game.getOpponentForToken(lastToken).ifPresent(p -> addPointForPlayer(p, ZERO));
-		} else if (score.equals(Score.DRAW)) {
+			game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, ZERO));
+		} else if (score.equals(DRAW)) {
 			addPointForPlayer(game.getPlayerForToken(lastToken), HALF_POINT);
-			game.getOpponentForToken(lastToken).ifPresent(p -> addPointForPlayer(p, HALF_POINT));
-		} else if (score.equals(Score.LOSE)) {
-			game.getOpponentForToken(lastToken).ifPresent(p -> addPointForPlayer(p, FULL_POINT));
+			game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, HALF_POINT));
+		} else if (score.equals(LOSE)) {
+			game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, FULL_POINT));
 			addPointForPlayer(game.getPlayerForToken(lastToken), ZERO);
 		}
 	}

@@ -28,7 +28,6 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Move;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
-import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
 import org.ase.fourwins.tournament.listener.TournamentListener;
@@ -93,11 +92,6 @@ class TournamentTest {
 				@Override
 				protected Board makeBoard() {
 					return new DummyBoard();
-				}
-
-				@Override
-				protected void gameEnded(Game game) {
-					super.gameEnded(game);
 				}
 
 			};

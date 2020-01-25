@@ -89,7 +89,6 @@ public class DefaultTournament implements Tournament {
 				.map(this::runMatches).flatMap(identity()) //
 				.forEach(consumer);
 		seasonEnded();
-
 	}
 
 	private Stream<GameState> runMatches(Stream<Match<Player>> matches) {
@@ -134,15 +133,15 @@ public class DefaultTournament implements Tournament {
 	}
 
 	protected void gameStarted(Game game) {
-		tournamentListenerList.forEach(listener -> listener.gameStarted(game));
+		tournamentListenerList.forEach(l -> l.gameStarted(game));
 	}
 
 	protected void gameEnded(Game game) {
-		tournamentListenerList.forEach(listener -> listener.gameEnded(game));
+		tournamentListenerList.forEach(l -> l.gameEnded(game));
 	}
 
 	protected void seasonEnded() {
-		tournamentListenerList.forEach(listener -> listener.seasonEnded());
+		tournamentListenerList.forEach(TournamentListener::seasonEnded);
 	}
 
 	@Override

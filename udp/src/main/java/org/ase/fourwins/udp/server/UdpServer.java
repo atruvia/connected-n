@@ -124,8 +124,8 @@ public class UdpServer {
 
 		private final UdpPlayerInfo playerInfo;
 
-		private UdpPlayer(String token, UdpPlayerInfo playerInfo) {
-			super(token);
+		private UdpPlayer(UdpPlayerInfo playerInfo) {
+			super(playerInfo.getName());
 			this.playerInfo = playerInfo;
 		}
 
@@ -286,7 +286,7 @@ public class UdpServer {
 	}
 
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
-		Player player = newPlayer(playerInfo, playerInfo.getName());
+		Player player = new UdpPlayer(playerInfo);
 		if (players.putIfAbsent(playerInfo, player) != null) {
 			playerInfo.send("NAME_ALREADY_TAKEN");
 			return;
@@ -302,10 +302,6 @@ public class UdpServer {
 		} finally {
 			lock.unlock();
 		}
-	}
-
-	private Player newPlayer(UdpPlayerInfo playerInfo, String playerName) {
-		return new UdpPlayer(playerName, playerInfo);
 	}
 
 	private void handleUnregisterCommand(UdpPlayerInfo playerInfo) {
