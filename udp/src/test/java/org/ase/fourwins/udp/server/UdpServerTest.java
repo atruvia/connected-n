@@ -7,10 +7,6 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
-import static org.ase.fourwins.board.Board.GameState.builder;
-import static org.ase.fourwins.board.Board.Score.DRAW;
-import static org.ase.fourwins.board.Board.Score.LOSE;
-import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.is;
@@ -28,7 +24,6 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,10 +34,9 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
-import org.ase.fourwins.game.DefaultGame;
-import org.ase.fourwins.game.Game.GameId;
+import org.ase.fourwins.board.BoardInfo.BoardInfoBuilder;
+import org.ase.fourwins.board.Move.DefaultMove;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
@@ -312,54 +306,68 @@ public class UdpServerTest {
 
 	@Test
 	void sendsWinMessageToAllPlayers() throws IOException {
-		String expectedMessage = "RESULT;WIN;1;reason";
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfStates(builder().token(client1.getName()).score(WIN).reason("reason").build());
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			await().until(client1::getReceived, hasItems(expectedMessage));
-			await().until(client2::getReceived, hasItems(expectedMessage));
-			client1.unregister();
-			client2.unregister();
-		});
+		tournamentOfStates(makeWinBoard(client1.getName()).gameState());
+		assertAllReceived("RESULT;WIN;" + client1.getName() + ";FOUR_IN_A_ROW", client1, client2);
 	}
 
 	@Test
 	void sendsLoseMessageToAllPlayers() throws IOException {
-		String expectedMessage = "RESULT;LOSE;1;reason";
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfStates(builder().token(client1.getName()).score(LOSE).reason("reason").build());
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			await().until(client1::getReceived, hasItems(expectedMessage));
-			await().until(client2::getReceived, hasItems(expectedMessage));
-			client1.unregister();
-			client2.unregister();
-		});
+		tournamentOfStates(makeLoseBoard(client1.getName()).gameState());
+		assertAllReceived("RESULT;LOSE;" + client1.getName() + ";ILLEGAL_COLUMN_ANNOUNCED", client1, client2);
 	}
 
 	@Test
 	void sendsDrawMessageToAllPlayers() throws IOException {
-		String expectedMessage = "RESULT;DRAW;null;";
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfStates(builder().score(DRAW).build());
+		tournamentOfStates(makeDrawBoard().gameState());
+		assertAllReceived("RESULT;DRAW;null;", client1, client2);
+	}
+
+	private static Board makeWinBoard(String winnerToken) {
+		return aBoard(oneOfOne().toConnect(1)).insertToken(new DefaultMove(0), winnerToken);
+	}
+
+	private static Board makeLoseBoard(String loseToken) {
+		return aBoard(oneOfOne().toConnect(1)).insertToken(new DefaultMove(-1), loseToken);
+	}
+
+	private static Board makeDrawBoard() {
+		return aBoard(oneOfOne().toConnect(2)).insertToken(new DefaultMove(0), "anyLastToken");
+	}
+
+	private static Board aBoard(BoardInfoBuilder connect) {
+		return Board.newBoard(connect.build());
+	}
+
+	private static BoardInfoBuilder oneOfOne() {
+		return BoardInfo.builder().rows(1).columns(1);
+	}
+
+	private void assertAllReceived(String expectedMessage, DummyClient... clients) {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
-			await().until(client1::getReceived, hasItems(expectedMessage));
-			await().until(client2::getReceived, hasItems(expectedMessage));
-			client1.unregister();
-			client2.unregister();
+			for (DummyClient client : clients) {
+				await().until(client::getReceived, hasItems(expectedMessage));
+			}
+			for (DummyClient client : clients) {
+				client.unregister();
+			}
 		});
 	}
 
 	@SuppressWarnings("unchecked")
 	private void tournamentOfStates(GameState gameState) {
 		ArgumentCaptor<Collection<Player>> playerCaptor = ArgumentCaptor.forClass(Collection.class);
+		ArgumentCaptor<Consumer<GameState>> consumerCaptor = ArgumentCaptor.forClass(Consumer.class);
 		doAnswer(s -> {
 			playerCaptor.getValue().forEach(p -> p.gameEnded(gameState));
 			waitForever();
 			throw new IllegalStateException();
-		}).when(tournament).playSeason(playerCaptor.capture(), anyGameStateConsumer());
+		}).when(tournament).playSeason(playerCaptor.capture(), consumerCaptor.capture());
 	}
 
 	private void assertWelcomed(DummyClient client) throws InterruptedException {
