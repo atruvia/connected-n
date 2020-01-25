@@ -160,8 +160,9 @@ public class UdpServer {
 
 		public void gameEnded(GameState state) {
 			Object reason = state.getReason() == null ? "" : state.getReason();
-			String message = Stream.of("RESULT", state.getScore(), state.getToken(), reason).map(String::valueOf)
-					.collect(joining(";"));
+			Object token = state.getToken();
+			String message = Stream.of("RESULT", state.getScore(), token == null ? "" : token, reason)
+					.map(String::valueOf).collect(joining(";"));
 			playerInfo.send(message);
 			super.gameEnded(state);
 		}

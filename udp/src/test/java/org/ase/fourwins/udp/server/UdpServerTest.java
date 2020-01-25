@@ -308,7 +308,7 @@ public class UdpServerTest {
 	void sendsWinMessageToAllPlayers() throws IOException {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfStates(makeWinBoard(client1.getName()).gameState());
+		tournamentOfState(makeWinBoard(client1.getName()));
 		assertAllReceived("RESULT;WIN;" + client1.getName() + ";FOUR_IN_A_ROW", client1, client2);
 	}
 
@@ -316,7 +316,7 @@ public class UdpServerTest {
 	void sendsLoseMessageToAllPlayers() throws IOException {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfStates(makeLoseBoard(client1.getName()).gameState());
+		tournamentOfState(makeLoseBoard(client1.getName()));
 		assertAllReceived("RESULT;LOSE;" + client1.getName() + ";ILLEGAL_COLUMN_ANNOUNCED", client1, client2);
 	}
 
@@ -324,8 +324,8 @@ public class UdpServerTest {
 	void sendsDrawMessageToAllPlayers() throws IOException {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfStates(makeDrawBoard().gameState());
-		assertAllReceived("RESULT;DRAW;null;", client1, client2);
+		tournamentOfState(makeDrawBoard());
+		assertAllReceived("RESULT;DRAW;;", client1, client2);
 	}
 
 	private static Board makeWinBoard(String winnerToken) {
@@ -359,8 +359,12 @@ public class UdpServerTest {
 		});
 	}
 
+	private void tournamentOfState(Board board) {
+		tournamentOfState(board.gameState());
+	}
+
 	@SuppressWarnings("unchecked")
-	private void tournamentOfStates(GameState gameState) {
+	private void tournamentOfState(GameState gameState) {
 		ArgumentCaptor<Collection<Player>> playerCaptor = ArgumentCaptor.forClass(Collection.class);
 		ArgumentCaptor<Consumer<GameState>> consumerCaptor = ArgumentCaptor.forClass(Consumer.class);
 		doAnswer(s -> {
