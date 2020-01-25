@@ -308,7 +308,7 @@ public class UdpServerTest {
 	void sendsWinMessageToAllPlayers() throws IOException {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfState(makeWinBoard(client1.getName()));
+		tournamentOfBoardWithState(makeWinBoard(client1.getName()));
 		assertAllReceived("RESULT;WIN;" + client1.getName() + ";FOUR_IN_A_ROW", client1, client2);
 	}
 
@@ -316,7 +316,7 @@ public class UdpServerTest {
 	void sendsLoseMessageToAllPlayers() throws IOException {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfState(makeLoseBoard(client1.getName()));
+		tournamentOfBoardWithState(makeLoseBoard(client1.getName()));
 		assertAllReceived("RESULT;LOSE;" + client1.getName() + ";ILLEGAL_COLUMN_ANNOUNCED", client1, client2);
 	}
 
@@ -324,7 +324,7 @@ public class UdpServerTest {
 	void sendsDrawMessageToAllPlayers() throws IOException {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
-		tournamentOfState(makeDrawBoard());
+		tournamentOfBoardWithState(makeDrawBoard());
 		assertAllReceived("RESULT;DRAW;;", client1, client2);
 	}
 
@@ -359,7 +359,7 @@ public class UdpServerTest {
 		});
 	}
 
-	private void tournamentOfState(Board board) {
+	private void tournamentOfBoardWithState(Board board) {
 		tournamentOfState(board.gameState());
 	}
 
