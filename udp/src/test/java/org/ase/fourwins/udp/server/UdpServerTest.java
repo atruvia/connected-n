@@ -309,7 +309,7 @@ public class UdpServerTest {
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
 		tournamentOfBoardWithState(makeWinBoard(client1.getName()));
-		assertAllReceived("RESULT;WIN;" + client1.getName() + ";FOUR_IN_A_ROW", client1, client2);
+		assertAllReceived("RESULT;WIN;" + client1.getName() + ";CONNECTED_ROW", client1, client2);
 	}
 
 	@Test

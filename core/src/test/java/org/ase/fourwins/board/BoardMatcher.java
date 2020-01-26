@@ -22,7 +22,7 @@ public class BoardMatcher extends TypeSafeMatcher<Board> {
 	}
 
 	public static BoardMatcher winnerIs(Object token) {
-		return scoreIs(WIN).withToken(token).withReason("FOUR_IN_A_ROW").withCombinations(1);
+		return scoreIs(WIN).withToken(token).withReason("CONNECTED_ROW").withCombinations(1);
 	}
 
 	public static BoardMatcher loserIs(Object token) {

@@ -80,10 +80,10 @@ Das ```ergebnis``` hat die Ausprägungen LOSE|WIN|DRAW
 
 ### Gründe, warum eine Partie beendet wurde
 Der Wert ```grund``` kann u.a folgende Ausprägungen haben: 
-- FOUR_IN_A_ROW
-- COLUMN_IS_FULL
-- ILLEGAL_COLUMN_ANNOUNCED
-- Fehlertext der Exception (Protokollfehler, Timeout, etc.)
+- CONNECTED_ROW (WIN)
+- COLUMN_IS_FULL (LOSE)
+- ILLEGAL_COLUMN_ANNOUNCED (LOSE)
+- Fehlertext der Exception (Protokollfehler, Timeout, etc.) (LOSE)
 
 ### Timeouts
 Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er die Partie
