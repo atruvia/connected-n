@@ -51,10 +51,6 @@
 				<version>1.8.0</version>
 				<configuration>
 					<skip>true</skip>
-					<container>
-						<mainClass>org.ase.fourwins.udp.server.Main</mainClass>
-						<creationTime>USE_CURRENT_TIMESTAMP</creationTime>
-					</container>
 					<allowInsecureRegistries>true</allowInsecureRegistries>
 					<to>
 						<tags>
@@ -65,6 +61,9 @@
 			</plugin>
 		</plugins>
 	</build>
+
+
+
 	<dependencies>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

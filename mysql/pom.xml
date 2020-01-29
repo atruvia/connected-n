@@ -10,19 +10,6 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>com.google.cloud.tools</groupId>
-				<artifactId>jib-maven-plugin</artifactId>
-				<version>1.8.0</version>
-				<configuration>
-					<skip>false</skip>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
 	<dependencies>
 		<dependency>
 			<groupId>de.fiduciagad.ase.fourwins</groupId>
