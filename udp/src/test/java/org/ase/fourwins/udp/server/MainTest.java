@@ -53,8 +53,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.verification.VerificationMode;
 
-import com.github.stefanbirkner.systemlambda.SystemLambda;
-
 import lombok.Getter;
 
 public class MainTest {
