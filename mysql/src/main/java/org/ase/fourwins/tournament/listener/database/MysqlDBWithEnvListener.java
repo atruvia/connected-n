@@ -2,11 +2,11 @@ package org.ase.fourwins.tournament.listener.database;
 
 import java.sql.SQLException;
 
-import org.ase.fourwins.annos.OnlyActivateWHenEnvSet;
+import org.ase.fourwins.annos.OnlyActivateWhenEnvSet;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
-@OnlyActivateWHenEnvSet("WITH_DATABASE")
+@OnlyActivateWhenEnvSet("WITH_DATABASE")
 //@ActivateIfSet({ MysqlDBWithEnvListener.DATABASE_URL, MysqlDBWithEnvListener.DATABASE_USER,
 //	MysqlDBWithEnvListener.DATABASE_PASSWORD })
 public class MysqlDBWithEnvListener implements TournamentListener {

@@ -7,7 +7,7 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.stream.Stream;
 
-import org.ase.fourwins.annos.OnlyActivateWHenEnvSet;
+import org.ase.fourwins.annos.OnlyActivateWhenEnvSet;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.listener.TournamentListener;
@@ -28,7 +28,7 @@ public class Main {
 	}
 
 	private static boolean canLoad(Provider<TournamentListener> provider) {
-		OnlyActivateWHenEnvSet annotation = provider.type().getAnnotation(OnlyActivateWHenEnvSet.class);
+		OnlyActivateWhenEnvSet annotation = provider.type().getAnnotation(OnlyActivateWhenEnvSet.class);
 		return annotation == null || envIsSet(annotation.value());
 	}
 
