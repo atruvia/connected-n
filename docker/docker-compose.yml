@@ -38,11 +38,15 @@ services:
       - "./grafana/plugins:/var/lib/grafana/plugins"
 
   fourwinsserver: 
-    image: fiduciagad/fourwins-mysql
+    image: fiduciagad/fourwins-udp
     environment:
+      WITH_DATABASE: "true"
       DATABASE_URL: "jdbc:mysql://db:3306/4WINS"
       DATABASE_USER: "fourwins_write"
       DATABASE_PASSWORD: "fourwinswrite"
+      WITH_MQTT: "true"
+      MQTT_HOST: "localhost"
+      MQTT_PORT: "1883"
     ports: 
       - "4446:4446/udp"
 

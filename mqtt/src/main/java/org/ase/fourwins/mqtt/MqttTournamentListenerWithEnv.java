@@ -3,9 +3,11 @@ package org.ase.fourwins.mqtt;
 import java.io.IOException;
 import java.util.Optional;
 
+import org.ase.fourwins.annos.OnlyActivateWHenEnvSet;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
+@OnlyActivateWHenEnvSet("WITH_MQTT")
 public class MqttTournamentListenerWithEnv implements TournamentListener {
 
 	private final MqttTournamentListener delegate;
