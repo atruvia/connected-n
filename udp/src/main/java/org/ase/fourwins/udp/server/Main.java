@@ -1,5 +1,6 @@
 package org.ase.fourwins.udp.server;
 
+import static java.lang.Integer.parseInt;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
@@ -12,15 +13,34 @@ import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
+import lombok.Setter;
+
 public class Main {
 
+	@Setter
+	protected Tournament tournament = new DefaultTournament();
+	@Setter
+	protected int port = 4446;
+
 	public static void main(String[] args) {
-		new UdpServer(4446, addListeners(new DefaultTournament())).startServer();
+		Main main = new Main();
+		if (args.length > 0) {
+			main.setPort(parseInt(args[1]));
+		}
+		main.doMain();
 	}
 
-	private static Tournament addListeners(Tournament tournament) {
+	public void doMain() {
+		addListeners(tournament);
+		createUdpServer(tournament).startServer();
+	}
+
+	protected UdpServer createUdpServer(Tournament tournament) {
+		return new UdpServer(port, tournament);
+	}
+
+	private static void addListeners(Tournament tournament) {
 		loadListeners().forEach(tournament::addTournamentListener);
-		return tournament;
 	}
 
 	private static Stream<TournamentListener> loadListeners() {

@@ -2,7 +2,7 @@ package org.ase.fourwins.udp.server;
 
 import java.io.IOException;
 
-import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
+import org.ase.fourwins.udp.server.MainTest.DummyClient;
 
 public class PlayingClient extends DummyClient {
 

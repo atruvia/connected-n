@@ -30,7 +30,7 @@ import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.ScoreSheet;
 import org.ase.fourwins.tournament.TournamentScoreListener;
 import org.ase.fourwins.tournament.listener.TournamentListener;
-import org.ase.fourwins.udp.server.UdpServerTest.DummyClient;
+import org.ase.fourwins.udp.server.MainTest.DummyClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

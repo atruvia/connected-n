@@ -1,5 +1,6 @@
 package org.ase.fourwins.udp.server;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static java.lang.Long.MAX_VALUE;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
@@ -28,6 +29,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -39,6 +43,9 @@ import org.ase.fourwins.board.BoardInfo.BoardInfoBuilder;
 import org.ase.fourwins.board.Move.DefaultMove;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
+import org.ase.fourwins.udp.server.listeners.TournamentListenerDisabled;
+import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled;
+import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,9 +53,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.verification.VerificationMode;
 
+import com.github.stefanbirkner.systemlambda.SystemLambda;
+
 import lombok.Getter;
 
-public class UdpServerTest {
+public class MainTest {
 
 	private static final Duration TIMEOUT = ofSeconds(10);
 
@@ -117,10 +126,52 @@ public class UdpServerTest {
 
 	private final Tournament tournament = mock(Tournament.class);
 
-	private UdpServer udpServerInBackground() {
-		UdpServer udpServer = new UdpServer(serverPort, tournament);
-		runInBackground(() -> udpServer.startServer());
-		return udpServer;
+	private Main runMainInBackground() {
+
+		Lock lock = new ReentrantLock();
+		Condition serverIsReady = lock.newCondition();
+
+		Main main = new Main() {
+			@Override
+			protected UdpServer createUdpServer(Tournament listeners) {
+				return new UdpServer(port, tournament) {
+					@Override
+					protected void playSeasonsForever(Tournament tournament) {
+						lock.lock();
+						signalReady();
+						super.playSeasonsForever(tournament);
+					}
+
+					private void signalReady() {
+						try {
+							serverIsReady.signal();
+						} finally {
+							lock.unlock();
+						}
+					}
+				};
+			}
+		};
+		main.setPort(serverPort);
+		main.setTournament(tournament);
+		runInBackground(() -> {
+			try {
+				withEnvironmentVariable("envNameThatIsSet", "anyValue").execute(main::doMain);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
+		waitReady(lock, serverIsReady);
+		return main;
+	}
+
+	private void waitReady(Lock lock, Condition ready) {
+		lock.lock();
+		try {
+			ready.awaitUninterruptibly();
+		} finally {
+			lock.unlock();
+		}
 	}
 
 	private static void runInBackground(Runnable runnable) {
@@ -129,7 +180,7 @@ public class UdpServerTest {
 
 	@BeforeEach
 	public void setup() {
-		udpServerInBackground();
+		runMainInBackground();
 	}
 
 	@AfterEach
@@ -328,6 +379,13 @@ public class UdpServerTest {
 		assertAllReceived("RESULT;DRAW;;", client1, client2);
 	}
 
+	@Test
+	void verifyListenersAreLoadedByServiceLoader() {
+		assertThat(TournamentListenerDisabled.isConstructorCalled(), is(false));
+		assertThat(TournamentListenerEnabled.isConstructorCalled(), is(true));
+		assertThat(TournamentListenerEnabled2.isConstructorCalled(), is(true));
+	}
+
 	private static Board makeWinBoard(String winnerToken) {
 		return aBoard(oneOfOne().toConnect(1)).insertToken(new DefaultMove(0), winnerToken);
 	}
@@ -367,11 +425,14 @@ public class UdpServerTest {
 	private void tournamentOfState(GameState gameState) {
 		ArgumentCaptor<Collection<Player>> playerCaptor = ArgumentCaptor.forClass(Collection.class);
 		ArgumentCaptor<Consumer<GameState>> consumerCaptor = ArgumentCaptor.forClass(Consumer.class);
-		doAnswer(s -> {
-			playerCaptor.getValue().forEach(p -> p.gameEnded(gameState));
-			waitForever();
-			throw new IllegalStateException();
-		}).when(tournament).playSeason(playerCaptor.capture(), consumerCaptor.capture());
+		doAnswer(s -> callGameEnded(gameState, playerCaptor.getValue())).when(tournament)
+				.playSeason(playerCaptor.capture(), consumerCaptor.capture());
+	}
+
+	private Object callGameEnded(GameState gameState, Collection<Player> players) {
+		players.forEach(p -> p.gameEnded(gameState));
+		waitForever();
+		return null;
 	}
 
 	private void assertWelcomed(DummyClient client) {

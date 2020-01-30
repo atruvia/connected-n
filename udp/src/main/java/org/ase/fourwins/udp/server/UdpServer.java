@@ -180,6 +180,10 @@ public class UdpServer {
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
 		}
+		playSeasonsForever(tournament);
+	}
+
+	protected void playSeasonsForever(Tournament tournament) {
 		new Thread(() -> {
 			while (true) {
 				if (players.size() < 2) {
@@ -198,7 +202,6 @@ public class UdpServer {
 				}
 			}
 		}).start();
-
 	}
 
 	private Consumer<GameState> noop() {
