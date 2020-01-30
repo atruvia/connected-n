@@ -9,6 +9,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
+import static org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2.ENV_NAME_TO_BE_SET;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasItem;
@@ -154,7 +155,7 @@ public class MainTest {
 		main.setTournament(tournament);
 		runInBackground(() -> {
 			try {
-				withEnvironmentVariable("envNameThatIsSet", "anyValue").execute(main::doMain);
+				withEnvironmentVariable(ENV_NAME_TO_BE_SET, "anyValue").execute(main::doMain);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
