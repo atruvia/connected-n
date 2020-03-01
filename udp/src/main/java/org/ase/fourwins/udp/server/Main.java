@@ -13,30 +13,30 @@ import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
-import lombok.Setter;
-
 public class Main {
 
-	@Setter
-	protected Tournament tournament = new DefaultTournament();
-	@Setter
-	protected int port = 4446;
+	private UdpServer udpServer;
 
 	public static void main(String[] args) {
 		Main main = new Main();
-		if (args.length > 0) {
-			main.setPort(parseInt(args[1]));
+		String port = System.getenv("PORT");
+		if (port != null) {
+			main.udpServer.setPort(parseInt(port));
 		}
-		main.doMain();
+		main.doMain(new DefaultTournament());
 	}
 
-	public void doMain() {
+	public Main() {
+		udpServer = createUdpServer();
+	}
+
+	public void doMain(Tournament tournament) {
 		addListeners(tournament);
-		createUdpServer(tournament).startServer();
+		udpServer.startServer(tournament);
 	}
 
-	protected UdpServer createUdpServer(Tournament tournament) {
-		return new UdpServer(port, tournament);
+	protected UdpServer createUdpServer() {
+		return new UdpServer();
 	}
 
 	private static void addListeners(Tournament tournament) {

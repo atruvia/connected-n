@@ -29,20 +29,23 @@ import java.util.stream.Stream;
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.Accessors;
 
+@Accessors(chain = true)
 public class UdpServer {
 
 	public static final int MAX_CLIENT_NAME_LENGTH = 30;
 
+	@Setter
+	private int port = 4446;
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
 
-	private final DatagramSocket socket;
 	private final byte[] buf = new byte[1024];
 
 	private final Lock lock = new ReentrantLock();
@@ -169,20 +172,6 @@ public class UdpServer {
 
 	}
 
-	public UdpServer(int port) {
-		this(port, new DefaultTournament());
-	}
-
-	public UdpServer(int port, Tournament tournament) {
-		try {
-			socket = new DatagramSocket(port);
-			System.out.println("Listening on " + port);
-		} catch (SocketException e) {
-			throw new RuntimeException(e);
-		}
-		playSeasonsForever(tournament);
-	}
-
 	protected void playSeasonsForever(Tournament tournament) {
 		new Thread(() -> {
 			while (true) {
@@ -225,8 +214,17 @@ public class UdpServer {
 		});
 	}
 
-	public UdpServer startServer() {
+	public UdpServer startServer(Tournament tournament) {
 		System.out.println("Starting server");
+		DatagramSocket socket;
+		try {
+			socket = new DatagramSocket(port);
+			System.out.println("Listening on " + port);
+		} catch (SocketException e) {
+			throw new RuntimeException(e);
+		}
+		playSeasonsForever(tournament);
+
 		while (!socket.isClosed()) {
 			DatagramPacket packet = new DatagramPacket(buf, buf.length);
 			try {

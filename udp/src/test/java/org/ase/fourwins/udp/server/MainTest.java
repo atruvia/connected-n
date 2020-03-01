@@ -132,8 +132,8 @@ public class MainTest {
 
 		Main main = new Main() {
 			@Override
-			protected UdpServer createUdpServer(Tournament listeners) {
-				return new UdpServer(port, tournament) {
+			protected UdpServer createUdpServer() {
+				return new UdpServer() {
 					@Override
 					protected void playSeasonsForever(Tournament tournament) {
 						lock.lock();
@@ -148,14 +148,12 @@ public class MainTest {
 							lock.unlock();
 						}
 					}
-				};
+				}.setPort(serverPort);
 			}
 		};
-		main.setPort(serverPort);
-		main.setTournament(tournament);
 		runInBackground(() -> {
 			try {
-				withEnvironmentVariable(ENV_NAME_TO_BE_SET, "anyValue").execute(main::doMain);
+				withEnvironmentVariable(ENV_NAME_TO_BE_SET, "anyValue").execute(() -> main.doMain(tournament));
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
