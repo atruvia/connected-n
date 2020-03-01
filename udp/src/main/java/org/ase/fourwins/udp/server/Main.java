@@ -18,12 +18,23 @@ public class Main {
 	private UdpServer udpServer;
 
 	public static void main(String[] args) {
-		Main main = new Main();
+		new Main().port().timeout().doMain(new DefaultTournament());
+	}
+
+	private Main port() {
 		String port = System.getenv("PORT");
 		if (port != null) {
-			main.udpServer.setPort(parseInt(port));
+			udpServer.setPort(parseInt(port));
 		}
-		main.doMain(new DefaultTournament());
+		return this;
+	}
+
+	private Main timeout() {
+		String timeout = System.getenv("TIMEOUT");
+		if (timeout != null) {
+			udpServer.setTimeoutMillis(parseInt(timeout));
+		}
+		return this;
 	}
 
 	public Main() {

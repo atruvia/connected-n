@@ -44,6 +44,10 @@ public class UdpServer {
 
 	@Setter
 	private int port = 4446;
+
+	@Setter
+	private int timeoutMillis = 250;
+
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
 
 	private final byte[] buf = new byte[1024];
@@ -56,11 +60,10 @@ public class UdpServer {
 	@ToString
 	private static class UdpPlayerInfo {
 
-		private static final int TIMEOUT_IN_MILLIS = 250;
-
 		private final InetAddress adressInfo;
 		private final Integer port;
 		private final String name;
+		private final int timeoutInMillis;
 		private final ArrayBlockingQueue<String> responses = new ArrayBlockingQueue<>(10);
 
 		void reponseReceived(String received) {
@@ -70,7 +73,7 @@ public class UdpServer {
 		String getResponse(String delimiter, String uuid) throws TimeoutException {
 			try {
 				do {
-					String response = responses.poll(TIMEOUT_IN_MILLIS, MILLISECONDS);
+					String response = responses.poll(timeoutInMillis, MILLISECONDS);
 					if (response == null) {
 						throw new TimeoutException("TIMEOUT");
 					}
@@ -89,7 +92,7 @@ public class UdpServer {
 			try {
 				byte[] bytes = message.getBytes();
 				try (DatagramSocket sendSocket = new DatagramSocket()) {
-					sendSocket.setSoTimeout(TIMEOUT_IN_MILLIS);
+					sendSocket.setSoTimeout(timeoutInMillis);
 					sendSocket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
 				}
 			} catch (IOException e) {
@@ -243,24 +246,28 @@ public class UdpServer {
 		if (received.startsWith("REGISTER;")) {
 			String[] split = received.split(";");
 			if (split.length < 2) {
-				new UdpPlayerInfo(clientIp, clientPort, "").send("NO_NAME_GIVEN");
+				new UdpPlayerInfo(clientIp, clientPort, "", timeoutMillis).send("NO_NAME_GIVEN");
 				return;
 			}
 			String playerName = split[1].trim();
 			if (playerName.length() > MAX_CLIENT_NAME_LENGTH) {
-				new UdpPlayerInfo(clientIp, clientPort, playerName.substring(0, MAX_CLIENT_NAME_LENGTH))
+				new UdpPlayerInfo(clientIp, clientPort, playerName.substring(0, MAX_CLIENT_NAME_LENGTH), timeoutMillis)
 						.send("NAME_TOO_LONG");
 				return;
 			}
 			handleRegisterCommand(findBy(inetAddressAndName(clientIp, playerName)).map(i -> {
 				players.remove(i);
-				return new UdpPlayerInfo(clientIp, clientPort, playerName);
-			}).orElseGet(() -> new UdpPlayerInfo(clientIp, clientPort, playerName)));
+				return newPlayer(clientIp, clientPort, playerName, timeoutMillis);
+			}).orElseGet(() -> newPlayer(clientIp, clientPort, playerName, timeoutMillis)));
 		} else if ("UNREGISTER".equals(received)) {
 			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(this::handleUnregisterCommand);
 		} else {
 			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(i -> i.reponseReceived(received));
 		}
+	}
+
+	private UdpPlayerInfo newPlayer(InetAddress clientIp, int clientPort, String playerName, int timeout) {
+		return new UdpPlayerInfo(clientIp, clientPort, playerName, timeout);
 	}
 
 	private Predicate<UdpPlayerInfo> inetAddressAndPort(InetAddress clientIp, int clientPort) {
