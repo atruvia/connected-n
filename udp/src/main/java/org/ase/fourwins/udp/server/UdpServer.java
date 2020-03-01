@@ -1,5 +1,6 @@
 package org.ase.fourwins.udp.server;
 
+import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
@@ -65,11 +66,10 @@ public class UdpServer {
 		}
 
 		String getResponse(String delimiter, String uuid) throws TimeoutException {
-			long start = System.currentTimeMillis();
-			long millisLeft = TIMEOUT_IN_MILLIS;
 			try {
+				long timeoutAt = currentTimeMillis() + TIMEOUT_IN_MILLIS;
 				while (true) {
-					String response = responses.poll(millisLeft, MILLISECONDS);
+					String response = responses.poll(timeoutAt - currentTimeMillis(), MILLISECONDS);
 					if (response == null) {
 						throw new TimeoutException("No response for UUID " + uuid);
 					}
@@ -77,7 +77,6 @@ public class UdpServer {
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
 						return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 					}
-					millisLeft -= (System.currentTimeMillis() - start);
 				}
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
