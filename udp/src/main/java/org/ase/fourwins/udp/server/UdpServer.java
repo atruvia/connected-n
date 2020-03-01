@@ -65,18 +65,20 @@ public class UdpServer {
 		}
 
 		String getResponse(String delimiter, String uuid) throws TimeoutException {
+			long start = System.currentTimeMillis();
+			long millisLeft = TIMEOUT_IN_MILLIS;
 			try {
-				do {
-					String response = responses.poll(TIMEOUT_IN_MILLIS, MILLISECONDS);
+				while (true) {
+					String response = responses.poll(millisLeft, MILLISECONDS);
 					if (response == null) {
-						throw new TimeoutException("TIMEOUT");
+						throw new TimeoutException("No response for UUID " + uuid);
 					}
 					String[] splitted = response.split(delimiter);
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
 						return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 					}
-				} while (!responses.isEmpty());
-				throw new IllegalStateException("No response for UUID " + uuid);
+					millisLeft -= (System.currentTimeMillis() - start);
+				}
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
