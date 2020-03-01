@@ -71,7 +71,7 @@ public class UdpServer {
 				while (true) {
 					String response = responses.poll(timeoutAt - currentTimeMillis(), MILLISECONDS);
 					if (response == null) {
-						throw new TimeoutException("No response for UUID " + uuid);
+						throw new TimeoutException("Timeout while waiting for response for UUID " + uuid);
 					}
 					String[] splitted = response.split(delimiter);
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
