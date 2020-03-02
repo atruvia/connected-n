@@ -73,7 +73,7 @@ public class UdpServer {
 
 		String getResponse(String delimiter, String uuid) throws TimeoutException {
 			try {
-				long timeoutAt = currentTimeMillis() + TIMEOUT_IN_MILLIS;
+				long timeoutAt = currentTimeMillis() + timeoutInMillis;
 				while (true) {
 					String response = responses.poll(timeoutAt - currentTimeMillis(), MILLISECONDS);
 					if (response == null) {
