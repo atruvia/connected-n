@@ -74,8 +74,8 @@ public class UdpServerRealTournamentIT {
 	private final UdpServer sut = udpServerInBackground();
 
 	private UdpServer udpServerInBackground() {
-		UdpServer udpServer = new UdpServer(serverPort, tournament);
-		runInBackground(() -> udpServer.startServer());
+		UdpServer udpServer = new UdpServer().setPort(serverPort);
+		runInBackground(() -> udpServer.startServer(tournament));
 		return udpServer;
 	}
 
