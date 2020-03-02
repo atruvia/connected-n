@@ -271,7 +271,7 @@ public class MainTest {
 	}
 
 	@Test
-	void seasonWillOnlyBeStartedIfTwoOreMorePlayersAreRegistered() throws IOException {
+	void seasonWillOnlyBeStartedIfMoreThanOnePlayerIsRegistered() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1");

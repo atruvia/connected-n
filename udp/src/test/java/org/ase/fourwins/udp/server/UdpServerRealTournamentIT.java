@@ -71,8 +71,6 @@ public class UdpServerRealTournamentIT {
 
 	private final DefaultTournament tournament = new DefaultTournament();
 
-	private final UdpServer sut = udpServerInBackground();
-
 	private UdpServer udpServerInBackground() {
 		UdpServer udpServer = new UdpServer().setPort(serverPort);
 		runInBackground(() -> udpServer.startServer(tournament));
@@ -86,6 +84,7 @@ public class UdpServerRealTournamentIT {
 	@Test
 	void canReRegister() throws IOException, InterruptedException {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
+			udpServerInBackground();
 			assertWelcomed(playingClient("1", 0));
 			assertWelcomed(playingClient("1", 0));
 		});
@@ -94,6 +93,7 @@ public class UdpServerRealTournamentIT {
 	@Test
 	void canPlay_2() throws IOException, InterruptedException {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
+			udpServerInBackground();
 			TournamentScoreListener scoreListener = new TournamentScoreListener();
 			tournament.addTournamentListener(scoreListener);
 			GameStateCollector stateListener = new GameStateCollector();
@@ -157,9 +157,10 @@ public class UdpServerRealTournamentIT {
 	@Test
 	@Disabled
 	void canPlay_Multi() throws IOException, InterruptedException {
-		tournament.addTournamentListener(new TournamentScoreListener());
 		// TEST fails since is canceled after timeout has reached ;-)
 		assertTimeoutPreemptively(TIMEOUT, () -> {
+			udpServerInBackground();
+			tournament.addTournamentListener(new TournamentScoreListener());
 			IntStream.range(0, 10).forEach(i -> {
 				try {
 					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
@@ -232,6 +233,7 @@ public class UdpServerRealTournamentIT {
 	@Test
 	void aClientWithTimeout() throws IOException, InterruptedException {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
+			udpServerInBackground();
 			GameStateCollector stateListener = new GameStateCollector();
 			tournament.addTournamentListener(stateListener);
 

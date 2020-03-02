@@ -1,6 +1,7 @@
 package org.ase.fourwins.udp.server;
 
 import static java.lang.Integer.parseInt;
+import static java.util.EnumSet.allOf;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
@@ -13,28 +14,54 @@ import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
+import lombok.RequiredArgsConstructor;
+
 public class Main {
 
 	private UdpServer udpServer;
 
+	@RequiredArgsConstructor
+	private enum EnvVar {
+		PORT("PORT") {
+			@Override
+			void setValue(UdpServer udpServer, String value) {
+				udpServer.setPort(parseInt(value));
+			}
+		}, //
+		TIMEOUT("TIMEOUT") {
+			@Override
+			void setValue(UdpServer udpServer, String value) {
+				udpServer.setTimeoutMillis(parseInt(value));
+			}
+		}, //
+		DELAY("DELAY") {
+			@Override
+			void setValue(UdpServer udpServer, String value) {
+				udpServer.setDelayMillis(parseInt(value));
+			}
+		};
+
+		private final String key;
+
+		private void setValueAt(UdpServer udpServer) {
+			String value = System.getenv(key);
+			if (value != null) {
+				setValue(udpServer, value);
+			}
+		}
+
+		abstract void setValue(UdpServer udpServer, String value);
+
+		private static void setAll(UdpServer udpServer) {
+			allOf(EnvVar.class).forEach(v -> v.setValueAt(udpServer));
+		}
+
+	}
+
 	public static void main(String[] args) {
-		new Main().port().timeout().doMain(new DefaultTournament());
-	}
-
-	private Main port() {
-		String port = System.getenv("PORT");
-		if (port != null) {
-			udpServer.setPort(parseInt(port));
-		}
-		return this;
-	}
-
-	private Main timeout() {
-		String timeout = System.getenv("TIMEOUT");
-		if (timeout != null) {
-			udpServer.setTimeoutMillis(parseInt(timeout));
-		}
-		return this;
+		Main main = new Main();
+		EnvVar.setAll(main.udpServer);
+		main.doMain(new DefaultTournament());
 	}
 
 	public Main() {

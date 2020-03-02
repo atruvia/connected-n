@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -47,6 +48,9 @@ public class UdpServer {
 
 	@Setter
 	private int timeoutMillis = 250;
+
+	@Setter
+	private int delayMillis = 0;
 
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
 
@@ -177,6 +181,7 @@ public class UdpServer {
 
 	protected void playSeasonsForever(Tournament tournament) {
 		new Thread(() -> {
+			System.out.println("Torunament starting");
 			while (true) {
 				if (players.size() < 2) {
 					try {
@@ -219,26 +224,40 @@ public class UdpServer {
 
 	public UdpServer startServer(Tournament tournament) {
 		System.out.println("Starting server");
-		DatagramSocket socket;
-		try {
-			socket = new DatagramSocket(port);
-			System.out.println("Listening on " + port);
-		} catch (SocketException e) {
-			throw new RuntimeException(e);
-		}
-		playSeasonsForever(tournament);
+		try (DatagramSocket socket = createSocket()) {
+			delay();
+			playSeasonsForever(tournament);
 
-		while (!socket.isClosed()) {
-			DatagramPacket packet = new DatagramPacket(buf, buf.length);
-			try {
-				socket.receive(packet);
-				String received = new String(packet.getData(), 0, packet.getLength());
-				dispatchCommand(packet.getAddress(), packet.getPort(), received);
-			} catch (IOException e) {
-				e.printStackTrace();
+			while (!socket.isClosed()) {
+				DatagramPacket packet = new DatagramPacket(buf, buf.length);
+				try {
+					socket.receive(packet);
+					String received = new String(packet.getData(), 0, packet.getLength());
+					dispatchCommand(packet.getAddress(), packet.getPort(), received);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		return this;
+	}
+
+	private void delay() {
+		try {
+			TimeUnit.MILLISECONDS.sleep(this.delayMillis);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+
+	private DatagramSocket createSocket() {
+		try {
+			DatagramSocket socket = new DatagramSocket(port);
+			System.out.println("Listening on " + port);
+			return socket;
+		} catch (SocketException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private void dispatchCommand(InetAddress clientIp, int clientPort, String received)
@@ -303,7 +322,6 @@ public class UdpServer {
 
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
-		System.out.println(playerInfo.getName() + ":" + playerInfo.getPort());
 		playerInfo.send("WELCOME;" + playerInfo.getName());
 		try {
 			lock.lock();
