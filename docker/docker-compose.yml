@@ -40,6 +40,8 @@ services:
   fourwinsserver: 
     image: fiduciagad/fourwins-udp
     environment:
+      TIMEOUT: 250
+      DELAY: 30000
       WITH_DATABASE: "true"
       DATABASE_URL: "jdbc:mysql://db:3306/4WINS"
       DATABASE_USER: "fourwins_write"
