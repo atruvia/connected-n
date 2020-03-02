@@ -59,6 +59,7 @@ public class UdpServer {
 
 	private final Lock lock = new ReentrantLock();
 	private final Condition playerRegistered = lock.newCondition();
+	private volatile boolean keepSeasonRunning = true;
 
 	@Getter
 	@RequiredArgsConstructor
@@ -182,8 +183,9 @@ public class UdpServer {
 
 	protected void playSeasonsForever(Tournament tournament) {
 		new Thread(() -> {
-			System.out.println("Torunament starting");
-			while (true) {
+			delay();
+			System.out.println("Tournament starting");
+			while (keepSeasonRunning) {
 				if (players.size() < 2) {
 					try {
 						lock.lock();
@@ -199,7 +201,24 @@ public class UdpServer {
 					tournament.playSeason(playersJoiningNextSeason().map(Entry::getValue).collect(toList()), noop());
 				}
 			}
+			System.out.println("Tournament stopped");
 		}).start();
+	}
+
+	public void stop() {
+		System.out.println("Tournament will stop");
+		keepSeasonRunning = false;
+	}
+
+	private void delay() {
+		if (delayMillis > 0) {
+			System.out.println("Delaying start for " + delayMillis + " millis");
+			try {
+				TimeUnit.MILLISECONDS.sleep(delayMillis);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
 	}
 
 	private Consumer<GameState> noop() {
@@ -226,7 +245,6 @@ public class UdpServer {
 	public UdpServer startServer(Tournament tournament) {
 		System.out.println("Starting server");
 		try (DatagramSocket socket = createSocket()) {
-			delay();
 			playSeasonsForever(tournament);
 
 			while (!socket.isClosed()) {
@@ -241,14 +259,6 @@ public class UdpServer {
 			}
 		}
 		return this;
-	}
-
-	private void delay() {
-		try {
-			TimeUnit.MILLISECONDS.sleep(this.delayMillis);
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
 	}
 
 	private DatagramSocket createSocket() {

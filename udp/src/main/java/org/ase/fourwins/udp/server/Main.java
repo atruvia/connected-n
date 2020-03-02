@@ -60,8 +60,15 @@ public class Main {
 
 	public static void main(String[] args) {
 		Main main = new Main();
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> stop(main)));
 		EnvVar.setAll(main.udpServer);
 		main.doMain(new DefaultTournament());
+	}
+
+	private static void stop(Main main) {
+		main.udpServer.stop();
+		System.out.flush();
+		System.err.flush();
 	}
 
 	public Main() {
