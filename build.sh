@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DOCKER_IMAGE=maven:3.6-jdk-8
+DOCKER_IMAGE=maven:3.6-jdk-11
 PRJ_NAME=`basename "$PWD"`
 
 docker run -it --rm \
