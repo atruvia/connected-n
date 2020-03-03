@@ -43,20 +43,6 @@ public class UdpServerRealTournamentIT {
 	private static final String SERVER = "localhost";
 	private final int serverPort = freePort();
 
-	private final class NoResponseClient extends DummyClient {
-		private NoResponseClient(String name, String remoteHost, int remotePort) throws IOException {
-			super(name, remoteHost, remotePort);
-		}
-
-		@Override
-		protected void messageReceived(String received) {
-			super.messageReceived(received);
-			if (received.startsWith("NEW SEASON;")) {
-				trySend("JOIN;" + received.split(";")[1]);
-			}
-		}
-	}
-
 	private final class GameStateCollector implements TournamentListener {
 
 		@Getter
@@ -231,6 +217,27 @@ public class UdpServerRealTournamentIT {
 	}
 
 	@Test
+	void aClientThatDoNotRespondGetsDeregistered() throws IOException, InterruptedException {
+		assertTimeoutPreemptively(TIMEOUT, () -> {
+			udpServerInBackground();
+			GameStateCollector stateListener = new GameStateCollector();
+			tournament.addTournamentListener(stateListener);
+
+			DummyClient client1 = playingClient("1", 0);
+			DummyClient client2 = onlyRespondToFirstJoinSeason("2");
+
+			/// ...let it run for a while
+			TimeUnit.SECONDS.sleep(5);
+
+			await().until(() -> getReceived(client2, s -> s.toLowerCase().contains("unregister")).size(),
+					greaterThan(0));
+
+			client1.unregister();
+			client2.unregister();
+		});
+	}
+
+	@Test
 	void aClientWithTimeout() throws IOException, InterruptedException {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			udpServerInBackground();
@@ -238,7 +245,7 @@ public class UdpServerRealTournamentIT {
 			tournament.addTournamentListener(stateListener);
 
 			DummyClient client1 = playingClient("1", 0);
-			DummyClient client2 = noResponseClient();
+			DummyClient client2 = onlyRespondToFirstJoinSeason("2");
 
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
@@ -262,8 +269,19 @@ public class UdpServerRealTournamentIT {
 		});
 	}
 
-	private NoResponseClient noResponseClient() throws IOException {
-		return new NoResponseClient("2", SERVER, serverPort);
+	private DummyClient onlyRespondToFirstJoinSeason(String name) throws IOException {
+		return new DummyClient(name, SERVER, serverPort) {
+			private boolean responded;
+
+			@Override
+			protected void messageReceived(String received) {
+				super.messageReceived(received);
+				if (!responded && received.startsWith("NEW SEASON;")) {
+					trySend("JOIN;" + received.split(";")[1]);
+					responded = true;
+				}
+			}
+		};
 	}
 
 	private List<String> newGames(DummyClient client) {

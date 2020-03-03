@@ -64,13 +64,13 @@ public class UdpServer {
 	@Getter
 	@RequiredArgsConstructor
 	@ToString
-	private static class UdpPlayerInfo {
+	private class UdpPlayerInfo {
 
 		private final InetAddress adressInfo;
 		private final Integer port;
 		private final String name;
-		private final int timeoutInMillis;
 		private final ArrayBlockingQueue<String> responses = new ArrayBlockingQueue<>(10);
+		private int timeouts;
 
 		void reponseReceived(String received) {
 			responses.offer(received);
@@ -78,14 +78,19 @@ public class UdpServer {
 
 		String getResponse(String delimiter, String uuid) throws TimeoutException {
 			try {
-				long timeoutAt = currentTimeMillis() + timeoutInMillis;
+				long timeoutAt = currentTimeMillis() + timeoutMillis;
 				while (true) {
 					String response = responses.poll(timeoutAt - currentTimeMillis(), MILLISECONDS);
 					if (response == null) {
+						if (timeouts++ >= 10) {
+							System.out.println("Deregistering " + name + " because of too many timeouts in a row");
+							handleUnregisterCommand(this);
+						}
 						throw new TimeoutException("Timeout while waiting for response for UUID " + uuid);
 					}
 					String[] splitted = response.split(delimiter);
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
+						timeouts = 0;
 						return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 					}
 				}
@@ -98,7 +103,7 @@ public class UdpServer {
 			try {
 				byte[] bytes = message.getBytes();
 				try (DatagramSocket sendSocket = new DatagramSocket()) {
-					sendSocket.setSoTimeout(timeoutInMillis);
+					sendSocket.setSoTimeout(timeoutMillis);
 					sendSocket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
 				}
 			} catch (IOException e) {
@@ -113,7 +118,7 @@ public class UdpServer {
 			return getResponse(delimiter, uuid);
 		}
 
-		private static String uuid() {
+		private String uuid() {
 			String uuid = UUID.randomUUID().toString();
 			int pos = uuid.indexOf("-");
 			return pos < 0 ? uuid : uuid.substring(0, pos);
@@ -276,12 +281,12 @@ public class UdpServer {
 		if (received.startsWith("REGISTER;")) {
 			String[] split = received.split(";");
 			if (split.length < 2) {
-				new UdpPlayerInfo(clientIp, clientPort, "", timeoutMillis).send("NO_NAME_GIVEN");
+				new UdpPlayerInfo(clientIp, clientPort, "").send("NO_NAME_GIVEN");
 				return;
 			}
 			String playerName = split[1].trim();
 			if (playerName.length() > MAX_CLIENT_NAME_LENGTH) {
-				new UdpPlayerInfo(clientIp, clientPort, playerName.substring(0, MAX_CLIENT_NAME_LENGTH), timeoutMillis)
+				new UdpPlayerInfo(clientIp, clientPort, playerName.substring(0, MAX_CLIENT_NAME_LENGTH))
 						.send("NAME_TOO_LONG");
 				return;
 			}
@@ -297,7 +302,7 @@ public class UdpServer {
 	}
 
 	private UdpPlayerInfo newPlayer(InetAddress clientIp, int clientPort, String playerName, int timeout) {
-		return new UdpPlayerInfo(clientIp, clientPort, playerName, timeout);
+		return new UdpPlayerInfo(clientIp, clientPort, playerName);
 	}
 
 	private Predicate<UdpPlayerInfo> inetAddressAndPort(InetAddress clientIp, int clientPort) {
