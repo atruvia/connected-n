@@ -295,7 +295,8 @@ public class UdpServer {
 				return newPlayer(clientIp, clientPort, playerName, timeoutMillis);
 			}).orElseGet(() -> newPlayer(clientIp, clientPort, playerName, timeoutMillis)));
 		} else if ("UNREGISTER".equals(received)) {
-			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(this::handleUnregisterCommand);
+			// deactivated until clarification of issue #26 
+//			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(this::handleUnregisterCommand);
 		} else {
 			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(i -> i.reponseReceived(received));
 		}
