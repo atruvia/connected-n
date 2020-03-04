@@ -1,6 +1,5 @@
 package org.ase.fourwins.season;
 
-import static java.util.Arrays.asList;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
@@ -146,7 +145,7 @@ class SeasonTest {
 	}
 
 	static <T> List<T> teamsOf(Match<T> match) {
-		return asList(match.getTeam1(), match.getTeam2());
+		return List.of(match.getTeam1(), match.getTeam2());
 	}
 
 }

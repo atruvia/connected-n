@@ -63,7 +63,7 @@ public class DefaultTournament implements Tournament {
 
 		@Override
 		public List<Player> getPlayers() {
-			return Arrays.asList(other);
+			return List.of(other);
 		}
 	}
 

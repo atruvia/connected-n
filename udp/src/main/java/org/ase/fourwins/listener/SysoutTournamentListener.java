@@ -23,7 +23,7 @@ public class SysoutTournamentListener implements TournamentListener {
 
 	@Override
 	public void gameEnded(Game game) {
-		winners(game).forEach(w -> gamesWon.computeIfAbsent(w, x -> new AtomicInteger()).incrementAndGet());
+		winners(game).map(w -> gamesWon.computeIfAbsent(w, n -> new AtomicInteger())).forEach(c -> c.incrementAndGet());
 	}
 
 	private Stream<Object> winners(Game game) {

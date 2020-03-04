@@ -3,7 +3,6 @@ package org.ase.fourwins.udp.server;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static java.lang.Long.MAX_VALUE;
 import static java.time.Duration.ofSeconds;
-import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -118,7 +117,7 @@ public class MainTest {
 		}
 
 		void assertReceived(String... messages) {
-			await().until(this::getReceived, is(asList(messages)));
+			await().until(this::getReceived, is(List.of(messages)));
 		}
 
 	}

@@ -1,6 +1,5 @@
 package org.ase.fourwins.tournament.listener.database;
 
-import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -111,7 +110,7 @@ class MysqlListenerIT {
 	}
 
 	private List<Score> validGameEndScores() {
-		List<Score> scores = new ArrayList<Score>(asList(Score.values()));
+		List<Score> scores = new ArrayList<Score>(List.of(Score.values()));
 		scores.remove(IN_GAME);
 		return scores;
 	}

@@ -1,12 +1,12 @@
 package org.ase.fourwins.game;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 public class GameTestUtil {
+
 	protected static List<Integer> withMoves(Integer... moves) {
-		return Arrays.asList(moves);
+		return List.of(moves);
 	}
 
 	protected static Player player(String token, List<Integer> columns) {

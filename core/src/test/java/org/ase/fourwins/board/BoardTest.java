@@ -9,7 +9,7 @@ import static org.ase.fourwins.board.Move.moveToColumn;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -166,7 +166,7 @@ class BoardTest {
 		}
 
 		private BoardBuilder filled(String... lines) {
-			for (String line : reverse(Arrays.asList(lines))) {
+			for (String line : reverse(List.of(lines))) {
 				for (int i = 0; i < line.length(); i += 2) {
 					char token = line.charAt(i);
 					board = ' ' == token ? board : board.insertToken(moveToColumn(i / 2), String.valueOf(token));
@@ -176,8 +176,9 @@ class BoardTest {
 		}
 
 		private List<String> reverse(List<String> lines) {
-			Collections.reverse(lines);
-			return lines;
+			List<String> reversed = new ArrayList<>(lines);
+			Collections.reverse(reversed);
+			return reversed;
 		}
 
 		public static BoardBuilder boardOfSize(int cols, int rows) {

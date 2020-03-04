@@ -1,6 +1,5 @@
 package org.ase.fourwins.board;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -205,7 +204,7 @@ public abstract class Board {
 
 		}
 
-		private static final List<Line> lines = asList(fromTo(NORTH, SOUTH), fromTo(WEST, EAST),
+		private static final List<Line> lines = List.of(fromTo(NORTH, SOUTH), fromTo(WEST, EAST),
 				fromTo(SOUTHWEST, NORTHEAST), fromTo(NORTHWEST, SOUTHEAST));
 
 		private final BoardInfo boardInfo;

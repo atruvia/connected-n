@@ -1,6 +1,5 @@
 package org.ase.fourwins.tournament;
 
-import static java.util.Arrays.asList;
 import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.tournament;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -63,7 +62,7 @@ class TournamentListenerTest {
 
 	@Test
 	void tournamentListenerGetsInformedAboutMoves() {
-		List<PlayerMock> players = asList(mockPlayer("P1", 0), mockPlayer("P2", 1), mockPlayer("P3", 2));
+		List<PlayerMock> players = List.of(mockPlayer("P1", 0), mockPlayer("P2", 1), mockPlayer("P3", 2));
 		TournamentListenerForTest tournamentListener = new TournamentListenerForTest();
 		DefaultTournament sut = new DefaultTournament();
 		sut.addTournamentListener(tournamentListener);

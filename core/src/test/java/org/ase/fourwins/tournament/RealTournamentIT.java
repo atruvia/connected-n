@@ -11,7 +11,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -65,7 +64,7 @@ public class RealTournamentIT {
 	}
 
 	private void verifyAllProperties(int seasons, String... playersNames) {
-		List<String> players = Arrays.asList(playersNames);
+		List<String> players = List.of(playersNames);
 		verifyGameState(players, seasons);
 		verifyPlayers(players, seasons);
 	}

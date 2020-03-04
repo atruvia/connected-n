@@ -1,6 +1,5 @@
 package org.ase.fourwins.game;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.function.Predicate.isEqual;
 import static java.util.stream.Collectors.joining;
@@ -108,13 +107,13 @@ public class DefaultGame implements Game {
 	public DefaultGame(MoveListener moveListener, Board board, GameId gameId, Player... players) {
 		this.gameId = gameId;
 		validateTokens(players);
-		List<Player> playerList = asList(players);
+		List<Player> playerList = List.of(players);
 		playerList.forEach(p -> informPlayer(board.boardInfo(), p,
 				playerList.stream().filter(isEqual(p).negate()).collect(toList())));
 		this.moveListener = moveListener;
 		this.board = board;
 		this.players = unmodifiableList(new ArrayList<>(playerList));
-		this.nextPlayer = new InfiniteIterator<Player>(asList(players));
+		this.nextPlayer = new InfiniteIterator<Player>(List.of(players));
 	}
 
 	@Override

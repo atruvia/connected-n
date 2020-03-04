@@ -6,7 +6,6 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -127,7 +126,7 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public List<Player> getPlayers() {
-				return Arrays.asList(player1, player2);
+				return List.of(player1, player2);
 			}
 
 			@Override

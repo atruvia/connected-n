@@ -1,6 +1,5 @@
 package org.ase.fourwins.tournament;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.addAll;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -141,13 +140,13 @@ class TournamentTest {
 
 		int i = 0;
 		assertThat(states.size(), is(3 * 2 * 2));
-		assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P2"))));
-		assertThat(next(states, i += 2), is(asList(lose("P1"), coffeeBreakWin("P3"))));
-		assertThat(next(states, i += 2), is(asList(lose("P1"), coffeeBreakWin("P2"))));
+		assertThat(next(states, i += 2), is(List.of(coffeeBreakWin("P1"), lose("P2"))));
+		assertThat(next(states, i += 2), is(List.of(lose("P1"), coffeeBreakWin("P3"))));
+		assertThat(next(states, i += 2), is(List.of(lose("P1"), coffeeBreakWin("P2"))));
 
-		assertThat(next(states, i += 2), is(asList(coffeeBreakWin("P1"), lose("P3"))));
-		assertThat(next(states, i += 2), is(asList(lose("P2"), coffeeBreakWin("P3"))));
-		assertThat(next(states, i += 2), is(asList(lose("P3"), coffeeBreakWin("P2"))));
+		assertThat(next(states, i += 2), is(List.of(coffeeBreakWin("P1"), lose("P3"))));
+		assertThat(next(states, i += 2), is(List.of(lose("P2"), coffeeBreakWin("P3"))));
+		assertThat(next(states, i += 2), is(List.of(lose("P3"), coffeeBreakWin("P2"))));
 	}
 
 	private String twoTimes(String string) {

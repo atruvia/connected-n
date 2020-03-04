@@ -4,7 +4,6 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static io.moquette.BrokerConstants.HOST_PROPERTY_NAME;
 import static io.moquette.BrokerConstants.PORT_PROPERTY_NAME;
 import static java.time.Duration.ofSeconds;
-import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -235,7 +234,7 @@ class MqttTournamentListenerTest {
 			sut.newTokenAt(game, "X", 0);
 			sut.newTokenAt(game, "O", 1);
 			sut.newTokenAt(game, "X", -1);
-			await().until(() -> payloads(gameId + "/action/tokeninserted/X"), is(asList("0", "-1")));
+			await().until(() -> payloads(gameId + "/action/tokeninserted/X"), is(List.of("0", "-1")));
 			await().until(() -> payload(gameId + "/action/tokeninserted/O"), is("1"));
 		});
 	}
