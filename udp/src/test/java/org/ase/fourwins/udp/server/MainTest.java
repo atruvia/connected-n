@@ -50,6 +50,7 @@ import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.verification.VerificationMode;
@@ -285,6 +286,7 @@ public class MainTest {
 	}
 
 	@Test
+	@Disabled("deactivated until clarification of issue #26")
 	void canUnregister() throws IOException {
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
