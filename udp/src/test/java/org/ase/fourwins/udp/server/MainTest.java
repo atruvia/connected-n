@@ -112,6 +112,7 @@ public class MainTest {
 			send("REGISTER;" + name);
 		}
 
+		@Deprecated
 		protected void unregister() throws IOException {
 			send("UNREGISTER");
 		}
@@ -297,7 +298,8 @@ public class MainTest {
 	}
 
 	@Test
-	void whenDeregisteringNoNextSeasonIsStarted() throws IOException {
+	@Disabled("deactivated until clarification of issue #26")
+	void whenUnregisteringNoNextSeasonIsStarted() throws IOException {
 		AtomicInteger seasonsStarted = new AtomicInteger(0);
 		doAnswer(s -> {
 			seasonsStarted.incrementAndGet();
@@ -442,6 +444,7 @@ public class MainTest {
 		return "WELCOME;" + name;
 	}
 
+	@Deprecated
 	private static String unregistered() {
 		return "UNREGISTERED";
 	}
