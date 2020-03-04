@@ -8,5 +8,5 @@ docker run -it --rm \
 -v "$PWD":/usr/src/$PRJ_NAME \
 -w /usr/src/$PRJ_NAME \
 $DOCKER_IMAGE \
-mvn package jib:buildTar && docker image load -i mysql/target/jib-image.tar
+mvn package jib:buildTar && docker image load -i udp/target/jib-image.tar
 
