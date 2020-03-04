@@ -10,9 +10,12 @@ public interface TournamentListener {
 	default void gameEnded(Game game) {
 	}
 
-	default void seasonEnded() {
+	default void seasonStarted() {
 	}
 
+	default void seasonEnded() {
+	}
+	
 	default void newTokenAt(Game game, String token, int column) {
 	}
 

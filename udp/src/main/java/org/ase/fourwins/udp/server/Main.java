@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 public class Main {
 
-	private UdpServer udpServer;
+	private final UdpServer udpServer;
 
 	@RequiredArgsConstructor
 	private enum EnvVar {

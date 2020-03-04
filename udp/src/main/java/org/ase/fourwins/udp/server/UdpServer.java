@@ -202,7 +202,6 @@ public class UdpServer {
 					}
 					System.out.println("Waiting for more players to join");
 				} else {
-					System.out.println("Season starting");
 					tournament.playSeason(playersJoiningNextSeason().map(Entry::getValue).collect(toList()), noop());
 				}
 			}

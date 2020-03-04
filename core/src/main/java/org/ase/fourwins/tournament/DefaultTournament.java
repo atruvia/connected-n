@@ -85,6 +85,7 @@ public class DefaultTournament implements Tournament {
 
 	@Override
 	public void playSeason(Collection<? extends Player> players, Consumer<GameState> consumer) {
+		seasonStarted();
 		newSeason(players).getMatchdays().map(Matchday::getMatches) //
 				.map(this::runMatches).flatMap(identity()) //
 				.forEach(consumer);
@@ -138,6 +139,10 @@ public class DefaultTournament implements Tournament {
 
 	protected void gameEnded(Game game) {
 		tournamentListenerList.forEach(l -> l.gameEnded(game));
+	}
+
+	protected void seasonStarted() {
+		tournamentListenerList.forEach(TournamentListener::seasonStarted);
 	}
 
 	protected void seasonEnded() {

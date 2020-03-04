@@ -10,7 +10,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		String serverHost = "localhost";
 		int serverPort = 4446;
-		String botname = "bot1";
+		String botname = args.length > 0 ? args[0] : "dummybot";
 		System.out.println("Starting ... ");
 		UdpCommunicator communicator = new UdpCommunicator(serverHost, serverPort);
 		MessageListener bot = new SimpleBot(botname, communicator.getMessageSender());
