@@ -12,6 +12,7 @@ import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UdpCommunicator {
 
@@ -20,7 +21,7 @@ public class UdpCommunicator {
 	private final String remoteHost;
 	private final int remotePort;
 
-	private final Collection<MessageListener> listeners = new ArrayList<>();
+	private final Collection<MessageListener> listeners = new CopyOnWriteArrayList<>();
 	private final DatagramChannel channel;
 
 	private volatile boolean shouldStop;

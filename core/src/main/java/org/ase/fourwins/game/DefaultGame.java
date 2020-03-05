@@ -1,15 +1,11 @@
 package org.ase.fourwins.game;
 
-import static java.util.Collections.unmodifiableList;
-import static java.util.function.Predicate.isEqual;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Move.moveToColumn;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -103,16 +99,14 @@ public class DefaultGame implements Game {
 	public DefaultGame(Board board, GameId gameId, Player... players) {
 		this(MoveListener.NULL, board, gameId, players);
 	}
-	
+
 	public DefaultGame(MoveListener moveListener, Board board, GameId gameId, Player... players) {
-		this.gameId = gameId;
 		validateTokens(players);
-		List<Player> playerList = List.of(players);
-		playerList.forEach(p -> informPlayer(board.boardInfo(), p,
-				playerList.stream().filter(isEqual(p).negate()).collect(toList())));
+		this.gameId = gameId;
+		this.players = List.of(players);
+		this.players.forEach(p -> informPlayer(board.boardInfo(), p));
 		this.moveListener = moveListener;
 		this.board = board;
-		this.players = unmodifiableList(new ArrayList<>(playerList));
 		this.nextPlayer = new InfiniteIterator<Player>(List.of(players));
 	}
 
@@ -126,8 +120,9 @@ public class DefaultGame implements Game {
 		return board.boardInfo();
 	}
 
-	private boolean informPlayer(BoardInfo boardInfo, Player player, List<Player> opposites) {
-		return player.joinGame(opposites.stream().map(Player::getToken).collect(joining(",")), boardInfo);
+	private boolean informPlayer(BoardInfo boardInfo, Player player) {
+		return player.joinGame(getOpponentsForToken(player.getToken()).map(Player::getToken).collect(joining(",")),
+				boardInfo);
 	}
 
 	protected void validateTokens(Player... players) {
@@ -167,7 +162,7 @@ public class DefaultGame implements Game {
 		this.players.stream().forEach(p -> sendTokenWasInserted(p, token, column));
 	}
 
-	private void sendTokenWasInserted(Player player, String token,int column) {
+	private void sendTokenWasInserted(Player player, String token, int column) {
 		try {
 			player.tokenWasInserted(token, column);
 		} catch (Exception e) {
@@ -179,6 +174,5 @@ public class DefaultGame implements Game {
 	public GameState gameState() {
 		return board.gameState();
 	}
-
 
 }

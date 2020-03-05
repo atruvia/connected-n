@@ -6,11 +6,11 @@ import static java.util.stream.IntStream.rangeClosed;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+
+import org.ase.fourwins.util.CollectionUtil;
 
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
@@ -125,13 +125,7 @@ class SeasonTest {
 	}
 
 	static <T> Stream<List<T>> reversed(Stream<List<T>> teams) {
-		return teams.map(SeasonTest::reversed);
-	}
-
-	static <T> List<T> reversed(List<T> in) {
-		List<T> out = new ArrayList<>(in);
-		Collections.reverse(out);
-		return out;
+		return teams.map(CollectionUtil::reverse);
 	}
 
 	static <T> Stream<Match<T>> matchesOf(Round<T> round) {

@@ -4,7 +4,6 @@ import static java.util.function.Function.identity;
 import static org.ase.fourwins.board.Board.Score.WIN;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -69,7 +68,7 @@ public class DefaultTournament implements Tournament {
 
 	private final List<TournamentListener> tournamentListenerList = new CopyOnWriteArrayList<>();
 	private final MoveListener moveListener = (game, token, column) -> tournamentListenerList
-			.forEach(listener -> listener.newTokenAt(game, token, column));
+			.forEach(l -> l.newTokenAt(game, token, column));
 
 	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
 		@Override

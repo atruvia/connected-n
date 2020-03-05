@@ -6,11 +6,10 @@ import static org.ase.fourwins.board.BoardMatcher.isStillInGame;
 import static org.ase.fourwins.board.BoardMatcher.winnerIs;
 import static org.ase.fourwins.board.BoardTest.BoardBuilder.boardOfSize;
 import static org.ase.fourwins.board.Move.moveToColumn;
+import static org.ase.fourwins.util.CollectionUtil.reverse;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -173,12 +172,6 @@ class BoardTest {
 				}
 			}
 			return this;
-		}
-
-		private List<String> reverse(List<String> lines) {
-			List<String> reversed = new ArrayList<>(lines);
-			Collections.reverse(reversed);
-			return reversed;
 		}
 
 		public static BoardBuilder boardOfSize(int cols, int rows) {

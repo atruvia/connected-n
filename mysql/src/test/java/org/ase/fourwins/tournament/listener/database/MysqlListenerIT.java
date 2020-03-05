@@ -1,8 +1,11 @@
 package org.ase.fourwins.tournament.listener.database;
 
 import static java.util.Comparator.comparing;
+import static java.util.EnumSet.allOf;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
@@ -17,7 +20,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -110,9 +112,7 @@ class MysqlListenerIT {
 	}
 
 	private List<Score> validGameEndScores() {
-		List<Score> scores = new ArrayList<Score>(List.of(Score.values()));
-		scores.remove(IN_GAME);
-		return scores;
+		return allOf(Score.class).stream().filter(not(IN_GAME::equals)).collect(toList());
 	}
 
 	private void whenEnded(Game game) {
