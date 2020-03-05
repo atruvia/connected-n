@@ -202,7 +202,8 @@ public class UdpServer {
 					}
 					System.out.println("Waiting for more players to join");
 				} else {
-					tournament.playSeason(playersJoiningNextSeason().map(Entry::getValue).collect(toList()), noop());
+					tournament.playSeason(players.entrySet().parallelStream().filter(this::wantToJoin)
+							.map(Entry::getValue).collect(toList()), noop());
 				}
 			}
 			System.out.println("Tournament stopped");
@@ -235,15 +236,17 @@ public class UdpServer {
 	}
 
 	private Stream<Entry<UdpPlayerInfo, Player>> playersJoiningNextSeason() {
-		return players.entrySet().parallelStream().filter(p -> {
-			try {
-				return ("JOIN".equals(p.getKey().sendAndWait("NEW SEASON")));
-			} catch (Exception e) {
-				System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for "
-						+ p.getValue().getToken() + ": " + e.getMessage());
-				return false;
-			}
-		});
+		return players.entrySet().parallelStream().filter(this::wantToJoin);
+	}
+
+	private boolean wantToJoin(Entry<UdpPlayerInfo, Player> p) {
+		try {
+			return "JOIN".equals(p.getKey().sendAndWait("NEW SEASON"));
+		} catch (Exception e) {
+			System.out.println("Exception while retrieving response for " + "NEW SEASON" + " for "
+					+ p.getValue().getToken() + ": " + e.getMessage());
+			return false;
+		}
 	}
 
 	public UdpServer startServer(Tournament tournament) {
@@ -294,7 +297,7 @@ public class UdpServer {
 				return newPlayer(clientIp, clientPort, playerName, timeoutMillis);
 			}).orElseGet(() -> newPlayer(clientIp, clientPort, playerName, timeoutMillis)));
 		} else if ("UNREGISTER".equals(received)) {
-			// deactivated until clarification of issue #26 
+			// deactivated until clarification of issue #26
 //			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(this::handleUnregisterCommand);
 		} else {
 			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(i -> i.reponseReceived(received));

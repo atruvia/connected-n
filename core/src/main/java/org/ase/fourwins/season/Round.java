@@ -4,7 +4,6 @@ import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliterator;
 import static java.util.stream.StreamSupport.stream;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -42,7 +41,7 @@ public class Round<T> {
 	private final List<T> teams;
 
 	public Round(List<T> teams) {
-		this.teams = Collections.unmodifiableList(teams);
+		this.teams = List.copyOf(teams);
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
