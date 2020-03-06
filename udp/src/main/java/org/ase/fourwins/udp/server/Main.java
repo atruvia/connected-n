@@ -2,9 +2,10 @@ package org.ase.fourwins.udp.server;
 
 import static java.lang.Integer.parseInt;
 import static java.util.EnumSet.allOf;
-import static java.util.Objects.isNull;
+import static java.util.function.Predicate.not;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.stream.Stream;
@@ -94,11 +95,11 @@ public class Main {
 
 	private static boolean canLoad(Provider<TournamentListener> provider) {
 		OnlyActivateWhenEnvSet annotation = provider.type().getAnnotation(OnlyActivateWhenEnvSet.class);
-		return annotation == null || envIsSet(annotation.value());
+		return annotation == null || anyEnvIsSet(annotation.value());
 	}
 
-	private static boolean envIsSet(String[] envVars) {
-		return Arrays.stream(envVars).map(System::getenv).anyMatch(e -> !isNull(e));
+	private static boolean anyEnvIsSet(String[] envVars) {
+		return Arrays.stream(envVars).map(System::getenv).anyMatch(not(Objects::isNull));
 	}
 
 }
