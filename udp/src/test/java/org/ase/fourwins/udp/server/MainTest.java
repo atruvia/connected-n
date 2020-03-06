@@ -285,57 +285,6 @@ public class MainTest {
 		});
 	}
 
-	@Test
-	@Disabled("deactivated until clarification of issue #26")
-	void canUnregister() throws IOException {
-		setupInfiniteSeason(tournament);
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			DummyClient client = newClientWithName("1");
-			client.unregister();
-			client.assertReceived(welcomed("1"), unregistered());
-		});
-	}
-
-	@Test
-	@Disabled("deactivated until clarification of issue #26")
-	void whenUnregisteringNoNextSeasonIsStarted() throws IOException {
-		AtomicInteger seasonsStarted = new AtomicInteger(0);
-		doAnswer(s -> {
-			seasonsStarted.incrementAndGet();
-			MILLISECONDS.sleep(25);
-			return Stream.empty();
-		}).when(tournament).playSeason(anyCollection(), anyGameStateConsumer());
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			newPlayingClientWithName("1");
-			DummyClient client2 = newPlayingClientWithName("2");
-
-			assertTournamentStartet();
-
-			// while season is running others can register
-			DummyClient client3 = newPlayingClientWithName("3");
-			assertWelcomed(client3);
-
-			// TODO signal to Mockito answer to delay until...
-
-			client3.unregister();
-			client2.unregister();
-
-			assertWelcomed(client3);
-			assertWelcomed(client2);
-
-			await().until(client3::getReceived, hasItems(welcomed("3"), unregistered()));
-			await().until(client2::getReceived, hasItems(welcomed("2"), unregistered()));
-
-			int seasonsStartedBeforeUnregister = seasonsStarted.get();
-
-			// TODO ...here
-
-			// TODO eliminate wait
-			SECONDS.sleep(3);
-			assertThat(seasonsStarted.get(), is(seasonsStartedBeforeUnregister));
-		});
-	}
-
 //	TODO joining with long runner
 //	TODO test when returning a wrong UUID the next message must be working
 
@@ -441,11 +390,6 @@ public class MainTest {
 
 	private static String welcomed(String name) {
 		return "WELCOME;" + name;
-	}
-
-	@Deprecated
-	private static String unregistered() {
-		return "UNREGISTERED";
 	}
 
 	private static void setupInfiniteSeason(Tournament mock) {

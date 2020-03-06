@@ -235,10 +235,6 @@ public class UdpServer {
 		return s -> System.out.println(s.getScore() + ";" + s.getToken() + " -- " + s.getReason());
 	}
 
-	private Stream<Entry<UdpPlayerInfo, Player>> playersJoiningNextSeason() {
-		return players.entrySet().parallelStream().filter(this::wantToJoin);
-	}
-
 	private boolean wantToJoin(Entry<UdpPlayerInfo, Player> p) {
 		try {
 			return "JOIN".equals(p.getKey().sendAndWait("NEW SEASON"));
@@ -296,9 +292,6 @@ public class UdpServer {
 				players.remove(i);
 				return newPlayer(clientIp, clientPort, playerName, timeoutMillis);
 			}).orElseGet(() -> newPlayer(clientIp, clientPort, playerName, timeoutMillis)));
-		} else if ("UNREGISTER".equals(received)) {
-			// deactivated until clarification of issue #26
-//			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(this::handleUnregisterCommand);
 		} else {
 			findBy(inetAddressAndPort(clientIp, clientPort)).ifPresent(i -> i.reponseReceived(received));
 		}
