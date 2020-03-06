@@ -50,5 +50,5 @@ services:
       MQTT_HOST: "localhost"
       MQTT_PORT: "1883"
     ports: 
-      - "4446:4446/udp"
+      - "${EXTERNAL_IP}:4446:4446/udp"
 
