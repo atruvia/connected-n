@@ -1,5 +1,9 @@
 package org.ase.fourwins.listener;
 
+import static java.util.Comparator.comparing;
+import static java.util.Map.Entry.comparingByValue;
+import static java.util.stream.Collectors.joining;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,7 +45,10 @@ public class SysoutTournamentListener implements TournamentListener {
 
 	@Override
 	public void seasonEnded() {
-		System.out.println("Season ended, games won: " + gamesWon);
+		String collect = gamesWon.entrySet().stream() //
+				.sorted(comparingByValue(comparing(AtomicInteger::get)).reversed()) //
+				.map(e -> e.getKey() + "=" + e.getValue()).collect(joining(", "));
+		System.out.println("Season ended, games won: " + collect);
 		gamesWon.clear();
 	}
 
