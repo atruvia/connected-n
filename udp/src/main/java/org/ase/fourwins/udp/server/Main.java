@@ -11,7 +11,6 @@ import java.util.ServiceLoader.Provider;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.annos.OnlyActivateWhenEnvSet;
-import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.Tournament;
 import org.ase.fourwins.tournament.listener.TournamentListener;
@@ -87,51 +86,6 @@ public class Main {
 	}
 
 	private static void addListeners(Tournament tournament) {
-		@RequiredArgsConstructor
-		class IgnoreExceptionDelegateTournamentListener implements TournamentListener {
-			private final TournamentListener delegate;
-
-			public void gameStarted(Game game) {
-				try {
-					delegate.gameStarted(game);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			public void gameEnded(Game game) {
-				try {
-					delegate.gameEnded(game);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			public void seasonStarted() {
-				try {
-					delegate.seasonStarted();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			public void seasonEnded() {
-				try {
-					delegate.seasonEnded();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-			public void newTokenAt(Game game, String token, int column) {
-				try {
-					delegate.newTokenAt(game, token, column);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-
-		}
 		loadListeners().map(IgnoreExceptionDelegateTournamentListener::new).forEach(tournament::addTournamentListener);
 	}
 
