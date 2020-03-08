@@ -34,6 +34,7 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 	private MqttConnectOptions connectOptions() {
 		MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
 		mqttConnectOptions.setAutomaticReconnect(true);
+		mqttConnectOptions.setMaxInflight(10_000);
 		return mqttConnectOptions;
 	}
 
