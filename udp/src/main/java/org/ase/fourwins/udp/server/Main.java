@@ -3,6 +3,7 @@ package org.ase.fourwins.udp.server;
 import static java.lang.Integer.parseInt;
 import static java.util.EnumSet.allOf;
 import static java.util.function.Predicate.not;
+import static org.ase.fourwins.udp.server.IgnoreExceptions.catchExceptions;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -86,7 +87,8 @@ public class Main {
 	}
 
 	private static void addListeners(Tournament tournament) {
-		loadListeners().map(IgnoreExceptionDelegateTournamentListener::new).forEach(tournament::addTournamentListener);
+		loadListeners().map(l -> catchExceptions(TournamentListener.class, l, e -> e.printStackTrace()))
+				.forEach(tournament::addTournamentListener);
 	}
 
 	private static Stream<TournamentListener> loadListeners() {

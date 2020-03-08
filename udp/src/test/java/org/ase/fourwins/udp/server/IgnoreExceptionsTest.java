@@ -1,6 +1,5 @@
 package org.ase.fourwins.udp.server;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemErr;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.CoreMatchers.is;
@@ -11,6 +10,8 @@ import static org.mockito.Mockito.mockingDetails;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -19,7 +20,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.mockito.invocation.Invocation;
 
-class IgnoreExceptionDelegateTournamentListenerTest {
+class IgnoreExceptionsTest {
 
 	@TestFactory
 	Stream<DynamicTest> allExceptionsToCallsToInterfaceMethodAreCaught() {
@@ -30,10 +31,13 @@ class IgnoreExceptionDelegateTournamentListenerTest {
 		TournamentListener mock = mock(TournamentListener.class, i -> {
 			throw new UnsupportedOperationException("method: " + i.getMethod());
 		});
-		TournamentListener sut = new IgnoreExceptionDelegateTournamentListener(mock);
+
+		List<Exception> exceptions = new ArrayList<>();
+		TournamentListener sut = IgnoreExceptions.catchExceptions(TournamentListener.class, mock, exceptions::add);
 
 		return dynamicTest(method.getName(), () -> {
-			assertThat(tapSystemErr(() -> method.invoke(sut, emptyArgs(method))).isEmpty(), is(false));
+			method.invoke(sut, nullArgs(method));
+			assertThat(exceptions.size(), is(1));
 			assertThat(Set.of(method), is(methodsCalled(mock)));
 		});
 	}
@@ -42,12 +46,11 @@ class IgnoreExceptionDelegateTournamentListenerTest {
 		return mockingDetails(mock).getInvocations().stream().map(Invocation::getMethod).collect(toSet());
 	}
 
-	private static Object[] emptyArgs(Method method) {
-		return stream(method.getParameters()).map(IgnoreExceptionDelegateTournamentListenerTest::emptyArg)
-				.toArray(Object[]::new);
+	private static Object[] nullArgs(Method method) {
+		return stream(method.getParameters()).map(IgnoreExceptionsTest::nullArg).toArray(Object[]::new);
 	}
 
-	private static Object emptyArg(Parameter parameter) {
+	private static Object nullArg(Parameter parameter) {
 		return parameter.getType() == boolean.class ? false : parameter.getType().isPrimitive() ? 0 : null;
 	}
 
