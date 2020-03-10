@@ -20,7 +20,7 @@ public class ScoreSheet {
 	private final Map<String, Double> data = new ConcurrentHashMap<>();
 
 	public void addPointForPlayer(String player, double add) {
-		data.merge(player, add, (o, v) -> o + v);
+		data.merge(player, add, Double::sum);
 	}
 
 	public Set<String> players(String player) {
