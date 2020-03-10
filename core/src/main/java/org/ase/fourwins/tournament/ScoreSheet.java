@@ -3,12 +3,10 @@ package org.ase.fourwins.tournament;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
@@ -19,21 +17,12 @@ public class ScoreSheet {
 
 	private final Map<String, Double> data = new ConcurrentHashMap<>();
 
-	public void addPointForPlayer(String player, double add) {
+	public void increaseScore(String player, double add) {
 		data.merge(player, add, Double::sum);
-	}
-
-	public Set<String> players(String player) {
-		return this.data.keySet();
 	}
 
 	public Double scoreOf(String name) {
 		return this.data.get(name);
-	}
-
-	@Deprecated
-	public Collection<Double> values() {
-		return data.values();
 	}
 
 	@Override

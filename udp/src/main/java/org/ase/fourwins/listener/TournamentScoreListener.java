@@ -48,7 +48,7 @@ public class TournamentScoreListener implements TournamentListener {
 	}
 
 	private void addPointForPlayer(Player player, double value) {
-		scoreSheet.addPointForPlayer(player.getToken(), value);
+		scoreSheet.increaseScore(player.getToken(), value);
 	}
 
 	@Override
