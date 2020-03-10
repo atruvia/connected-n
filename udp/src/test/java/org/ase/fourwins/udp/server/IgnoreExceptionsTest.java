@@ -2,6 +2,7 @@ package org.ase.fourwins.udp.server;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toSet;
+import static org.ase.fourwins.udp.server.IgnoreExceptions.catchExceptions;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
@@ -33,12 +34,12 @@ class IgnoreExceptionsTest {
 		});
 
 		List<Exception> exceptions = new ArrayList<>();
-		TournamentListener sut = IgnoreExceptions.catchExceptions(TournamentListener.class, mock, exceptions::add);
+		TournamentListener sut = catchExceptions(TournamentListener.class, mock, exceptions::add);
 
 		return dynamicTest(method.getName(), () -> {
 			method.invoke(sut, nullArgs(method));
-			assertThat(exceptions.size(), is(1));
 			assertThat(Set.of(method), is(methodsCalled(mock)));
+			assertThat(exceptions.size(), is(1));
 		});
 	}
 

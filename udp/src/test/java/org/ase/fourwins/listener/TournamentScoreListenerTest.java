@@ -1,4 +1,4 @@
-package org.ase.fourwins.tournament;
+package org.ase.fourwins.listener;
 
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
@@ -13,6 +13,7 @@ import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
+import org.ase.fourwins.tournament.ScoreSheet;
 import org.junit.jupiter.api.Test;
 
 class TournamentScoreListenerTest {
@@ -83,18 +84,6 @@ class TournamentScoreListenerTest {
 		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.5));
 
 		System.out.println(scoreSheet);
-	}
-
-	@Test
-	void testStatisticForCoffeebreakGame() {
-		TournamentScoreListener listener = new TournamentScoreListener();
-		Player player1 = dummyPlayer("P1");
-
-		DefaultTournament.CoffeebreakGame coffeebreakGame = new DefaultTournament.CoffeebreakGame(player1);
-		listener.gameEnded(coffeebreakGame);
-
-		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
 	}
 
 	private Player dummyPlayer(String token) {

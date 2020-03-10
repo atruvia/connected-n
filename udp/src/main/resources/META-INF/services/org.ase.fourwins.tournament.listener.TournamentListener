@@ -1,1 +1,2 @@
+org.ase.fourwins.listener.TournamentScoreListener
 org.ase.fourwins.listener.SysoutTournamentListener

@@ -36,7 +36,7 @@ public class DefaultTournament implements Tournament {
 		private final Player other;
 		private final GameId gameId = new GameId("-coffee-break-");
 
-		CoffeebreakGame(Player other) {
+		private CoffeebreakGame(Player other) {
 			this.other = other;
 		}
 
