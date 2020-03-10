@@ -10,9 +10,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
 public class ScoreSheet {
 
 	private final Map<String, Double> data = new ConcurrentHashMap<>();

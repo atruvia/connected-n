@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 
 import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.game.Game;
-import org.ase.fourwins.listener.TournamentScoreListener;
+import org.ase.fourwins.listener.SysoutTournamentListener;
 import org.ase.fourwins.tournament.DefaultTournament;
 import org.ase.fourwins.tournament.ScoreSheet;
 import org.ase.fourwins.tournament.listener.TournamentListener;
@@ -80,7 +80,7 @@ public class UdpServerRealTournamentIT {
 	void canPlay_2() throws IOException, InterruptedException {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			udpServerInBackground();
-			TournamentScoreListener scoreListener = new TournamentScoreListener();
+			SysoutTournamentListener scoreListener = new SysoutTournamentListener();
 			tournament.addTournamentListener(scoreListener);
 			GameStateCollector stateListener = new GameStateCollector();
 			tournament.addTournamentListener(stateListener);
@@ -146,7 +146,7 @@ public class UdpServerRealTournamentIT {
 		// TEST fails since is canceled after timeout has reached ;-)
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			udpServerInBackground();
-			tournament.addTournamentListener(new TournamentScoreListener());
+			tournament.addTournamentListener(new SysoutTournamentListener());
 			IntStream.range(0, 10).forEach(i -> {
 				try {
 					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());

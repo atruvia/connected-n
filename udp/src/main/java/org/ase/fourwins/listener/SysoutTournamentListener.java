@@ -11,14 +11,25 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.annos.OnlyActivateWhenEnvSet;
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
+import org.ase.fourwins.tournament.ScoreSheet;
 import org.ase.fourwins.tournament.listener.TournamentListener;
+
+import lombok.Getter;
 
 @OnlyActivateWhenEnvSet("WITH_SYSOUT")
 public class SysoutTournamentListener implements TournamentListener {
 
 	private final Map<Object, Integer> gamesWon = new ConcurrentHashMap<>();
+
+	private static final double FULL_POINT = 1;
+	private static final double ZERO = 0.0;
+	private static final double HALF_POINT = 0.5;
+
+	@Getter
+	private final ScoreSheet scoreSheet = new ScoreSheet();
 
 	@Override
 	public void seasonStarted() {
@@ -28,6 +39,7 @@ public class SysoutTournamentListener implements TournamentListener {
 	@Override
 	public void gameEnded(Game game) {
 		winners(game).forEach(w -> gamesWon.merge(w, 1, Integer::sum));
+		updateScoreSheet(game);
 	}
 
 	private Stream<Object> winners(Game game) {
@@ -43,6 +55,33 @@ public class SysoutTournamentListener implements TournamentListener {
 		}
 	}
 
+	private void updateScoreSheet(Game game) {
+		Score score = game.gameState().getScore();
+		switch (score) {
+		case WIN:
+			updateScores(game, FULL_POINT, ZERO);
+			break;
+		case LOSE:
+			updateScores(game, ZERO, FULL_POINT);
+			break;
+		case DRAW:
+			updateScores(game, HALF_POINT, HALF_POINT);
+			break;
+		default:
+			break;
+		}
+	}
+
+	private void updateScores(Game game, double tokenOwner, double others) {
+		Object lastToken = game.gameState().getToken();
+		addPointForPlayer(game.getPlayerForToken(lastToken), tokenOwner);
+		game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, others));
+	}
+
+	private void addPointForPlayer(Player player, double value) {
+		scoreSheet.increaseScore(player.getToken(), value);
+	}
+
 	@Override
 	public void seasonEnded() {
 		Comparator<Entry<Object, Integer>> comparingByValue = comparingByValue();
@@ -50,6 +89,7 @@ public class SysoutTournamentListener implements TournamentListener {
 				.sorted(comparingByValue.reversed()) //
 				.map(e -> e.getKey() + "=" + e.getValue()).collect(joining(", "));
 		System.out.println("Season ended, games won: " + collect);
+		System.out.println(scoreSheet);
 		gamesWon.clear();
 	}
 

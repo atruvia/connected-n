@@ -9,6 +9,7 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.text.MessageFormat;
 import java.util.List;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -24,15 +25,25 @@ class SysoutTournamentListenerTest {
 	@Test
 	void canCount() throws Exception {
 		String sysout = playSeasonOfTwoGames();
-		assertThat(sysout, is("Season ended, games won: Z=2, Y=1\n"));
+		assertThat(sysout, is(String.format("Season ended, games won: Z=2, Y=1\n" //
+				+ "1: Z %1.1f\n" //
+				+ "2: Y %1.1f\n" //
+				+ "3: X %1.1f\n", //
+				2.5, 1.5, 0.5)));
 	}
 
 	@Test
 	void doesReset() throws Exception {
-		String sysout;
-		sysout = playSeasonOfTwoGames();
-		sysout = playSeasonOfTwoGames();
-		assertThat(sysout, is("Season ended, games won: Z=2, Y=1\n"));
+		String sysout = null;
+		int seasons = 2;
+		for (int i = 0; i < seasons; i++) {
+			sysout = playSeasonOfTwoGames();
+		}
+		assertThat(sysout, is(String.format("Season ended, games won: Z=2, Y=1\n" //
+				+ "1: Z %1.1f\n" //
+				+ "2: Y %1.1f\n" //
+				+ "3: X %1.1f\n", //
+				2.5 * seasons, 1.5 * seasons, 0.5 * seasons)));
 	}
 
 	private String playSeasonOfTwoGames() throws Exception {
