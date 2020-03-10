@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 
 import lombok.RequiredArgsConstructor;
@@ -20,9 +19,8 @@ public class ScoreSheet {
 
 	private final Map<String, Double> data = new ConcurrentHashMap<>();
 
-	public Double merge(String player, double value,
-			BiFunction<? super Double, ? super Double, ? extends Double> remappingFunction) {
-		return data.merge(player, value, remappingFunction);
+	public void addPointForPlayer(String player, double add) {
+		data.merge(player, add, (o, v) -> o + v);
 	}
 
 	public Set<String> players(String player) {

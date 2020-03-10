@@ -21,22 +21,22 @@ class TournamentScoreListenerTest {
 	@Test
 	void testStatisticForOneGameWithPlayer1Winning() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		Player player1 = dummyPlayer("P1");
-		Player player2 = dummyPlayer("P2");
+		String player1 = "P1";
+		String player2 = "P2";
 
 		Game game = buildGame(player1, player2, WIN, player1);
 		listener.gameEnded(game);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.0));
-		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.0));
+		assertThat(scoreSheet.scoreOf(player1), is(1.0));
+		assertThat(scoreSheet.scoreOf(player2), is(0.0));
 	}
 
 	@Test
 	void testStatisticForThreeGamesWith3Draws() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		Player player1 = dummyPlayer("P1");
-		Player player2 = dummyPlayer("P2");
+		String player1 = "P1";
+		String player2 = "P2";
 
 		Game game = buildGame(player1, player2, DRAW, player1);
 		listener.gameEnded(game);
@@ -44,16 +44,15 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(game);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.5));
-		assertThat(scoreSheet.scoreOf(player2.getToken()), is(1.5));
-
+		assertThat(scoreSheet.scoreOf(player1), is(1.5));
+		assertThat(scoreSheet.scoreOf(player2), is(1.5));
 	}
 
 	@Test
 	void testStatisticForOneLossAnd1Draw() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		Player player1 = dummyPlayer("P1");
-		Player player2 = dummyPlayer("P2");
+		String player1 = "P1";
+		String player2 = "P2";
 
 		Game gameDraw = buildGame(player1, player2, DRAW, player1);
 		Game gameLost = buildGame(player1, player2, LOSE, player2);
@@ -61,15 +60,15 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(gameLost);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1.getToken()), is(1.5));
-		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.5));
+		assertThat(scoreSheet.scoreOf(player1), is(1.5));
+		assertThat(scoreSheet.scoreOf(player2), is(0.5));
 	}
 
 	@Test
 	void testPlayerWins4GamesInARow() {
 		TournamentScoreListener listener = new TournamentScoreListener();
-		Player player1 = dummyPlayer("P1");
-		Player player2 = dummyPlayer("P2");
+		String player1 = "P1";
+		String player2 = "P2";
 
 		Game gameDraw = buildGame(player1, player2, DRAW, player1);
 		Game gameLost = buildGame(player1, player2, LOSE, player2);
@@ -80,10 +79,8 @@ class TournamentScoreListenerTest {
 		listener.gameEnded(gameLost);
 
 		ScoreSheet scoreSheet = listener.getScoreSheet();
-		assertThat(scoreSheet.scoreOf(player1.getToken()), is(4.5));
-		assertThat(scoreSheet.scoreOf(player2.getToken()), is(0.5));
-
-		System.out.println(scoreSheet);
+		assertThat(scoreSheet.scoreOf(player1), is(4.5));
+		assertThat(scoreSheet.scoreOf(player2), is(0.5));
 	}
 
 	private Player dummyPlayer(String token) {
@@ -95,7 +92,8 @@ class TournamentScoreListenerTest {
 		};
 	}
 
-	private Game buildGame(Player player1, Player player2, Score score, Player lastMoveBy) {
+	private Game buildGame(String token1, String token2, Score score, String lastMoveBy) {
+		List<Player> players = List.of(dummyPlayer(token1), dummyPlayer(token2));
 		return new Game() {
 
 			@Override
@@ -115,12 +113,12 @@ class TournamentScoreListenerTest {
 
 			@Override
 			public List<Player> getPlayers() {
-				return List.of(player1, player2);
+				return players;
 			}
 
 			@Override
 			public GameState gameState() {
-				return GameState.builder().score(score).token(lastMoveBy.getToken()).build();
+				return GameState.builder().score(score).token(lastMoveBy).build();
 			}
 		};
 	}
