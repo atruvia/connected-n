@@ -1,12 +1,12 @@
 package org.ase.fourwins.listener;
 
-import static java.util.Comparator.comparing;
 import static java.util.Map.Entry.comparingByValue;
 import static java.util.stream.Collectors.joining;
 
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.annos.OnlyActivateWhenEnvSet;
@@ -18,7 +18,7 @@ import org.ase.fourwins.tournament.listener.TournamentListener;
 @OnlyActivateWhenEnvSet("WITH_SYSOUT")
 public class SysoutTournamentListener implements TournamentListener {
 
-	private final ConcurrentMap<Object, AtomicInteger> gamesWon = new ConcurrentHashMap<>();
+	private final Map<Object, Integer> gamesWon = new ConcurrentHashMap<>();
 
 	@Override
 	public void seasonStarted() {
@@ -27,7 +27,7 @@ public class SysoutTournamentListener implements TournamentListener {
 
 	@Override
 	public void gameEnded(Game game) {
-		winners(game).map(w -> gamesWon.computeIfAbsent(w, n -> new AtomicInteger())).forEach(c -> c.incrementAndGet());
+		winners(game).forEach(w -> gamesWon.merge(w, 1, Integer::sum));
 	}
 
 	private Stream<Object> winners(Game game) {
@@ -45,8 +45,9 @@ public class SysoutTournamentListener implements TournamentListener {
 
 	@Override
 	public void seasonEnded() {
+		Comparator<Entry<Object, Integer>> comparingByValue = comparingByValue();
 		String collect = gamesWon.entrySet().stream() //
-				.sorted(comparingByValue(comparing(AtomicInteger::get)).reversed()) //
+				.sorted(comparingByValue.reversed()) //
 				.map(e -> e.getKey() + "=" + e.getValue()).collect(joining(", "));
 		System.out.println("Season ended, games won: " + collect);
 		gamesWon.clear();
