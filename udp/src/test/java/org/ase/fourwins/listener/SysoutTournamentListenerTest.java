@@ -3,6 +3,7 @@ package org.ase.fourwins.listener;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
+import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
@@ -37,6 +38,7 @@ class SysoutTournamentListenerTest {
 	private String playSeasonOfTwoGames() throws Exception {
 		sut.seasonStarted();
 		sut.gameEnded(game(GameState.builder().score(WIN).token("Z").build(), "X", "Y", "Z"));
+		sut.gameEnded(game(GameState.builder().score(DRAW).token("Y").build(), "X", "Y", "Z"));
 		sut.gameEnded(game(GameState.builder().score(LOSE).token("X").build(), "X", "Y", "Z"));
 		return tapSystemOut(sut::seasonEnded);
 	}
