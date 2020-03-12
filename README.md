@@ -25,7 +25,7 @@ bzw. mit entsprechender Fehlermeldung, falls der Name nicht den Vorgaben entspri
 
 ### Ablauf des Turniers
 Solange mindestens zwei Spieler registriert sind, wird Saison für Saion gespielt.
-Innerhalb einer Sasion spielt jeder Spieler, Partie für Partie, gegen alle anderen Spieler (=Spieltag).
+Innerhalb einer Saison spielt jeder Spieler, Partie für Partie, gegen alle anderen Spieler (=Spieltag).
 Hierbei gibt es Hin- und Rückrunde, so dass jeder Spieler einmal Heimrecht (=erster Zug) hat.
 Alle Partien eines Spieltags finden parallel statt. 
 
@@ -86,7 +86,14 @@ Der Wert ```grund``` kann u.a folgende Ausprägungen haben:
 - Fehlertext der Exception (Protokollfehler, Timeout, etc.) (LOSE)
 
 ### Timeouts
-Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er die Partie
+Antwortet ein Spieler ungültig oder nicht innerhalb von 250ms verliert er die Partie. Antwortet ein Spieler 10x in Folge nicht rechtzeitig, wird er deregistriert und muss sich daher erneut registrieren. 
+
+### Umgebungsvariablen
+Folgende Umgebungsvariablen können gesetzt werden
+- PORT: Port auf welchem der Server lauscht (default 4446)
+- TIMEOUT: Maximale Zeit in Millisekunden auf welche der Server auf eine Antwort des Clients wartet (default 250)
+- DELAY: Wartezeit in Millisekunden zwischen Serverstart und erster Saison in welcher sich bereits Clients registrieren können (default 0)
+- MINPLAYERS: Minimale Anzahl an Spielern welche angemeldet sein müssen, damit eine Saison gestartet wird (default 1)
 
 ## Setup des Servers
 Um das Docker-Image mit dem Connected4-Server zu bauen, muss einmal 
