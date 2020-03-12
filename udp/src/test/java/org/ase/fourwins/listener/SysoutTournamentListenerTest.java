@@ -9,7 +9,6 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.text.MessageFormat;
 import java.util.List;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -49,7 +48,7 @@ class SysoutTournamentListenerTest {
 	private String playSeasonOfTwoGames() throws Exception {
 		sut.seasonStarted();
 		sut.gameEnded(game(GameState.builder().score(WIN).token("Z").build(), "X", "Y", "Z"));
-		sut.gameEnded(game(GameState.builder().score(DRAW).token("Y").build(), "X", "Y", "Z"));
+		sut.gameEnded(game(GameState.builder().score(DRAW).build(), "X", "Y", "Z"));
 		sut.gameEnded(game(GameState.builder().score(LOSE).token("X").build(), "X", "Y", "Z"));
 		return tapSystemOut(sut::seasonEnded);
 	}

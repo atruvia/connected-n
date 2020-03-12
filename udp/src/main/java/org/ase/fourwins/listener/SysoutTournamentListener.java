@@ -57,25 +57,22 @@ public class SysoutTournamentListener implements TournamentListener {
 
 	private void updateScoreSheet(Game game) {
 		Score score = game.gameState().getScore();
+		Object lastToken = game.gameState().getToken();
 		switch (score) {
 		case WIN:
-			updateScores(game, FULL_POINT, ZERO);
+			addPointForPlayer(game.getPlayerForToken(lastToken), FULL_POINT);
+			game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, ZERO));
 			break;
 		case LOSE:
-			updateScores(game, ZERO, FULL_POINT);
+			addPointForPlayer(game.getPlayerForToken(lastToken), ZERO);
+			game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, FULL_POINT));
 			break;
 		case DRAW:
-			updateScores(game, HALF_POINT, HALF_POINT);
+			game.getPlayers().stream().forEach(p -> addPointForPlayer(p, HALF_POINT));
 			break;
 		default:
 			break;
 		}
-	}
-
-	private void updateScores(Game game, double tokenOwner, double others) {
-		Object lastToken = game.gameState().getToken();
-		addPointForPlayer(game.getPlayerForToken(lastToken), tokenOwner);
-		game.getOpponentsForToken(lastToken).forEach(p -> addPointForPlayer(p, others));
 	}
 
 	private void addPointForPlayer(Player player, double value) {
