@@ -90,10 +90,11 @@ public class UdpServer {
 							handleUnregisterCommand(this);
 						}
 						throw new TimeoutException("Timeout while waiting for response for UUID " + uuid);
+					} else {
+						timeouts = 0;
 					}
 					String[] splitted = response.split(delimiter);
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
-						timeouts = 0;
 						return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 					}
 				}
