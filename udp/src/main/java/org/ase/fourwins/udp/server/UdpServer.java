@@ -53,6 +53,9 @@ public class UdpServer {
 	@Setter
 	private int delayMillis = 0;
 
+	@Setter
+	private int minPlayers = 2;
+
 	private final Map<UdpPlayerInfo, Player> players = new ConcurrentHashMap<>();
 
 	private final byte[] buf = new byte[1024];
@@ -191,7 +194,7 @@ public class UdpServer {
 			delay();
 			System.out.println("Tournament starting");
 			while (keepSeasonRunning) {
-				if (players.size() < 2) {
+				if (players.size() < minPlayers) {
 					try {
 						lock.lock();
 						playerRegistered.await(5, SECONDS);
