@@ -34,10 +34,11 @@ public class DefaultTournament implements Tournament {
 
 		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
 		private final Player other;
-		private final GameId gameId = new GameId("-coffee-break-");
+		private final GameId gameId;
 
-		private CoffeebreakGame(Player other) {
+		private CoffeebreakGame(Player other, GameId gameId) {
 			this.other = other;
+			this.gameId = gameId;
 		}
 
 		@Override
@@ -115,13 +116,14 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private Game newGame(Match<Player> match) {
-		if (isCoffeBreak(match.getTeam1())) {
-			return new CoffeebreakGame(match.getTeam2());
-		} else if (isCoffeBreak(match.getTeam2())) {
-			return new CoffeebreakGame(match.getTeam1());
-		}
 		// TODO change gameId to "<season>/<gameNo>"
-		return new DefaultGame(moveListener, makeBoard(), GameId.random(), match.getTeam1(), match.getTeam2());
+		GameId gameId = GameId.random();
+		if (isCoffeBreak(match.getTeam1())) {
+			return new CoffeebreakGame(match.getTeam2(), gameId);
+		} else if (isCoffeBreak(match.getTeam2())) {
+			return new CoffeebreakGame(match.getTeam1(), gameId);
+		}
+		return new DefaultGame(moveListener, makeBoard(), gameId, match.getTeam1(), match.getTeam2());
 	}
 
 	private static boolean isCoffeBreak(Player player) {
