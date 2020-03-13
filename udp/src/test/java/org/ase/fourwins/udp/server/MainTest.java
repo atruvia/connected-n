@@ -4,7 +4,6 @@ import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironment
 import static java.lang.Long.MAX_VALUE;
 import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
@@ -28,13 +27,11 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
@@ -47,9 +44,6 @@ import org.ase.fourwins.udp.server.listeners.TournamentListenerDisabled;
 import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled;
 import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.verification.VerificationMode;
@@ -111,11 +105,6 @@ public class MainTest {
 			send("REGISTER;" + name);
 		}
 
-		@Deprecated
-		protected void unregister() throws IOException {
-			send("UNREGISTER");
-		}
-
 		void assertReceived(String... messages) {
 			await().until(this::getReceived, is(List.of(messages)));
 		}
@@ -123,13 +112,14 @@ public class MainTest {
 	}
 
 	private final int serverPort = freePort();
+	private int minPlayers = 2;
 
 	private final Tournament tournament = mock(Tournament.class);
 
 	private Main runMainInBackground() {
 
-		Lock lock = new ReentrantLock();
-		Condition serverIsReady = lock.newCondition();
+		final Lock lock = new ReentrantLock();
+		final Condition serverIsReady = lock.newCondition();
 
 		Main main = new Main() {
 			@Override
@@ -137,19 +127,19 @@ public class MainTest {
 				return new UdpServer() {
 					@Override
 					protected void playSeasonsForever(Tournament tournament) {
-						lock.lock();
 						signalReady();
 						super.playSeasonsForever(tournament);
 					}
 
 					private void signalReady() {
+						lock.lock();
 						try {
 							serverIsReady.signal();
 						} finally {
 							lock.unlock();
 						}
 					}
-				}.setPort(serverPort);
+				}.setPort(serverPort).setMinPlayers(minPlayers);
 			}
 		};
 		runInBackground(() -> {
@@ -176,18 +166,9 @@ public class MainTest {
 		new Thread(runnable).start();
 	}
 
-	@BeforeEach
-	public void setup() {
-		runMainInBackground();
-	}
-
-	@AfterEach
-	public void tearDown() {
-//		sut.shutdown();
-	}
-
 	@Test
 	void clientCanConnectToServer() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1").assertReceived(welcomed("1"));
@@ -197,6 +178,7 @@ public class MainTest {
 
 	@Test
 	void canHandleEmptyCorruptedRegisterMessage() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			new DummyClient("1", "localhost", serverPort) {
@@ -210,6 +192,7 @@ public class MainTest {
 
 	@Test
 	void acceptLongName() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longestAllowedName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
@@ -220,6 +203,7 @@ public class MainTest {
 
 	@Test
 	void denyTooLongName() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String tooLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
@@ -238,6 +222,7 @@ public class MainTest {
 
 	@Test
 	void denyEmptyName() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String emptyName = "";
@@ -248,7 +233,22 @@ public class MainTest {
 
 	@Test
 	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
+		assertTimeoutPreemptively(TIMEOUT, () -> {
+			DummyClient client1 = newClientWithName("1");
+			DummyClient client2 = newClientWithName("2");
+
+			assertWelcomed(client1);
+			assertWelcomed(client2);
+			assertTournamentStartet();
+		});
+	}
+
+	@Test
+	void whenMinPlayerIsOneAfterFirstClientConnectsTheTournamentIsStarted() throws IOException {
+		minPlayers = 1;
+		runMainInBackground();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = newClientWithName("1");
 			DummyClient client2 = newClientWithName("2");
@@ -273,6 +273,7 @@ public class MainTest {
 
 	@Test
 	void seasonWillOnlyBeStartedIfMoreThanOnePlayerIsRegistered() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1");
@@ -290,6 +291,7 @@ public class MainTest {
 
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {
+		runMainInBackground();
 		setupInfiniteSeason(tournament);
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String nameToReuse = "1";
@@ -299,13 +301,12 @@ public class MainTest {
 			newClientWithSameTokenFromSameIP.assertReceived(welcomed(nameToReuse));
 
 			assertTournamentNotStartet();
-			client.unregister();
-			newClientWithSameTokenFromSameIP.unregister();
 		});
 	}
 
 	@Test
 	void sendsWinMessageToAllPlayers() throws IOException {
+		runMainInBackground();
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
 		tournamentOfBoardWithState(makeWinBoard(client1.getName()));
@@ -314,6 +315,7 @@ public class MainTest {
 
 	@Test
 	void sendsLoseMessageToAllPlayers() throws IOException {
+		runMainInBackground();
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
 		tournamentOfBoardWithState(makeLoseBoard(client1.getName()));
@@ -322,6 +324,7 @@ public class MainTest {
 
 	@Test
 	void sendsDrawMessageToAllPlayers() throws IOException {
+		runMainInBackground();
 		DummyClient client1 = newPlayingClientWithName("1");
 		DummyClient client2 = newPlayingClientWithName("2");
 		tournamentOfBoardWithState(makeDrawBoard());
@@ -330,6 +333,7 @@ public class MainTest {
 
 	@Test
 	void verifyListenersAreLoadedByServiceLoader() {
+		runMainInBackground();
 		assertThat(TournamentListenerDisabled.isConstructorCalled(), is(false));
 		assertThat(TournamentListenerEnabled.isConstructorCalled(), is(true));
 		assertThat(TournamentListenerEnabled2.isConstructorCalled(), is(true));
@@ -359,9 +363,6 @@ public class MainTest {
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			for (DummyClient client : clients) {
 				await().until(client::getReceived, hasItems(expectedMessage));
-			}
-			for (DummyClient client : clients) {
-				client.unregister();
 			}
 		});
 	}

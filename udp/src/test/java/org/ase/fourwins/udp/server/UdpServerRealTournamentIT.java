@@ -94,9 +94,6 @@ public class UdpServerRealTournamentIT {
 			/// ...let it run for a while
 			SECONDS.sleep(5);
 
-			client1.unregister();
-			client2.unregister();
-
 			ScoreSheet scoreSheet = scoreListener.getScoreSheet();
 			Double score1 = scoreSheet.scoreOf(client1.getName());
 			Double score2 = scoreSheet.scoreOf(client2.getName());
@@ -223,17 +220,16 @@ public class UdpServerRealTournamentIT {
 			GameStateCollector stateListener = new GameStateCollector();
 			tournament.addTournamentListener(stateListener);
 
-			DummyClient client1 = playingClient("1", 0);
-			DummyClient client2 = onlyRespondToFirstJoinSeason("2");
+			playingClient("1", 0);
+			DummyClient onlyRespondToFirstJoinSeasonClient = onlyRespondToFirstJoinSeason("2");
 
 			/// ...let it run for a while
 			TimeUnit.SECONDS.sleep(5);
 
-			await().until(() -> getReceived(client2, s -> s.toLowerCase().contains("unregister")).size(),
+			await().until(
+					() -> getReceived(onlyRespondToFirstJoinSeasonClient, s -> s.toLowerCase().contains("unregister"))
+							.size(),
 					greaterThan(0));
-
-			client1.unregister();
-			client2.unregister();
 		});
 	}
 
@@ -252,9 +248,6 @@ public class UdpServerRealTournamentIT {
 
 			await().until(client1.getReceived()::size, greaterThan(0));
 			await().until(client2.getReceived()::size, greaterThan(0));
-
-			client1.unregister();
-			client2.unregister();
 
 			assertHasTimeout(client1, stateListener, false);
 			assertHasTimeout(client2, stateListener, true);

@@ -41,6 +41,12 @@ public class Main {
 			void setValue(UdpServer udpServer, String value) {
 				udpServer.setDelayMillis(parseInt(value));
 			}
+		},
+		MINPLAYERS("MINPLAYERS") {
+			@Override
+			void setValue(UdpServer udpServer, String value) {
+				udpServer.setMinPlayers(parseInt(value));
+			}
 		};
 
 		private final String key;
@@ -83,7 +89,7 @@ public class Main {
 	}
 
 	protected UdpServer createUdpServer() {
-		return new UdpServer();
+		return new UdpServer().setMinPlayers(1);
 	}
 
 	private static void addListeners(Tournament tournament) {
