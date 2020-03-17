@@ -19,11 +19,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+@Testcontainers
 class MysqlDBWithEnvListenerIT {
 
 	private static final String DATABASE_NAME = "4WINS";
 
+	@Container
 	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(DATABASE_NAME) //
 			.withFileSystemBind("../docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
 	;
@@ -32,7 +36,6 @@ class MysqlDBWithEnvListenerIT {
 
 	@BeforeEach
 	public void setup() throws Exception {
-		mysql.start();
 		System.out.println("MySQL database url " + mysql.getJdbcUrl());
 		Connection connection = DriverManager.getConnection(mysql.getJdbcUrl(), mysql.getUsername(),
 				mysql.getPassword());
@@ -42,7 +45,6 @@ class MysqlDBWithEnvListenerIT {
 	@AfterEach
 	public void tearDown() throws IOException {
 		this.scores.close();
-		mysql.stop();
 	}
 
 	@Test
