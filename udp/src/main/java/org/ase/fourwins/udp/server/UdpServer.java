@@ -64,6 +64,8 @@ public class UdpServer {
 	private final Condition playerRegistered = lock.newCondition();
 	private volatile boolean keepSeasonRunning = true;
 
+	private DatagramSocket socket;
+
 	@Getter
 	@RequiredArgsConstructor
 	@ToString
@@ -106,10 +108,7 @@ public class UdpServer {
 		synchronized void send(String message) {
 			try {
 				byte[] bytes = message.getBytes();
-				try (DatagramSocket sendSocket = new DatagramSocket()) {
-					sendSocket.setSoTimeout(timeoutMillis);
-					sendSocket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
-				}
+				socket.send(new DatagramPacket(bytes, bytes.length, getAdressInfo(), getPort()));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -251,18 +250,17 @@ public class UdpServer {
 
 	public UdpServer startServer(Tournament tournament) {
 		System.out.println("Starting server");
-		try (DatagramSocket socket = createSocket()) {
-			playSeasonsForever(tournament);
+		this.socket = createSocket();
+		playSeasonsForever(tournament);
 
-			while (!socket.isClosed()) {
-				DatagramPacket packet = new DatagramPacket(buf, buf.length);
-				try {
-					socket.receive(packet);
-					String received = new String(packet.getData(), 0, packet.getLength());
-					dispatchCommand(packet.getAddress(), packet.getPort(), received);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+		while (!socket.isClosed()) {
+			DatagramPacket packet = new DatagramPacket(buf, buf.length);
+			try {
+				socket.receive(packet);
+				String received = new String(packet.getData(), 0, packet.getLength());
+				dispatchCommand(packet.getAddress(), packet.getPort(), received);
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		}
 		return this;
@@ -271,6 +269,7 @@ public class UdpServer {
 	private DatagramSocket createSocket() {
 		try {
 			DatagramSocket socket = new DatagramSocket(port);
+			socket.setSoTimeout(timeoutMillis);
 			System.out.println("Listening on " + port);
 			return socket;
 		} catch (SocketException e) {
