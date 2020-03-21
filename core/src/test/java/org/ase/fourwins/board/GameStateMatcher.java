@@ -26,7 +26,7 @@ public class GameStateMatcher extends TypeSafeMatcher<GameState> {
 	}
 
 	public static GameStateMatcher winnerIs(Object token) {
-		return scoreIs(WIN).withToken(token).withReason("CONNECTED_ROW").withCombinations(1);
+		return scoreIs(WIN).withToken(token).withReason("CONNECTED_LINE").withCombinations(1);
 	}
 
 	public GameStateMatcher withCombinations(int combinations) {

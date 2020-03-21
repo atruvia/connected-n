@@ -162,7 +162,7 @@ public abstract class Board {
 
 		public WinnerBoard(Object token, List<WinningCombination> winningCombinatios, BoardInfo boardInfo) {
 			super(WIN, token, boardInfo);
-			this.gameState = gameState.toBuilder().reason("CONNECTED_ROW").winningCombinations(winningCombinatios)
+			this.gameState = gameState.toBuilder().reason("CONNECTED_LINE").winningCombinations(winningCombinatios)
 					.build();
 		}
 
