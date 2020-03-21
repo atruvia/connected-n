@@ -80,7 +80,7 @@ Das ```ergebnis``` hat die Ausprägungen LOSE|WIN|DRAW
 
 ### Gründe, warum eine Partie beendet wurde
 Der Wert ```grund``` kann u.a folgende Ausprägungen haben: 
-- CONNECTED_ROW (WIN)
+- CONNECTED_LINE (WIN)
 - COLUMN_IS_FULL (LOSE)
 - ILLEGAL_COLUMN_ANNOUNCED (LOSE)
 - Fehlertext der Exception (Protokollfehler, Timeout, etc.) (LOSE)
