@@ -15,13 +15,8 @@ public class Matchday<T> {
 
 	private final List<T> teams;
 
-	public Matchday(List<T> teams) {
-		this.teams = teams;
-	}
-
 	public Stream<Match<T>> getMatches() {
 		return stream(spliterator(iterator(), matchCount(), ORDERED), false);
-
 	}
 
 	protected Match<T> makeMatch(int i) {
