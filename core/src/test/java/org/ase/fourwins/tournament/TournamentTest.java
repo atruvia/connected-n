@@ -180,7 +180,7 @@ class TournamentTest {
 
 	@Property
 	void jqwikCheckTest(@ForAll("players") List<PlayerMock> players, @ForAll("numberOfSeasons") int numberOfSeasons) {
-		TournamentBuilder tournament = tournament().withPlayers(players.toArray(new Player[players.size()]));
+		TournamentBuilder tournament = tournament().withPlayers(players.toArray(Player[]::new));
 		range(0, numberOfSeasons).forEach(i -> tournament.playSeason());
 		boolean shouldHaveMoved = numberOfSeasons > 0 && players.size() > 1;
 		players.forEach(p -> assertThat(p.getMovesMade(), shouldHaveMoved ? moved() : not(moved())));
