@@ -114,7 +114,8 @@ public abstract class Board {
 
 		@Override
 		public Board insertToken(Move move, Object token) {
-			return (delegate = delegate.insertToken(move, token));
+			delegate = delegate.insertToken(move, token);
+			return this; 
 		}
 
 	}

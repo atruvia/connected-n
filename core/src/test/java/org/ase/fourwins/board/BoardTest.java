@@ -8,6 +8,7 @@ import static org.ase.fourwins.board.BoardTest.BoardBuilder.boardOfSize;
 import static org.ase.fourwins.board.Move.moveToColumn;
 import static org.ase.fourwins.util.CollectionUtil.reverse;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
 import java.util.List;
@@ -154,6 +155,18 @@ class BoardTest {
 				.filled("X X X"));
 		board = board.insertToken(moveToColumn('D'), "X");
 		assertThat(board, isStillInGame());
+	}
+	
+	/**
+	 * This test does not describe a functional requirement but some NFA behavior we would wish to fulfill. 
+	 */
+	@Test
+	void boardInstanceMustNotChange_noAccessToRealBoardInstance() {
+		Board b1 = a(boardOfSize(7, 1));
+		Board b2 = b1.insertToken(moveToColumn('A'), "X");
+		assertThat(b2, sameInstance(b1));
+		Board b3 = b1.insertToken(moveToColumn('A'), "O");
+		assertThat(b3, sameInstance(b2));
 	}
 
 	public static class BoardBuilder {
