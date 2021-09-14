@@ -17,23 +17,26 @@ public class Round<T> {
 
 	private static final class RotatedLeagueList<T> extends ListDelegate<T> {
 
-		private final int rotateBy = 1;
+		private final int rotateBy;
 
 		private RotatedLeagueList(List<T> delegate) {
-			super(delegate);
+			this(delegate, 1);
+		}
+
+		private RotatedLeagueList(List<T> delegate, int rotateBy) {
+			// constructor is optimized by doing decomposition, this is pure performance
+			// optimization only, could be removed without changing behavior. Just done for fun (and no profit) :D
+			super(delegate instanceof RotatedLeagueList ? ((RotatedLeagueList<T>) delegate).getDelegate() : delegate);
+			this.rotateBy = delegate instanceof RotatedLeagueList ? ((RotatedLeagueList<T>) delegate).rotateBy + rotateBy : rotateBy;
 		}
 
 		@Override
 		public T get(int index) {
-			return super.get(rotatedIndex(index));
+			return super.get(index == 0 ? 0 : rotatedIndex(index));
 		}
 
 		private int rotatedIndex(int index) {
-			if (index == 0) {
-				return index;
-			}
-			index += rotateBy;
-			return index >= size() ? index - size() + 1 : index;
+			return (rotateBy + index - 1) % (size() - 1) + 1;
 		}
 
 	}
