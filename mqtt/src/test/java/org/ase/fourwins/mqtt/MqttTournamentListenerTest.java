@@ -91,7 +91,6 @@ class MqttTournamentListenerTest {
 			try {
 				MqttClient client = new MqttClient("tcp://" + brokerHost + ":" + brokerPort, name,
 						new MemoryPersistence());
-				client.setTimeToWait(TimeUnit.SECONDS.toMillis(10));
 				client.connect(connectOptions());
 				client.setCallback(new MqttCallbackExtended() {
 
