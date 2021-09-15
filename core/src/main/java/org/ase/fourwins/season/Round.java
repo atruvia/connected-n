@@ -28,13 +28,13 @@ public class Round<T> {
 	 * 
 	 * <pre>
 	 * given {@link #shiftBy} is <code>1</code>
-	 * index 0 -> index 0 (A) (element at index <code></code> is always fix)
+	 * index 0 -> index 0 (A) (element at index <code>0</code> is always fix)
 	 * index 1 -> index 2 (C)
 	 * index 2 -> index 3 (D)
 	 * index 3 -> index 1 (B)
 	 * 
 	 * given {@link #shiftBy} is <code>2</code>
-	 * index 0 -> index 0 (A) (element at index <code></code> is always fix)
+	 * index 0 -> index 0 (A) (element at index <code>0</code> is always fix)
 	 * index 1 -> index 3 (D)
 	 * index 2 -> index 1 (B)
 	 * index 3 -> index 2 (C)
