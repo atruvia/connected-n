@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -45,29 +44,16 @@ import org.junit.jupiter.api.Test;
 
 import io.moquette.broker.Server;
 import io.moquette.broker.config.MemoryConfig;
+import lombok.Value;
 
 class MqttTournamentListenerTest {
 
 	private static final BoardInfo boardInfo = BoardInfo.builder().rows(42).columns(21).build();
 
+	@Value
 	private static class Message {
-
-		private final String topic;
-		private final String payload;
-
-		public Message(String topic, String payload) {
-			this.topic = topic;
-			this.payload = payload;
-		}
-
-		public String getTopic() {
-			return topic;
-		}
-
-		public String getPayload() {
-			return payload;
-		}
-
+		final String topic;
+		final String payload;
 	}
 
 	private static Duration timeout = ofSeconds(30);
@@ -91,7 +77,6 @@ class MqttTournamentListenerTest {
 			try {
 				MqttClient client = new MqttClient("tcp://" + brokerHost + ":" + brokerPort, name,
 						new MemoryPersistence());
-				client.setTimeToWait(TimeUnit.SECONDS.toMillis(1));
 				client.connect(connectOptions());
 				client.setCallback(new MqttCallbackExtended() {
 

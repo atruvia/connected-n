@@ -1,7 +1,5 @@
 package org.ase.fourwins.mqtt;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -23,7 +21,6 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 	public MqttTournamentListener(String host, int port) throws IOException {
 		try {
 			mqttClient = new MqttClient("tcp://" + host + ":" + port, getClass().getName(), new MemoryPersistence());
-			mqttClient.setTimeToWait(SECONDS.toMillis(1));
 			mqttClient.connect(connectOptions());
 			System.out.println("MQTT connected to " + host + ":" + port);
 		} catch (MqttException e) {
