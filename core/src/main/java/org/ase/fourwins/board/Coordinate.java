@@ -9,10 +9,10 @@ import lombok.Value;
 @RequiredArgsConstructor(access = PRIVATE)
 class Coordinate {
 
-	private final int x, y;
+	int x, y;
 
-	public Coordinate mutate(int mutX, int mutY) {
-		return xy(x + mutX, y + mutY);
+	public Coordinate mutate(int mutateX, int mutateY) {
+		return xy(x + mutateX, y + mutateY);
 	}
 
 	public Coordinate mutateX(int mutateX) {

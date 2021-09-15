@@ -305,11 +305,13 @@ public abstract class Board {
 				}
 
 				private boolean inBoundX(Coordinate coordinate) {
-					return coordinate.getX() >= 0 && coordinate.getX() < boardInfo.getColumns();
+					int x = coordinate.getX();
+					return x >= 0 && x < boardInfo.getColumns();
 				}
 
 				private boolean inBoundY(Coordinate coordinate) {
-					return coordinate.getY() >= 0 && coordinate.getY() < boardInfo.getRows();
+					int y = coordinate.getY();
+					return y >= 0 && y < boardInfo.getRows();
 				}
 
 			};
