@@ -43,8 +43,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.moquette.server.Server;
-import io.moquette.server.config.MemoryConfig;
+import io.moquette.broker.Server;
+import io.moquette.broker.config.MemoryConfig;
 
 class MqttTournamentListenerTest {
 
