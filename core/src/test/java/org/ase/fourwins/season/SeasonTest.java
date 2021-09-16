@@ -97,7 +97,7 @@ class SeasonTest {
 
 	@Provide(EVEN_TEAMS)
 	Arbitrary<List<String>> evenTeamList() {
-		return Arbitraries.strings().alpha().ofMaxLength(5).unique().list().ofMinSize(2).ofMaxSize(60)
+		return Arbitraries.strings().alpha().ofMaxLength(5).list().uniqueElements().ofMinSize(2).ofMaxSize(60)
 				.filter(l -> l.size() % 2 == 0);
 	}
 
