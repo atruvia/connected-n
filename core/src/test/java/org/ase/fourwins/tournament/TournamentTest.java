@@ -201,9 +201,8 @@ class TournamentTest {
 				stringsLength -> strings() //
 						.alpha() //
 						.ofLength(stringsLength) //
-						.unique() //
 						.map(PlayerMock::new) //
-						.list().ofMinSize(0).ofMaxSize(20));
+						.list().uniqueElements(Player::getToken).ofMinSize(0).ofMaxSize(20));
 	}
 
 	private IntegerArbitrary numberOfPlayers() {
