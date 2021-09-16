@@ -90,7 +90,7 @@ public class RealTournamentIT {
 				Tuple.of(5, Arbitraries.of(DefaultTournament.coffeeBreakPlayer.getToken())), //
 				Tuple.of(5, strings().ofMinLength(1)), //
 				Tuple.of(90, strings().ofMinLength(1).ofMaxLength(5)) //
-		).flatMap(identity()).unique().list().ofMaxSize(MAX_PLAYERS);
+		).flatMap(identity()).list().uniqueElements().ofMaxSize(MAX_PLAYERS);
 	}
 
 	private List<PlayerMock> players(List<String> playersNames) {
