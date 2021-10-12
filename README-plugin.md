@@ -1,8 +1,8 @@
 Connect-n loads classes during startup via service-loader interface. So all classes implememting ``org.ase.fourwins.tournament.listener.TournamentListener`` 
 (with correspodending META-INF/service file) are instanciated. 
 
-If you like to extend connect-n by yourself you can do so just by adding connect-n's core.jar as a compile time dependeny of your java project. 
-When calling java directly you can add your jar using the ``-cp`` argument. 
+If you like to extend connect-n by yourself you can do so just by adding connect-n's core.jar as a compile time dependency of your java project. 
+When calling java runtime by yourself you can add your jar using the ``-cp`` argument. 
 To be able to use the prebuild docker image the classpath is extended by ``/plugins`` so if you mount a host directory containing JARs those are inspected by the service-loader as well. 
 
 ```
