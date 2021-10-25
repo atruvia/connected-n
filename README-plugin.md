@@ -36,5 +36,5 @@ javac -source 9 -target 9 -cp "$CORE" -d target/ src/foo/Bar.java
 jar -cf myplugin.jar -C target/ META-INF -C target/ foo/
 
 # run docker container
-docker run --rm -v$PWD:/plugins/ fiduciagad/fourwins-udp
+docker run --rm -v$PWD:/plugins/ atruvia/fourwins-udp
 ```

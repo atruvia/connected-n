@@ -5,7 +5,7 @@
 	<artifactId>core</artifactId>
 
 	<parent>
-		<groupId>de.fiduciagad.ase.fourwins</groupId>
+		<groupId>de.atruvia.ase.fourwins</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>

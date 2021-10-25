@@ -5,27 +5,27 @@
 	<artifactId>udp</artifactId>
 
 	<parent>
-		<groupId>de.fiduciagad.ase.fourwins</groupId>
+		<groupId>de.atruvia.ase.fourwins</groupId>
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
 	<dependencies>
 		<dependency>
-			<groupId>de.fiduciagad.ase.fourwins</groupId>
+			<groupId>de.atruvia.ase.fourwins</groupId>
 			<artifactId>core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 		<!-- we do not really have a dependency to mysql/mqtt but we have to define 
 			them as runtime dependencies so that shade can include them -->
 		<dependency>
-			<groupId>de.fiduciagad.ase.fourwins</groupId>
+			<groupId>de.atruvia.ase.fourwins</groupId>
 			<artifactId>mysql</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>de.fiduciagad.ase.fourwins</groupId>
+			<groupId>de.atruvia.ase.fourwins</groupId>
 			<artifactId>mqtt</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<scope>runtime</scope>
