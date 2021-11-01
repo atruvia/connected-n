@@ -74,11 +74,11 @@ class SeasonTest {
 	@Property
 	void seasonMatchesAreFirstRoundPlusSecondRoundMatches(@ForAll(EVEN_TEAMS) int numberOfTeams) {
 		Season<String> season = new Season<>(teams(numberOfTeams));
-		Stream<Matchday<String>> combined = Stream.of( //
-				season.getFirstRound().getMatchdays(), //
-				season.getSecondRound().getMatchdays() //
+		Stream<Match<String>> combined = Stream.of( //
+				matchesOf(season.getFirstRound()), //
+				matchesOf(season.getSecondRound()) //
 		).flatMap(identity());
-		assertThat(combined.collect(toList()), is(season.getMatchdays().collect(toList())));
+		assertThat(combined.collect(toList()), is(matchesOf(season).collect(toList())));
 	}
 
 	@Property
@@ -175,8 +175,16 @@ class SeasonTest {
 		return teams.map(CollectionUtil::reverse);
 	}
 
+	static <T> Stream<Match<T>> matchesOf(Season<T> season) {
+		return matchesOf(season.getMatchdays());
+	}
+
 	static <T> Stream<Match<T>> matchesOf(Round<T> round) {
-		return round.getMatchdays().flatMap(Matchday::getMatches);
+		return matchesOf(round.getMatchdays());
+	}
+
+	static <T> Stream<Match<T>> matchesOf(Stream<Matchday<T>> matchdays) {
+		return matchdays.flatMap(Matchday::getMatches);
 	}
 
 	static <T> void assertNoDuplicateTeams(Collection<T> teams, Collection<Match<T>> matches) {
