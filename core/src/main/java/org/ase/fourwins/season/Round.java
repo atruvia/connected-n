@@ -73,7 +73,7 @@ public class Round<T> {
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
-		return iterate(teams, RotatedLeagueList<T>::new).map(Round.this::matchday).limit(matchdays(teams));
+		return iterate(teams, RotatedLeagueList<T>::new).map(this::matchday).limit(matchdays(teams));
 	}
 
 	private static int matchdays(Collection<?> teams) {
