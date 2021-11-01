@@ -1,18 +1,14 @@
 package org.ase.fourwins.season;
 
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterators.spliterator;
-import static java.util.stream.StreamSupport.stream;
+import static java.lang.Math.max;
+import static java.util.stream.Stream.iterate;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.util.ListDelegate;
 
-import lombok.Data;
-
-@Data
 public class Round<T> {
 
 	/**
@@ -52,9 +48,11 @@ public class Round<T> {
 
 		private RotatedLeagueList(List<T> delegate, int shiftBy) {
 			// constructor is optimized by doing decomposition, this is pure performance
-			// optimization only, could be removed without changing behavior. Just done for fun (and no profit) :D
+			// optimization only, could be removed without changing behavior. Just done for
+			// fun (and no profit) :D
 			super(delegate instanceof RotatedLeagueList ? ((RotatedLeagueList<T>) delegate).getDelegate() : delegate);
-			this.shiftBy = delegate instanceof RotatedLeagueList ? ((RotatedLeagueList<T>) delegate).shiftBy + shiftBy : shiftBy;
+			this.shiftBy = delegate instanceof RotatedLeagueList ? ((RotatedLeagueList<T>) delegate).shiftBy + shiftBy
+					: shiftBy;
 		}
 
 		@Override
@@ -75,32 +73,11 @@ public class Round<T> {
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
-		return stream(spliterator(iterator(), elements(), ORDERED), false);
+		return iterate(teams, RotatedLeagueList<T>::new).map(Round.this::matchday).limit(matchdays(teams));
 	}
 
-	private Iterator<Matchday<T>> iterator() {
-		return new Iterator<Matchday<T>>() {
-
-			private int cnt;
-			private List<T> teams = Round.this.teams;
-
-			@Override
-			public boolean hasNext() {
-				return cnt < elements();
-			}
-
-			@Override
-			public Matchday<T> next() {
-				Matchday<T> matchday = matchday(teams);
-				teams = new RotatedLeagueList<T>(teams);
-				cnt++;
-				return matchday;
-			}
-		};
-	}
-
-	private int elements() {
-		return teams.size() - 1;
+	private static int matchdays(Collection<?> teams) {
+		return max(0, teams.size() - 1);
 	}
 
 	protected Matchday<T> matchday(List<T> teams) {

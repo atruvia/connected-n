@@ -17,8 +17,8 @@ public class Season<T> {
 		}
 
 		@Override
-		protected Match<T> makeMatch(int i) {
-			Match<T> pair = super.makeMatch(i);
+		protected Match<T> makeMatch(int offset) {
+			Match<T> pair = super.makeMatch(offset);
 			return new Match<T>(pair.getTeam2(), pair.getTeam1());
 		}
 	}

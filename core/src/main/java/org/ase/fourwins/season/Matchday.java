@@ -1,52 +1,28 @@
 package org.ase.fourwins.season;
 
-import static java.util.Spliterator.ORDERED;
-import static java.util.Spliterators.spliterator;
-import static java.util.stream.StreamSupport.stream;
+import static java.util.stream.IntStream.range;
 
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
-@Data
+@RequiredArgsConstructor
 public class Matchday<T> {
 
 	private final List<T> teams;
 
 	public Stream<Match<T>> getMatches() {
-		return stream(spliterator(iterator(), matchCount(), ORDERED), false);
+		return range(0, matchCount(teams)).mapToObj(Matchday.this::makeMatch);
 	}
 
-	protected Match<T> makeMatch(int i) {
-		return new Match<T>(teams.get(i), teams.get(teams.size() - i - 1));
-	}
-
-	private Iterator<Match<T>> iterator() {
-		return new Iterator<Match<T>>() {
-
-			private int i;
-
-			@Override
-			public boolean hasNext() {
-				return i < matchCount();
-			}
-
-			@Override
-			public Match<T> next() {
-				return incrementCounter(makeMatch(i));
-			}
-
-			private Match<T> incrementCounter(Match<T> match) {
-				i++;
-				return match;
-			}
-		};
-	}
-
-	private int matchCount() {
+	private static int matchCount(Collection<?> teams) {
 		return teams.size() / 2;
+	}
+
+	protected Match<T> makeMatch(int offset) {
+		return new Match<T>(teams.get(offset), teams.get(teams.size() - offset - 1));
 	}
 
 }
