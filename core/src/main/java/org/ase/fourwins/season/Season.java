@@ -2,6 +2,7 @@ package org.ase.fourwins.season;
 
 import static java.util.stream.Stream.concat;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -26,6 +27,7 @@ public class Season<T> {
 	private final Round<T> firstRound, secondRound;
 
 	public Season(List<T> teams) {
+		verifySizeIsEven(teams);
 		this.firstRound = new Round<T>(teams);
 		this.secondRound = new Round<T>(teams) {
 			@Override
@@ -33,6 +35,12 @@ public class Season<T> {
 				return new ReversedMatchday<T>(teams);
 			}
 		};
+	}
+
+	private void verifySizeIsEven(Collection<T> teams) {
+		if (teams.size() % 2 != 0) {
+			throw new IllegalArgumentException("Amount of teams must be even (was " + teams.size() + ")");
+		}
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {

@@ -3,8 +3,12 @@ package org.ase.fourwins.season;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.rangeClosed;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,39 +25,55 @@ import net.jqwik.api.Provide;
 
 class SeasonTest {
 
-	private static final String EVEN_TEAMS = "evenTeams";
+	static final String EVEN_TEAMS = "evenTeams";
+	static final String ODD_TEAMS = "oddTeams";
 
 	@Example
 	void seasonOfTwoTeams() {
-		verifyAllProperties(teams(2));
+		verifyAllProperties(2);
 	}
 
 	@Example
 	void seasonOfFourTeams() {
-		verifyAllProperties(teams(4));
+		verifyAllProperties(4);
 	}
 
 	@Example
 	void seasonOfSixTeams() {
-		verifyAllProperties(teams(6));
+		verifyAllProperties(6);
+	}
+
+	@Example
+	void seasonOfThreeTeams() {
+		exceptionWhenAmountOfTeamsIsOdd(3);
+	}
+
+	@Example
+	void seasonOfFiveTeams() {
+		exceptionWhenAmountOfTeamsIsOdd(5);
+	}
+
+	@Example
+	void seasonOfSevenTeams() {
+		exceptionWhenAmountOfTeamsIsOdd(7);
 	}
 
 	static List<String> teams(int count) {
 		return rangeClosed(1, count).mapToObj(String::valueOf).map("Team "::concat).collect(toList());
 	}
 
-	void verifyAllProperties(List<String> teams) {
-		roundsHaveExpectedCountOfMatchdays(teams);
-		noDuplicateTeams(teams);
-		matchesInFirstRound(teams);
-		matchesInSecondRound(teams);
-		seasonMatchesAreFirstRoundPlusSecondRoundMatches(teams);
-		secondRoundGamesAreReversedFirstRoundGames(teams);
+	void verifyAllProperties(int numberOfTeams) {
+		roundsHaveExpectedCountOfMatchdays(numberOfTeams);
+		noDuplicateTeams(numberOfTeams);
+		matchesInFirstRound(numberOfTeams);
+		matchesInSecondRound(numberOfTeams);
+		seasonMatchesAreFirstRoundPlusSecondRoundMatches(numberOfTeams);
+		secondRoundGamesAreReversedFirstRoundGames(numberOfTeams);
 	}
 
 	@Property
-	void seasonMatchesAreFirstRoundPlusSecondRoundMatches(@ForAll(EVEN_TEAMS) List<String> teams) {
-		Season<String> season = new Season<>(teams);
+	void seasonMatchesAreFirstRoundPlusSecondRoundMatches(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		Season<String> season = new Season<>(teams(numberOfTeams));
 		Stream<Matchday<String>> combined = Stream.of( //
 				season.getFirstRound().getMatchdays(), //
 				season.getSecondRound().getMatchdays() //
@@ -62,43 +82,56 @@ class SeasonTest {
 	}
 
 	@Property
-	void secondRoundGamesAreReversedFirstRoundGames(@ForAll(EVEN_TEAMS) List<String> teams) {
-		Season<String> season = new Season<>(teams);
+	void secondRoundGamesAreReversedFirstRoundGames(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		Season<String> season = new Season<>(teams(numberOfTeams));
 		Stream<List<String>> firstRound = teamsOf(season.getFirstRound());
 		Stream<List<String>> secondRound = reversed(teamsOf(season.getSecondRound()));
 		assertThat(firstRound.collect(toList()), is(secondRound.collect(toList())));
 	}
 
 	@Property
-	void noDuplicateTeams(@ForAll(EVEN_TEAMS) List<String> teams) {
+	void noDuplicateTeams(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		List<String> teams = teams(numberOfTeams);
 		Season<String> season = new Season<>(teams);
 		assertNoDuplicateTeams(teams, season.getFirstRound());
 		assertNoDuplicateTeams(teams, season.getSecondRound());
 	}
 
 	@Property
-	boolean roundsHaveExpectedCountOfMatchdays(@ForAll(EVEN_TEAMS) List<String> teams) {
-		Season<String> season = new Season<>(teams);
+	boolean roundsHaveExpectedCountOfMatchdays(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		Season<String> season = new Season<>(teams(numberOfTeams));
 		return season.getFirstRound().getMatchdays().count()
-				+ season.getSecondRound().getMatchdays().count() == matchesPerTeamPerSeason(teams);
+				+ season.getSecondRound().getMatchdays().count() == matchesPerTeamPerSeason(numberOfTeams);
 	}
 
 	@Property
-	boolean matchesInFirstRound(@ForAll(EVEN_TEAMS) List<String> teams) {
-		Season<String> season = new Season<>(teams);
-		return matchCount(season.getFirstRound()) == matchesPerRound(teams);
+	boolean matchesInFirstRound(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		Season<String> season = new Season<>(teams(numberOfTeams));
+		return matchCount(season.getFirstRound()) == matchesPerRound(numberOfTeams);
 	}
 
 	@Property
-	boolean matchesInSecondRound(@ForAll(EVEN_TEAMS) List<String> teams) {
-		Season<String> season = new Season<>(teams);
-		return matchCount(season.getSecondRound()) == matchesPerRound(teams);
+	boolean matchesInSecondRound(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		Season<String> season = new Season<>(teams(numberOfTeams));
+		return matchCount(season.getSecondRound()) == matchesPerRound(numberOfTeams);
+	}
+
+	@Property
+	void exceptionWhenAmountOfTeamsIsOdd(@ForAll(ODD_TEAMS) int numberOfTeams) {
+		List<String> teams = teams(numberOfTeams);
+		String message = assertThrows(RuntimeException.class, () -> new Season<>(teams)).getMessage().toLowerCase();
+		assertThat(message, allOf(anyOf(containsString("even"), containsString("odd")),
+				containsString(String.valueOf(numberOfTeams))));
 	}
 
 	@Provide(EVEN_TEAMS)
-	Arbitrary<List<String>> evenTeamList() {
-		return Arbitraries.strings().alpha().ofMaxLength(5).list().uniqueElements().ofMinSize(2).ofMaxSize(60)
-				.filter(l -> l.size() % 2 == 0);
+	Arbitrary<Integer> evenTeamList() {
+		return Arbitraries.integers().between(1, 200 / 2).map(i -> i * 2);
+	}
+
+	@Provide(ODD_TEAMS)
+	Arbitrary<Integer> oddTeamList() {
+		return Arbitraries.integers().between(1, 1000 / 2).map(i -> i * 2 - 1);
 	}
 
 	static <T> Stream<List<T>> teamsOf(Round<T> round) {
@@ -122,20 +155,20 @@ class SeasonTest {
 		assertThat(teamsInMatches.sorted().collect(toList()), is(teams.stream().sorted().collect(toList())));
 	}
 
-	static int matchesPerRound(List<String> teams) {
+	static int matchesPerRound(int teams) {
 		return matchesPerMatchday(teams) * matchesPerTeamPerRound(teams);
 	}
 
-	static int matchesPerTeamPerSeason(Collection<String> teams) {
+	static int matchesPerTeamPerSeason(int teams) {
 		return matchesPerTeamPerRound(teams) * 2;
 	}
 
-	static int matchesPerTeamPerRound(Collection<String> teams) {
-		return teams.size() - 1;
+	static int matchesPerTeamPerRound(int teams) {
+		return teams - 1;
 	}
 
-	static int matchesPerMatchday(List<String> teams) {
-		return teams.size() / 2;
+	static int matchesPerMatchday(int teams) {
+		return teams / 2;
 	}
 
 	static <T> Stream<List<T>> reversed(Stream<List<T>> teams) {
