@@ -14,7 +14,7 @@ public interface Game {
 	@Value
 	public class GameId {
 
-		private final String gameId;
+		String gameId;
 
 		public static GameId random() {
 			return new GameId(UUID.randomUUID().toString());

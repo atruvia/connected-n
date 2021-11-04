@@ -10,7 +10,7 @@ public interface Move {
 
 	@Value
 	public static class DefaultMove implements Move {
-		private final int columnIdx;
+		int columnIdx;
 	}
 
 	int getColumnIdx();

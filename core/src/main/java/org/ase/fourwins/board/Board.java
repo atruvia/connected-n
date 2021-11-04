@@ -65,7 +65,7 @@ public abstract class Board {
 	@Value
 	static class Line {
 
-		private final Direction from, to;
+		Direction from, to;
 
 		public static Line fromTo(Direction from, Direction to) {
 			return new Line(from, to);
@@ -76,10 +76,10 @@ public abstract class Board {
 	@Value
 	@Builder(toBuilder = true)
 	public static class GameState {
-		private Score score;
-		private Object token;
-		private String reason;
-		private List<WinningCombination> winningCombinations;
+		Score score;
+		Object token;
+		String reason;
+		List<WinningCombination> winningCombinations;
 
 		public List<WinningCombination> getWinningCombinations() {
 			return winningCombinations == null ? emptyList() : winningCombinations;
@@ -89,9 +89,9 @@ public abstract class Board {
 
 	@Value
 	public class WinningCombination {
-		private final Object token;
-		private final Coordinate coordinateTokenInserted;
-		private final Set<Coordinate> coordinates;
+		Object token;
+		Coordinate coordinateTokenInserted;
+		Set<Coordinate> coordinates;
 	}
 
 	private static final class DelegateBoard extends Board {
