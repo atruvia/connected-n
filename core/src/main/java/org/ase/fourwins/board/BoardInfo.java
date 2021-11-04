@@ -9,9 +9,9 @@ public class BoardInfo {
 
 	public static BoardInfo sevenColsSixRows = builder().columns(7).rows(6).build();
 
-	private int columns, rows;
+	int columns, rows;
 
 	@Builder.Default
-	private int toConnect = 4;
+	int toConnect = 4;
 	
 }

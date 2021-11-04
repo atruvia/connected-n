@@ -52,8 +52,8 @@ class MqttTournamentListenerTest {
 
 	@Value
 	private static class Message {
-		final String topic;
-		final String payload;
+		String topic;
+		String payload;
 	}
 
 	private static Duration timeout = ofSeconds(30);
