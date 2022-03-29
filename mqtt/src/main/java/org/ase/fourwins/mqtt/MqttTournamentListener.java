@@ -43,14 +43,14 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 		publish(gameId + "/board/width", game.getBoardInfo().getColumns());
 		publish(gameId + "/players", players.size());
 		for (int i = 0; i < players.size(); i++) {
-			publish(gameId + "/player/" + (i + 1), players.get(i).getToken());
+			publish(gameId + "/player/" + (i + 1), mqttFriendlyName(players.get(i).getToken()));
 		}
 		publish(gameId + "/state/start", "");
 	}
 
 	@Override
 	public void newTokenAt(Game game, String token, int column) {
-		publish(game.getId() + "/action/tokeninserted/" + token, column);
+		publish(game.getId() + "/action/tokeninserted/" + mqttFriendlyName(token), column);
 	}
 
 	@Override
@@ -58,7 +58,7 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 		GameState gameState = game.gameState();
 		publish(game.getId() + "/state/end/score", gameState.getScore());
 		publish(game.getId() + "/state/end/reason", gameState.getReason());
-		publish(game.getId() + "/state/end/token", gameState.getToken());
+		publish(game.getId() + "/state/end/token", mqttFriendlyName(String.valueOf(gameState.getToken())));
 	}
 
 	private void publish(String topic, Object payload) {
@@ -83,6 +83,10 @@ public class MqttTournamentListener implements TournamentListener, AutoCloseable
 		} catch (MqttException e) {
 			throw new IOException(e);
 		}
+	}
+
+	private static String mqttFriendlyName(String token) {
+		return token.replaceAll("\\s", "%20").replaceAll("\\+", "%2B");
 	}
 
 }

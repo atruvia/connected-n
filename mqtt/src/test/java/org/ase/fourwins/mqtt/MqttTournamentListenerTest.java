@@ -224,6 +224,23 @@ class MqttTournamentListenerTest {
 		});
 	}
 
+	@Test
+	void playerNamesWithSpecialCharsAreEncoded() {
+		String gameId = "someId";
+		String playerName1 = "***abc def+ghi!?***";
+		String mqttFriendlyName = "***abc%20def%2Bghi!?***";
+		GameState gameState = GameState.builder().score(WIN).token(playerName1).reason("someReason").build();
+		Game game = game(gameId, boardInfo, gameState, playerName1);
+		assertTimeoutPreemptively(timeout, () -> {
+			sut.gameStarted(game);
+			await().until(() -> payload(gameId + "/player/1"), is(mqttFriendlyName));
+			sut.newTokenAt(game, playerName1, 0);
+			await().until(() -> payload(gameId + "/action/tokeninserted/" + mqttFriendlyName), is("0"));
+			sut.gameEnded(game);
+			await().until(() -> payload(gameId + "/state/end/token"), is(mqttFriendlyName));
+		});
+	}
+
 	private static String emptyPayload() {
 		return "";
 	}
