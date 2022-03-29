@@ -1,4 +1,3 @@
-#Diese Datei muss in den Ordner provisioning/datasources von grafana kopiert werden
 apiVersion: 1
 
 datasources:
