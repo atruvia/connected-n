@@ -38,7 +38,7 @@ services:
       - "./grafana/plugins:/var/lib/grafana/plugins"
 
   fourwinsserver: 
-    image: fiduciagad/fourwins-udp
+    image: atruvia/fourwins-udp
     environment:
       TIMEOUT: 250
       DELAY: 30000
