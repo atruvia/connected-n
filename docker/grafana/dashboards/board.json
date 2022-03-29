@@ -187,7 +187,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Kuchendiagramm",
-      "type": "grafana-piechart-panel",
+      "type": "piechart",
       "valueName": "current"
     },
     {
