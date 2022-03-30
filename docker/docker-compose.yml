@@ -29,13 +29,11 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: anafarg
+      # GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
     ports:
       - "3000:3000"
     volumes:
-      - "./grafana/datasources:/etc/grafana/provisioning/datasources"
-      - "./grafana/dashboards:/etc/grafana/provisioning/dashboards"
-      - "./grafana/dashboards:/var/lib/grafana/dashboards"
-      - "./grafana/plugins:/var/lib/grafana/plugins"
+      - "./grafana/provisioning/:/etc/grafana/provisioning/"
 
   fourwinsserver: 
     image: atruvia/fourwins-udp

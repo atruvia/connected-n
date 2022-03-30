@@ -18,4 +18,4 @@ providers:
   # <int> how often Grafana will scan for changed dashboards
   updateIntervalSeconds: 10
   options:
-    path: /var/lib/grafana/dashboards
+    path: /etc/grafana/provisioning/dashboards
