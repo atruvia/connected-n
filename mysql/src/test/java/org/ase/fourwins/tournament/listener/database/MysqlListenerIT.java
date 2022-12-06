@@ -13,8 +13,7 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.tournament.listener.database.Games.aGameOf;
 import static org.ase.fourwins.tournament.listener.database.Games.players;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.testcontainers.containers.BindMode.READ_ONLY;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -38,9 +37,8 @@ class MysqlListenerIT {
 	private static final String DATABASE_NAME = "4WINS";
 
 	@Container
-	private MySQLContainer<?> mysql = new MySQLContainer<>().withDatabaseName(DATABASE_NAME)//
-			.withFileSystemBind("../docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
-	;
+	private MySQLContainer<?> mysql = new MySQLContainer<>(MySQLContainer.NAME).withDatabaseName(DATABASE_NAME)
+			.withInitScript("../docker/mysql/sql.sql");
 
 	private MysqlDBListener sut;
 
