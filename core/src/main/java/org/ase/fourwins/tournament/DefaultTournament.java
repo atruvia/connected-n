@@ -1,5 +1,6 @@
 package org.ase.fourwins.tournament;
 
+import static java.lang.String.format;
 import static java.util.function.Function.identity;
 import static org.ase.fourwins.board.Board.Score.WIN;
 
@@ -24,27 +25,20 @@ import org.ase.fourwins.season.Season;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 public class DefaultTournament implements Tournament {
 
 	@Getter
 	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
 
+	@RequiredArgsConstructor
 	static final class CoffeebreakGame implements Game {
 
 		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
 		private final Player other;
-		private final GameId gameId;
-
-		private CoffeebreakGame(Player other, GameId gameId) {
-			this.other = other;
-			this.gameId = gameId;
-		}
-
-		@Override
-		public GameId getId() {
-			return gameId;
-		}
+		@Getter
+		private final GameId id;
 
 		@Override
 		public BoardInfo getBoardInfo() {
@@ -71,15 +65,17 @@ public class DefaultTournament implements Tournament {
 	private final MoveListener moveListener = (game, token, column) -> tournamentListenerList
 			.forEach(l -> l.newTokenAt(game, token, column));
 
-	static final Player coffeeBreakPlayer = new Player("CoffeeBreak") {
-		@Override
-		protected int nextColumn() {
-			throw new IllegalStateException("It's me, the coffee break, I don't want to play!");
-		}
-
+	private static final String COFFEE_BREAK_NAME = "CoffeeBreak";
+	static final Player coffeeBreakPlayer = new Player(COFFEE_BREAK_NAME) {
 		@Override
 		public boolean joinGame(String opposite, BoardInfo boardInfo) {
 			return false;
+		}
+
+		@Override
+		protected int nextColumn() {
+			// we don't join so we don't play
+			throw new IllegalStateException(format("It's me, the %s, I don't want to play!", COFFEE_BREAK_NAME));
 		}
 	};
 
@@ -98,10 +94,10 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private Season<Player> newSeason(Collection<? extends Player> players) {
-		return new Season<>(toEventQuantity(players));
+		return new Season<>(ensureEvenQuantity(players));
 	}
 
-	private List<Player> toEventQuantity(Collection<? extends Player> players) {
+	private List<Player> ensureEvenQuantity(Collection<? extends Player> players) {
 		List<Player> listOfPlayers = new ArrayList<>(players);
 		return evenPlayerCount(listOfPlayers) ? listOfPlayers : addCoffeeBreakPlayer(listOfPlayers);
 	}
