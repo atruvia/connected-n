@@ -1,17 +1,18 @@
 package org.ase.fourwins.udp.server;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Arrays.stream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -29,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
+import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
@@ -61,7 +63,7 @@ public class UdpServer {
 	private final byte[] buf = new byte[1024];
 
 	private final Lock lock = new ReentrantLock();
-	private final Condition playerRegistered = lock.newCondition();
+	private final Condition newPlayerRegistered = lock.newCondition();
 	private volatile boolean keepSeasonRunning = true;
 
 	private DatagramSocket socket;
@@ -96,12 +98,17 @@ public class UdpServer {
 					timeouts = 0;
 					String[] splitted = response.split(delimiter);
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
-						return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
+						return stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
 					}
 				}
 			} catch (InterruptedException e) {
 				throw new RuntimeException(e);
 			}
+		}
+
+		void send(String command, Object... parts) {
+			send(concat(Stream.of(command), stream(parts)).map(e -> e == null ? "" : String.valueOf(e))
+					.collect(joining(";")));
 		}
 
 		synchronized void send(String message) {
@@ -167,22 +174,18 @@ public class UdpServer {
 
 		@Override
 		public boolean joinGame(String opposite, BoardInfo boardInfo) {
-			playerInfo.send("NEW GAME;" + opposite);
+			playerInfo.send("NEW GAME", opposite);
 			return true;
 		}
 
 		@Override
 		protected void tokenWasInserted(String token, int column) {
-			playerInfo.send("TOKEN INSERTED;" + token + ";" + column);
+			playerInfo.send("TOKEN INSERTED", token, column);
 			super.tokenWasInserted(token, column);
 		}
 
 		public void gameEnded(GameState state) {
-			String reason = state.getReason();
-			Object token = state.getToken();
-			String message = Stream.of("RESULT", state.getScore(), token, reason)
-					.map(e -> e == null ? "" : String.valueOf(e)).collect(joining(";"));
-			playerInfo.send(message);
+			playerInfo.send("RESULT", state.getScore(), state.getToken(), state.getReason());
 			super.gameEnded(state);
 		}
 
@@ -196,7 +199,7 @@ public class UdpServer {
 				if (players.size() < minPlayers) {
 					try {
 						lock.lock();
-						playerRegistered.await(5, SECONDS);
+						newPlayerRegistered.await(5, SECONDS);
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					} finally {
@@ -312,7 +315,7 @@ public class UdpServer {
 	}
 
 	private Predicate<UdpPlayerInfo> inetAddress(InetAddress inetAddress) {
-		return i -> i.getAdressInfo().equals(inetAddress);
+		return i -> Objects.equals(i.getAdressInfo(), inetAddress);
 	}
 
 	private Predicate<UdpPlayerInfo> port(int port) {
@@ -320,11 +323,11 @@ public class UdpServer {
 	}
 
 	private Predicate<UdpPlayerInfo> name(String name) {
-		return i -> i.getName().equals(name);
+		return i -> Objects.equals(i.getName(), name);
 	}
 
-	private Optional<UdpPlayerInfo> findBy(Predicate<UdpPlayerInfo> p) {
-		return players.keySet().stream().filter(p).findFirst();
+	private Optional<UdpPlayerInfo> findBy(Predicate<UdpPlayerInfo> predicate) {
+		return players.keySet().stream().filter(predicate).findFirst();
 	}
 
 	private void handleRegisterCommand(UdpPlayerInfo playerInfo) {
@@ -336,10 +339,10 @@ public class UdpServer {
 
 		System.out.println(
 				"Player " + playerInfo.getName() + " registered, we now have " + players.size() + " player(s)");
-		playerInfo.send("WELCOME;" + playerInfo.getName());
+		playerInfo.send("WELCOME", playerInfo.getName());
 		try {
 			lock.lock();
-			playerRegistered.signal();
+			newPlayerRegistered.signal();
 		} finally {
 			lock.unlock();
 		}

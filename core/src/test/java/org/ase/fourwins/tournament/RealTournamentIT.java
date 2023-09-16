@@ -1,11 +1,13 @@
 package org.ase.fourwins.tournament;
 
 import static java.util.function.Function.identity;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static net.jqwik.api.Arbitraries.frequency;
 import static net.jqwik.api.Arbitraries.strings;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
+import static org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -21,7 +23,6 @@ import org.ase.fourwins.board.Board.GameState;
 import org.ase.fourwins.board.mockplayers.ColumnTrackingMockPlayer;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
 import net.jqwik.api.Arbitraries;
@@ -41,8 +42,7 @@ public class RealTournamentIT {
 
 	static final int MAX_SEASONS = 8;
 
-	static final Predicate<GameState> isCoffeeBreak = s -> CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE
-			.equals(s.getReason());
+	static final Predicate<GameState> isNotCoffeeBreak = not(s -> COFFEE_BREAK_WIN_MESSAGE.equals(s.getReason()));
 
 	private TournamentListener scoreListener;
 
@@ -120,7 +120,7 @@ public class RealTournamentIT {
 			}
 		};
 		tournament.addTournamentListener(scoreListener);
-		Stream<GameState> states = playSeasons(tournament, players, seasons).filter(isCoffeeBreak.negate());
+		Stream<GameState> states = playSeasons(tournament, players, seasons).filter(isNotCoffeeBreak);
 		assertThat(seasonEndedCalls.get(), is(seasons));
 		return states;
 	}
