@@ -2,7 +2,6 @@ package org.ase.fourwins.udp.server;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static java.time.Duration.ofSeconds;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
 import static org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2.ENV_NAME_TO_BE_SET;
@@ -12,12 +11,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -38,21 +31,64 @@ import org.ase.fourwins.board.BoardInfo.BoardInfoBuilder;
 import org.ase.fourwins.board.Move.DefaultMove;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
+import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.udp.server.listeners.TournamentListenerDisabled;
 import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled;
 import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.stubbing.Answer;
-import org.mockito.verification.VerificationMode;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 public class MainTest {
 
 	private static final Duration TIMEOUT = ofSeconds(10);
+
+	@Getter
+	@Setter
+	@Accessors(chain = true, fluent = true)
+	private static class FakeTournament implements Tournament {
+
+		private boolean blockOnPlaySeasonCall;
+		private int seasons;
+		private GameState state;
+
+		@Override
+		public void addTournamentListener(TournamentListener listener) {
+			// noop
+		}
+
+		@Override
+		public void removeTournamentListener(TournamentListener listener) {
+			// noop
+		}
+
+		@Override
+		public void playSeason(Collection<? extends Player> players, Consumer<GameState> consumer) {
+			this.seasons++;
+			if (this.state != null) {
+				players.forEach(p -> p.gameEnded(state));
+			}
+			if (this.blockOnPlaySeasonCall) {
+				waitForever();
+			}
+		}
+
+		private static void waitForever() {
+			try {
+				Object object = new Object();
+				synchronized (object) {
+					object.wait();
+				}
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+
+	}
 
 	@RequiredArgsConstructor
 	private static class BaseClient {
@@ -114,7 +150,7 @@ public class MainTest {
 	private final int serverPort = freePort();
 	private int minPlayers = 2;
 
-	private final Tournament tournament = mock(Tournament.class);
+	private final FakeTournament fakeTournament = new FakeTournament();
 
 	private Main runMainInBackground() {
 
@@ -144,7 +180,7 @@ public class MainTest {
 		};
 		runInBackground(() -> {
 			try {
-				withEnvironmentVariable(ENV_NAME_TO_BE_SET, "anyValue").execute(() -> main.doMain(tournament));
+				withEnvironmentVariable(ENV_NAME_TO_BE_SET, "anyValue").execute(() -> main.doMain(fakeTournament));
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -169,7 +205,7 @@ public class MainTest {
 	@Test
 	void clientCanConnectToServer() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1").assertReceived(welcomed("1"));
 			assertTournamentNotStartet();
@@ -179,7 +215,7 @@ public class MainTest {
 	@Test
 	void acceptLongName() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String longestAllowedName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
 			newClientWithName(longestAllowedName).assertReceived(welcomed(longestAllowedName));
@@ -190,7 +226,7 @@ public class MainTest {
 	@Test
 	void denyTooLongName() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String tooLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
 			newClientWithName(tooLongName).assertReceived("NAME_TOO_LONG");
@@ -201,7 +237,7 @@ public class MainTest {
 	@Test
 	void denyEmptyName() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName(emptyName()).assertReceived("NO_NAME_GIVEN");
 			assertTournamentNotStartet();
@@ -211,7 +247,7 @@ public class MainTest {
 	private String emptyName() {
 		return "";
 	}
-	
+
 	private DummyClient newClientWithName(String name) throws IOException {
 		return new DummyClient(name, "localhost", serverPort);
 	}
@@ -223,7 +259,7 @@ public class MainTest {
 	@Test
 	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = newClientWithName("1");
 			DummyClient client2 = newClientWithName("2");
@@ -255,13 +291,13 @@ public class MainTest {
 	}
 
 	private void verifySeasonsStarted(int times) {
-		verify(tournament, timesWithTimeout(times)).playSeason(anyCollection(), anyGameStateConsumer());
+		await().untilAsserted(() -> assertThat(this.fakeTournament.seasons(), is(times)));
 	}
 
 	@Test
 	void seasonWillOnlyBeStartedIfMoreThanOnePlayerIsRegistered() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			newClientWithName("1");
 			newClientWithName("2");
@@ -279,7 +315,7 @@ public class MainTest {
 	@Test
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {
 		runMainInBackground();
-		setupInfiniteSeason(tournament);
+		setupInfiniteSeason();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			String nameToReuse = "1";
 			DummyClient client = newClientWithName(nameToReuse);
@@ -358,17 +394,8 @@ public class MainTest {
 		tournamentOfState(board.gameState());
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void tournamentOfState(GameState gameState) {
-		ArgumentCaptor<Collection<Player>> playerCaptor = ArgumentCaptor.forClass(Collection.class);
-		Answer answer = s -> callGameEnded(gameState, playerCaptor.getValue());
-		doAnswer(answer).when(tournament).playSeason(playerCaptor.capture(), any(Consumer.class));
-	}
-
-	private Object callGameEnded(GameState gameState, Collection<Player> players) {
-		players.forEach(p -> p.gameEnded(gameState));
-		waitForever();
-		return null;
+		this.fakeTournament.state(gameState).blockOnPlaySeasonCall(true);
 	}
 
 	private void assertWelcomed(DummyClient client) {
@@ -379,41 +406,14 @@ public class MainTest {
 		return "WELCOME;" + name;
 	}
 
-	private static void setupInfiniteSeason(Tournament mock) {
-		doAnswer(s -> {
-			waitForever();
-			throw new IllegalStateException();
-		}).when(mock).playSeason(anyCollection(), anyGameStateConsumer());
-	}
-
-	private static void waitForever() {
-		try {
-			Object object = new Object();
-			synchronized (object) {
-				object.wait();
-			}
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-		}
+	private void setupInfiniteSeason() {
+		fakeTournament.blockOnPlaySeasonCall(true);
 	}
 
 	private static String nameOfLength(int length) {
 		String name = IntStream.range(0, length).mapToObj(i -> "X").collect(joining());
 		assert name.length() == length;
 		return name;
-	}
-
-	private static VerificationMode timesWithTimeout(int times) {
-		return timeout(SECONDS.toMillis(5)).times(times);
-	}
-
-	private static Consumer<GameState> anyGameStateConsumer() {
-		return anyConsumer(GameState.class);
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T> Consumer<T> anyConsumer(Class<T> clazz) {
-		return any(Consumer.class);
 	}
 
 	private static int freePort() {
