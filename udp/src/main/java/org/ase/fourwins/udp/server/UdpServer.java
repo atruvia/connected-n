@@ -92,9 +92,8 @@ public class UdpServer {
 							handleUnregisterCommand(this);
 						}
 						throw new TimeoutException("Timeout while waiting for response for UUID " + uuid);
-					} else {
-						timeouts = 0;
 					}
+					timeouts = 0;
 					String[] splitted = response.split(delimiter);
 					if (splitted.length > 1 && splitted[splitted.length - 1].equals(uuid)) {
 						return Arrays.stream(splitted).limit(splitted.length - 1).collect(joining(delimiter));
@@ -179,10 +178,10 @@ public class UdpServer {
 		}
 
 		public void gameEnded(GameState state) {
-			Object reason = state.getReason() == null ? "" : state.getReason();
+			String reason = state.getReason();
 			Object token = state.getToken();
-			String message = Stream.of("RESULT", state.getScore(), token == null ? "" : token, reason)
-					.map(String::valueOf).collect(joining(";"));
+			String message = Stream.of("RESULT", state.getScore(), token, reason)
+					.map(e -> e == null ? "" : String.valueOf(e)).collect(joining(";"));
 			playerInfo.send(message);
 			super.gameEnded(state);
 		}
