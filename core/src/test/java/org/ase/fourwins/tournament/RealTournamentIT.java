@@ -38,11 +38,11 @@ public class RealTournamentIT {
 
 	private static final String PLAYERS_NAMES_INCLUDING_COFFEE_BREAK = "playersNames";
 
-	static final int MAX_PLAYERS = 14;
+	private static final int MAX_PLAYERS = 14;
 
-	static final int MAX_SEASONS = 8;
+	private static final int MAX_SEASONS = 8;
 
-	static final Predicate<GameState> isNotCoffeeBreak = not(s -> COFFEE_BREAK_WIN_MESSAGE.equals(s.getReason()));
+	private static final Predicate<GameState> isNotCoffeeBreak = not(s -> COFFEE_BREAK_WIN_MESSAGE.equals(s.getReason()));
 
 	private TournamentListener scoreListener;
 
