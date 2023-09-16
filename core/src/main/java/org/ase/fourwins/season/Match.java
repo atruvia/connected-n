@@ -4,6 +4,5 @@ import lombok.Value;
 
 @Value
 public class Match<T> {
-	private final T team1;
-	private final T team2;
+	T team1, team2;
 }

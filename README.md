@@ -4,7 +4,7 @@
 ## Connected n
 Eine Umgebung zur Ausführung von Spielen, bei welchem es das Ziel ist, Steine in einer vertikalen, horizontalen oder diagonalen Reihe zu platzieren. Das Spiel wird von dem hier bereitgestellten Server ausgeführt. Die Spieler kommunizieren mit dem Server unter Verwendung eines einfachen textbasierten Protokolls über UDP.
 
-Das Spielprinzip basiert auf [4 Gewinnt](https://de.wikipedia.org/wiki/Vier_gewinnt) bzw. [connect four](https://en.wikipedia.org/wiki/Connect_Four). Die Brettgröße sowie die Anzahl verbundener Steine kann konfiguriert werden. 
+Das Spielprinzip basiert auf [4 Gewinnt](https://de.wikipedia.org/wiki/Vier_gewinnt) bzw. [connect four](https://en.wikipedia.org/wiki/Connect_Four). Die Brettgröße sowie die Anzahl zu verbindender Steine kann konfiguriert werden. 
 
 Die Idee für diese Coding Challenge wurde schamlos von Jan Ernsting (Mäxchen), welcher nach eigenen Angaben schamlos von Nicolas Botzet und Steven Collins (Poker) kopierte, kopiert. :-D
 

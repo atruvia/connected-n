@@ -36,13 +36,17 @@ public class DefaultTournament implements Tournament {
 	static final class CoffeebreakGame implements Game {
 
 		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
+
+		private static final BoardInfo boardInfo = BoardInfo.builder().columns(0).rows(0).build();
+
 		private final Player other;
+
 		@Getter
 		private final GameId id;
 
 		@Override
 		public BoardInfo getBoardInfo() {
-			return BoardInfo.builder().columns(0).rows(0).build();
+			return boardInfo;
 		}
 
 		@Override
@@ -114,12 +118,13 @@ public class DefaultTournament implements Tournament {
 	private Game newGame(Match<Player> match) {
 		// TODO change gameId to "<season>/<gameNo>"
 		GameId gameId = GameId.random();
-		if (isCoffeBreak(match.getTeam1())) {
-			return new CoffeebreakGame(match.getTeam2(), gameId);
-		} else if (isCoffeBreak(match.getTeam2())) {
-			return new CoffeebreakGame(match.getTeam1(), gameId);
-		}
-		return new DefaultGame(moveListener, makeBoard(), gameId, match.getTeam1(), match.getTeam2());
+		Player team1 = match.getTeam1();
+		Player team2 = match.getTeam2();
+		boolean team1IsCoffeBreak = isCoffeBreak(team1);
+		boolean team2IsCoffeBreak = isCoffeBreak(team2);
+		return team1IsCoffeBreak || team2IsCoffeBreak //
+				? new CoffeebreakGame(team1IsCoffeBreak ? team2 : team1, gameId) //
+				: new DefaultGame(moveListener, makeBoard(), gameId, team1, team2);
 	}
 
 	private static boolean isCoffeBreak(Player player) {

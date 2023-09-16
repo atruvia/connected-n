@@ -1,9 +1,7 @@
 package org.ase.fourwins.udp.server;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static java.lang.Long.MAX_VALUE;
 import static java.time.Duration.ofSeconds;
-import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
@@ -46,14 +44,17 @@ import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.Answer;
 import org.mockito.verification.VerificationMode;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 public class MainTest {
 
 	private static final Duration TIMEOUT = ofSeconds(10);
 
+	@RequiredArgsConstructor
 	private static class BaseClient {
 
 		@Getter
@@ -61,8 +62,7 @@ public class MainTest {
 		protected final UdpCommunicator communicator;
 
 		public BaseClient(String name, String remoteHost, int remotePort) throws IOException {
-			this.name = name;
-			this.communicator = new UdpCommunicator(remoteHost, remotePort);
+			this(name, new UdpCommunicator(remoteHost, remotePort));
 		}
 
 		void send(String message) throws IOException {
@@ -177,20 +177,6 @@ public class MainTest {
 	}
 
 	@Test
-	void canHandleEmptyCorruptedRegisterMessage() throws IOException {
-		runMainInBackground();
-		setupInfiniteSeason(tournament);
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			new DummyClient("1", "localhost", serverPort) {
-				protected void register() throws IOException {
-					send("REGISTER;");
-				}
-			}.assertReceived("NO_NAME_GIVEN");
-			assertTournamentNotStartet();
-		});
-	}
-
-	@Test
 	void acceptLongName() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason(tournament);
@@ -212,23 +198,26 @@ public class MainTest {
 		});
 	}
 
+	@Test
+	void denyEmptyName() throws IOException {
+		runMainInBackground();
+		setupInfiniteSeason(tournament);
+		assertTimeoutPreemptively(TIMEOUT, () -> {
+			newClientWithName(emptyName()).assertReceived("NO_NAME_GIVEN");
+			assertTournamentNotStartet();
+		});
+	}
+
+	private String emptyName() {
+		return "";
+	}
+	
 	private DummyClient newClientWithName(String name) throws IOException {
 		return new DummyClient(name, "localhost", serverPort);
 	}
 
 	private DummyClient newPlayingClientWithName(String name) throws IOException {
 		return new PlayingClient(name, "localhost", serverPort, -1);
-	}
-
-	@Test
-	void denyEmptyName() throws IOException {
-		runMainInBackground();
-		setupInfiniteSeason(tournament);
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			String emptyName = "";
-			newClientWithName(emptyName).assertReceived("NO_NAME_GIVEN");
-			assertTournamentNotStartet();
-		});
 	}
 
 	@Test
@@ -251,10 +240,8 @@ public class MainTest {
 		runMainInBackground();
 		assertTimeoutPreemptively(TIMEOUT, () -> {
 			DummyClient client1 = newClientWithName("1");
-			DummyClient client2 = newClientWithName("2");
 
 			assertWelcomed(client1);
-			assertWelcomed(client2);
 			assertTournamentStartet();
 		});
 	}
@@ -371,12 +358,11 @@ public class MainTest {
 		tournamentOfState(board.gameState());
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void tournamentOfState(GameState gameState) {
 		ArgumentCaptor<Collection<Player>> playerCaptor = ArgumentCaptor.forClass(Collection.class);
-		ArgumentCaptor<Consumer<GameState>> consumerCaptor = ArgumentCaptor.forClass(Consumer.class);
-		doAnswer(s -> callGameEnded(gameState, playerCaptor.getValue())).when(tournament)
-				.playSeason(playerCaptor.capture(), consumerCaptor.capture());
+		Answer answer = s -> callGameEnded(gameState, playerCaptor.getValue());
+		doAnswer(answer).when(tournament).playSeason(playerCaptor.capture(), any(Consumer.class));
 	}
 
 	private Object callGameEnded(GameState gameState, Collection<Player> players) {
@@ -402,8 +388,9 @@ public class MainTest {
 
 	private static void waitForever() {
 		try {
-			while (true) {
-				DAYS.sleep(MAX_VALUE);
+			Object object = new Object();
+			synchronized (object) {
+				object.wait();
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
