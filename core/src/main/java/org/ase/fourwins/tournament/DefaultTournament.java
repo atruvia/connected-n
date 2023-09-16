@@ -103,10 +103,10 @@ public class DefaultTournament implements Tournament {
 
 	private List<Player> ensureEvenQuantity(Collection<? extends Player> players) {
 		List<Player> listOfPlayers = new ArrayList<>(players);
-		return evenPlayerCount(listOfPlayers) ? listOfPlayers : addCoffeeBreakPlayer(listOfPlayers);
+		return isEvenPlayerCount(listOfPlayers) ? listOfPlayers : addCoffeeBreakPlayer(listOfPlayers);
 	}
 
-	private boolean evenPlayerCount(List<Player> players) {
+	private boolean isEvenPlayerCount(List<Player> players) {
 		return players.size() % 2 == 0;
 	}
 
