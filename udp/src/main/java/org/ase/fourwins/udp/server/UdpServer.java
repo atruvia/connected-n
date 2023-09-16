@@ -30,7 +30,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.Board.Score;
 import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.Tournament;
@@ -211,6 +210,7 @@ public class UdpServer {
 							.map(Entry::getValue).collect(toList()), noop());
 				}
 			}
+			socket.close();
 			System.out.println("Tournament stopped");
 		}).start();
 	}
