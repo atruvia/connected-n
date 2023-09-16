@@ -30,12 +30,18 @@
 				<version>3.1.2</version>
 				<configuration>
 					<useSystemClassLoader>false</useSystemClassLoader>
+					<!-- make it work using JDK16+ -->
+					<argLine>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>3.1.2</version>
+				<configuration>
+					<!-- make it work using JDK16+ -->
+					<argLine>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
@@ -61,8 +67,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
-
 
 	<dependencies>
 		<dependency>
