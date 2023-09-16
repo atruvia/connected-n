@@ -9,6 +9,7 @@ import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.GameStateMatcher.isGameError;
+import static org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE;
 import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.tournament;
 import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard.LOSE_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
@@ -28,7 +29,6 @@ import org.ase.fourwins.board.BoardInfo;
 import org.ase.fourwins.board.Move;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Player;
-import org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Disabled;
@@ -158,7 +158,7 @@ class TournamentTest {
 	}
 
 	GameState coffeeBreakWin(String token) {
-		return GameState.builder().score(WIN).token(token).reason(CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE).build();
+		return GameState.builder().score(WIN).token(token).reason(COFFEE_BREAK_WIN_MESSAGE).build();
 	}
 
 	GameState lose(String token) {
