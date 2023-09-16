@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.util.Optional;
 
 import org.ase.fourwins.annos.OnlyActivateWhenEnvSet;
-import org.ase.fourwins.game.Game;
 import org.ase.fourwins.tournament.listener.TournamentListener;
+
+import lombok.experimental.Delegate;
 
 @OnlyActivateWhenEnvSet("WITH_MQTT")
 public class MqttTournamentListenerWithEnv implements TournamentListener {
 
+	@Delegate
 	private final MqttTournamentListener delegate;
 
 	public MqttTournamentListenerWithEnv() throws NumberFormatException, IOException {
@@ -19,26 +21,6 @@ public class MqttTournamentListenerWithEnv implements TournamentListener {
 
 	private static Optional<String> tryEnv(String name) {
 		return Optional.ofNullable(System.getenv(name));
-	}
-
-	public void gameStarted(Game game) {
-		delegate.gameStarted(game);
-	}
-
-	public void newTokenAt(Game game, String token, int column) {
-		delegate.newTokenAt(game, token, column);
-	}
-
-	public void gameEnded(Game game) {
-		delegate.gameEnded(game);
-	}
-
-	public boolean isConnected() {
-		return delegate.isConnected();
-	}
-
-	public void close() throws IOException {
-		delegate.close();
 	}
 
 }

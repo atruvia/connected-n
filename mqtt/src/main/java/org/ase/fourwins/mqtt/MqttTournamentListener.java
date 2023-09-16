@@ -16,7 +16,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 public class MqttTournamentListener implements TournamentListener, AutoCloseable {
 
-	private MqttClient mqttClient;
+	private final MqttClient mqttClient;
 
 	public MqttTournamentListener(String host, int port) throws IOException {
 		try {
