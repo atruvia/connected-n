@@ -68,14 +68,18 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void canReRegister() throws IOException, InterruptedException {
-		udpServerInBackground();
-		assertWelcomed(playingClient("1", 0));
-		assertWelcomed(playingClient("1", 0));
+		UdpServer udpServer = udpServerInBackground();
+		try {
+			assertWelcomed(playingClient("1", 0));
+			assertWelcomed(playingClient("1", 0));
+		} finally {
+			udpServer.stopAndAwaitSocketClosed();
+		}
 	}
 
 	@Test
 	void canPlay_2() throws IOException, InterruptedException {
-		udpServerInBackground();
+		UdpServer udpServer = udpServerInBackground();
 		SysoutTournamentListener scoreListener = new SysoutTournamentListener();
 		tournament.addTournamentListener(scoreListener);
 		GameStateCollector stateListener = new GameStateCollector();
@@ -83,12 +87,15 @@ public class UdpServerRealTournamentIT {
 
 		DummyClient client1 = playingClient("1", 0);
 		DummyClient client2 = playingClient("2", 1);
+		try {
+			assertWelcomed(client1);
+			assertWelcomed(client2);
 
-		assertWelcomed(client1);
-		assertWelcomed(client2);
-
-		/// ...let it run for a while
-		SECONDS.sleep(5);
+			/// ...let it run for a while
+			SECONDS.sleep(5);
+		} finally {
+			udpServer.stopAndAwaitSocketClosed();
+		}
 
 		ScoreSheet scoreSheet = scoreListener.getScoreSheet();
 		Double score1 = scoreSheet.scoreOf(client1.getName());
@@ -134,23 +141,26 @@ public class UdpServerRealTournamentIT {
 	@Disabled
 	void canPlay_Multi() throws IOException, InterruptedException {
 		// TEST fails since is canceled after timeout has reached ;-)
-		udpServerInBackground();
-		tournament.addTournamentListener(new SysoutTournamentListener());
-		IntStream.range(0, 10).forEach(i -> {
-			try {
-				playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		});
-		uuidFaker();
-		sometimesNoResponse();
+		UdpServer udpServer = udpServerInBackground();
+		try {
+			tournament.addTournamentListener(new SysoutTournamentListener());
+			IntStream.range(0, 10).forEach(i -> {
+				try {
+					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			});
+			uuidFaker();
+			sometimesNoResponse();
 
-		/// ...let it run for a long while
-		TimeUnit.MINUTES.sleep(60);
+			/// ...let it run for a long while
+			TimeUnit.MINUTES.sleep(60);
 
-		fail("add more assertions");
-
+			fail("add more assertions");
+		} finally {
+			udpServer.stopAndAwaitSocketClosed();
+		}
 	}
 
 	private PlayingClient uuidFaker() throws IOException {

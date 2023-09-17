@@ -46,7 +46,7 @@ public class UdpServer {
 	public static final int MAX_CLIENT_NAME_LENGTH = 30;
 
 	public static final int UNREGISTER_AFTER_N_TIMEOUTS = 10;
-	
+
 	@Setter
 	private int port = 4446;
 
@@ -220,6 +220,13 @@ public class UdpServer {
 	public void stop() {
 		System.out.println("Tournament will stop");
 		keepSeasonRunning = false;
+	}
+
+	public void stopAndAwaitSocketClosed() throws InterruptedException {
+		stop();
+		while (!socket.isClosed()) {
+			TimeUnit.MILLISECONDS.sleep(100);
+		}
 	}
 
 	private void delay() {
