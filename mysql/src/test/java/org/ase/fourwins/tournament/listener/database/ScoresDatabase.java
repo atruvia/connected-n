@@ -1,7 +1,9 @@
 package org.ase.fourwins.tournament.listener.database;
 
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_PLAYER_ID;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.TABLE_NAME;
+import static org.ase.fourwins.tournament.listener.database.MySqlDbRow.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.database.MySqlDbRow.TABLE_NAME;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -12,19 +14,24 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.ase.fourwins.game.Player;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 public final class ScoresDatabase implements AutoCloseable {
 
-	private Connection connection;
+	private static final String QUERY = "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMNNAME_PLAYER_ID + " = ?";
 
-	public ScoresDatabase(Connection connection) {
-		this.connection = connection;
-	}
+	private static final QueryRunner queryRunner = new QueryRunner();
+	private static final BeanListHandler<MySqlDbRow> handler = new BeanListHandler<>(MySqlDbRow.class);
 
-	public List<MysqlDBRow> scores(Player player) throws SQLException {
-		QueryRunner runner = new QueryRunner();
-		BeanListHandler<MysqlDBRow> handler = new BeanListHandler<>(MysqlDBRow.class);
-		String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + COLUMNNAME_PLAYER_ID + " = ?";
-		return runner.query(connection, query, handler, player.getToken());
+	private final Connection connection;
+
+	public List<MySqlDbRow> scores(Player player) {
+		try {
+			return queryRunner.query(connection, QUERY, handler, player.getToken());
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -34,6 +41,18 @@ public final class ScoresDatabase implements AutoCloseable {
 		} catch (SQLException e) {
 			throw new IOException(e);
 		}
+	}
+
+	public void assertThatScoresAre(List<Player> players, double... scores) throws SQLException {
+		assertThat(players.stream().map(p -> scoreOf(p)).toArray(Double[]::new), is(scores));
+	}
+
+	public double scoreOf(Player player) {
+		return rows(player).stream().reduce((a, b) -> b).map(MySqlDbRow::getValue).orElse(0.0);
+	}
+
+	public List<MySqlDbRow> rows(Player player) {
+		return scores(player);
 	}
 
 }

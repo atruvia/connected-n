@@ -1,12 +1,13 @@
 package org.ase.fourwins.tournament.listener.database;
 
 import static java.util.function.Predicate.isEqual;
+import static java.util.function.Predicate.not;
 import static org.ase.fourwins.board.Board.Score.DRAW;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_PLAYER_ID;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.COLUMNNAME_VALUE;
-import static org.ase.fourwins.tournament.listener.database.MysqlDBRow.TABLE_NAME;
+import static org.ase.fourwins.tournament.listener.database.MySqlDbRow.COLUMNNAME_PLAYER_ID;
+import static org.ase.fourwins.tournament.listener.database.MySqlDbRow.COLUMNNAME_VALUE;
+import static org.ase.fourwins.tournament.listener.database.MySqlDbRow.TABLE_NAME;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -19,7 +20,7 @@ import org.ase.fourwins.game.Game;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
-public class MysqlDBListener implements TournamentListener {
+public class MySqlDbListener implements TournamentListener {
 
 	private static final double POINTS_WIN = 1;
 	private static final double POINTS_DRAW = 0.5;
@@ -33,7 +34,7 @@ public class MysqlDBListener implements TournamentListener {
 			+ COLUMNNAME_VALUE + ") SELECT ?,COALESCE(MAX(value),0)+? FROM " + TABLE_NAME + " WHERE "
 			+ COLUMNNAME_PLAYER_ID + "=?";
 
-	public MysqlDBListener(String url, String user, String password) throws ClassNotFoundException, SQLException {
+	public MySqlDbListener(String url, String user, String password) throws ClassNotFoundException, SQLException {
 		this.connection = DriverManager.getConnection(url, user, password);
 	}
 
@@ -42,7 +43,7 @@ public class MysqlDBListener implements TournamentListener {
 		rows(game).forEach(this::insertRow);
 	}
 
-	private void insertRow(MysqlDBRow row) {
+	private void insertRow(MySqlDbRow row) {
 		try {
 			runner.update(connection, insertSQL, row.getPlayerId(), row.getValue(), row.getPlayerId());
 		} catch (SQLException e) {
@@ -50,11 +51,11 @@ public class MysqlDBListener implements TournamentListener {
 		}
 	}
 
-	private Stream<MysqlDBRow> rows(Game game) {
+	private Stream<MySqlDbRow> rows(Game game) {
 		Object lastToken = game.gameState().getToken();
 		Score score = game.gameState().getScore();
 		if (LOSE.equals(score)) {
-			return tokens(game).filter(isEqual(lastToken).negate()).map(t -> points(t, POINTS_WIN));
+			return tokens(game).filter(not(isEqual(lastToken))).map(t -> points(t, POINTS_WIN));
 		} else if (WIN.equals(score)) {
 			return Stream.of(points(lastToken, POINTS_WIN));
 		} else if (DRAW.equals(score)) {
@@ -67,11 +68,8 @@ public class MysqlDBListener implements TournamentListener {
 		return game.getPlayers().stream().map(Player::getToken);
 	}
 
-	private MysqlDBRow points(Object token, double points) {
-		MysqlDBRow row = new MysqlDBRow();
-		row.setPlayerId(String.valueOf(token));
-		row.setValue(points);
-		return row;
+	private MySqlDbRow points(Object token, double points) {
+		return new MySqlDbRow(String.valueOf(token), points);
 	}
 
 }

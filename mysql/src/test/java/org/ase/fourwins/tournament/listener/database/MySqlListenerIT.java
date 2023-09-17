@@ -1,6 +1,5 @@
 package org.ase.fourwins.tournament.listener.database;
 
-import static java.util.Comparator.comparing;
 import static java.util.EnumSet.allOf;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -12,8 +11,7 @@ import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.tournament.listener.database.Games.aGameOf;
 import static org.ase.fourwins.tournament.listener.database.Games.players;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.testcontainers.containers.BindMode.READ_ONLY;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -32,65 +30,67 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
-class MysqlListenerIT {
+class MySqlListenerIT {
 
 	private static final String DATABASE_NAME = "4WINS";
 
 	@Container
-	private MySQLContainer<?> mysql = new MySQLContainer<>(MySQLContainer.NAME).withDatabaseName(DATABASE_NAME)
-			.withInitScript("../docker/mysql/sql.sql");
+	MySQLContainer<?> mySql = new MySQLContainer<>(MySQLContainer.NAME) //
+			.withDatabaseName(DATABASE_NAME) //
+			.withFileSystemBind("../docker/mysql", "/docker-entrypoint-initdb.d", READ_ONLY) //
+	;
 
-	private MysqlDBListener sut;
+	private MySqlDbListener sut;
 
 	@BeforeEach
-	public void setup() throws Exception {
-		this.sut = new MysqlDBListener(mysql.getJdbcUrl(), "fourwins_write", "fourwinswrite");
+	void setup() throws Exception {
+		this.sut = new MySqlDbListener(mySql.getJdbcUrl(), "fourwins_write", "fourwinswrite");
 	}
 
-	private ScoresDatabase scoreDb() throws SQLException {
+	private ScoresDatabase scoresDb() throws SQLException {
 		return new ScoresDatabase(connection());
 	}
 
 	private Connection connection() throws SQLException {
-		System.out.println("MySQL database url " + mysql.getJdbcUrl());
-		return DriverManager.getConnection(mysql.getJdbcUrl(), "fourwins_read", "fourwinsread");
+		System.out.println("MySql database url " + mySql.getJdbcUrl());
+		return DriverManager.getConnection(mySql.getJdbcUrl(), "fourwins_read", "fourwinsread");
 	}
 
 	@Test
 	void testOneGameEndingIsInsertedToDatabase() throws Exception {
-		try (ScoresDatabase scoresDb = scoreDb()) {
+		try (ScoresDatabase scoresDb = scoresDb()) {
 			List<Player> givenPlayers = players(2);
-			whenEnded(aGameOf(givenPlayers, WIN, 0));
-			scoresAre(scoresDb, givenPlayers, 1.0, 0.0);
+			gameEnded(aGameOf(givenPlayers, WIN, 0));
+			scoresDb.assertThatScoresAre(givenPlayers, 1.0, 0.0);
 		}
 	}
 
 	@Test
 	void testPlayerMakesIllegalMoveAndOpponentGetsAFullPoint() throws Exception {
-		try (ScoresDatabase scoresDb = scoreDb()) {
+		try (ScoresDatabase scoresDb = scoresDb()) {
 			List<Player> players = players(2);
-			whenEnded(aGameOf(players, LOSE, 0));
-			scoresAre(scoresDb, players, 0.0, 1.0);
+			gameEnded(aGameOf(players, LOSE, 0));
+			scoresDb.assertThatScoresAre(players, 0.0, 1.0);
 		}
 	}
 
 	@Test
 	void testBothPlayersGetAHalfPointForADraw() throws Exception {
-		try (ScoresDatabase scoresDb = scoreDb()) {
+		try (ScoresDatabase scoresDb = scoresDb()) {
 			List<Player> players = players(2);
-			whenEnded(aGameOf(players, DRAW, 0));
-			scoresAre(scoresDb, players, 0.5, 0.5);
+			gameEnded(aGameOf(players, DRAW, 0));
+			scoresDb.assertThatScoresAre(players, 0.5, 0.5);
 		}
 	}
 
 	@Test
 	void canAccumulateValues() throws Exception {
-		try (ScoresDatabase scoreDb = scoreDb()) {
+		try (ScoresDatabase scoresDb = scoresDb()) {
 			List<Player> players = players(2);
-			whenEnded(aGameOf(players, WIN, 1));
-			whenEnded(aGameOf(players, WIN, 1));
-			whenEnded(aGameOf(players, DRAW, 1));
-			scoresAre(scoreDb, players, 0.5, 2.5);
+			gameEnded(aGameOf(players, WIN, 1));
+			gameEnded(aGameOf(players, WIN, 1));
+			gameEnded(aGameOf(players, DRAW, 1));
+			scoresDb.assertThatScoresAre(players, 0.5, 2.5);
 		}
 	}
 
@@ -113,24 +113,8 @@ class MysqlListenerIT {
 		return allOf(Score.class).stream().filter(not(IN_GAME::equals)).collect(toList());
 	}
 
-	private void whenEnded(Game game) {
+	private void gameEnded(Game game) {
 		sut.gameEnded(game);
-	}
-
-	private static void scoresAre(ScoresDatabase scoreDb, List<Player> players, double... scores) throws SQLException {
-		assertThat("Players size must match scores length", players.size(), is(scores.length));
-		for (int i = 0; i < players.size(); i++) {
-			assertThat(scoreOf(scoreDb, players.get(i)), is(scores[i]));
-		}
-	}
-
-	private static double scoreOf(ScoresDatabase scoreDb, Player player) throws SQLException {
-		return rows(scoreDb, player).stream().max(comparing(MysqlDBRow::getValue)).map(MysqlDBRow::getValue)
-				.orElse(0.0);
-	}
-
-	private static List<MysqlDBRow> rows(ScoresDatabase scoreDb, Player player) throws SQLException {
-		return scoreDb.scores(player);
 	}
 
 }

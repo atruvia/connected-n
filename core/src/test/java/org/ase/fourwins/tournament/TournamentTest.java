@@ -5,13 +5,12 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static net.jqwik.api.Arbitraries.integers;
 import static net.jqwik.api.Arbitraries.strings;
-import static org.ase.fourwins.board.Board.Score.IN_GAME;
 import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.GameStateMatcher.isGameError;
 import static org.ase.fourwins.tournament.DefaultTournament.CoffeebreakGame.COFFEE_BREAK_WIN_MESSAGE;
+import static org.ase.fourwins.tournament.DummyBoard.LOSE_MESSAGE;
 import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.tournament;
-import static org.ase.fourwins.tournament.TournamentTest.TournamentBuilder.DummyBoard.LOSE_MESSAGE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -25,8 +24,6 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.board.Board;
 import org.ase.fourwins.board.Board.GameState;
-import org.ase.fourwins.board.BoardInfo;
-import org.ase.fourwins.board.Move;
 import org.ase.fourwins.board.mockplayers.PlayerMock;
 import org.ase.fourwins.game.Player;
 import org.ase.fourwins.tournament.listener.TournamentListener;
@@ -43,35 +40,6 @@ import net.jqwik.api.arbitraries.IntegerArbitrary;
 class TournamentTest {
 
 	static final class TournamentBuilder {
-
-		static final class DummyBoard extends Board {
-
-			public static final String LOSE_MESSAGE = "dummy board lose message";
-			private int moves;
-			private GameState gameState = GameState.builder().score(IN_GAME).build();
-
-			@Override
-			public GameState gameState() {
-				return gameState;
-			}
-
-			@Override
-			public Board insertToken(Move move, Object token) {
-				if (++moves == 7) {
-					this.gameState = gameState.toBuilder() //
-							.score(LOSE) //
-							.token(token) //
-							.reason(LOSE_MESSAGE) //
-							.build();
-				}
-				return this;
-			}
-
-			@Override
-			public BoardInfo boardInfo() {
-				return BoardInfo.sevenColsSixRows;
-			}
-		}
 
 		public static TournamentBuilder tournament() {
 			return new TournamentBuilder();
@@ -113,8 +81,8 @@ class TournamentTest {
 
 	@Example
 	void twoPlayersPlayOneSeason() {
-		PlayerMock p1 = mock("P1");
-		PlayerMock p2 = mock("P2");
+		PlayerMock p1 = playerMock("P1");
+		PlayerMock p2 = playerMock("P2");
 
 		List<GameState> states = tournament().withPlayers(p1, p2).playSeason();
 		assertThat(states.size(), is(2));
@@ -128,9 +96,9 @@ class TournamentTest {
 
 	@Example
 	void tournamentWithOddPlayerCount() {
-		PlayerMock p1 = mock("P1");
-		PlayerMock p2 = mock("P2");
-		PlayerMock p3 = mock("P3");
+		PlayerMock p1 = playerMock("P1");
+		PlayerMock p2 = playerMock("P2");
+		PlayerMock p3 = playerMock("P3");
 
 		List<GameState> states = tournament().withPlayers(p1, p2, p3).playSeason();
 
@@ -167,7 +135,7 @@ class TournamentTest {
 
 	@Example
 	void playersCanUseTheCoffeeBreakToken() {
-		PlayerMock p1 = mock(DefaultTournament.coffeeBreakPlayer.getToken());
+		PlayerMock p1 = playerMock(DefaultTournament.coffeeBreakPlayer.getToken());
 		tournament().withPlayers(p1).playSeason();
 		assertOpponentsOf(p1, haveBeen("-- --"));
 	}
@@ -231,7 +199,7 @@ class TournamentTest {
 		return states;
 	}
 
-	PlayerMock mock(String token) {
+	PlayerMock playerMock(String token) {
 		return new PlayerMock(token);
 	}
 

@@ -3,7 +3,6 @@ package org.ase.fourwins.mqtt;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static io.moquette.BrokerConstants.HOST_PROPERTY_NAME;
 import static io.moquette.BrokerConstants.PORT_PROPERTY_NAME;
-import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.stream;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -13,12 +12,10 @@ import static org.awaitility.Awaitility.await;
 import static org.awaitility.Awaitility.setDefaultPollInterval;
 import static org.awaitility.Awaitility.setDefaultTimeout;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,12 +38,16 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import io.moquette.broker.Server;
 import io.moquette.broker.config.MemoryConfig;
 import lombok.Value;
 
+@Timeout(MqttTournamentListenerTest.TIMEOUT)
 class MqttTournamentListenerTest {
+
+	static final int TIMEOUT = 30;
 
 	private static final BoardInfo boardInfo = BoardInfo.builder().rows(42).columns(21).build();
 
@@ -56,7 +57,6 @@ class MqttTournamentListenerTest {
 		String payload;
 	}
 
-	private static Duration timeout = ofSeconds(30);
 	private static final String LOCALHOST = "localhost";
 
 	static class MqttClientForTest implements Closeable {
@@ -146,7 +146,7 @@ class MqttTournamentListenerTest {
 
 	@BeforeEach
 	void setup() throws Exception {
-		setDefaultTimeout(timeout.getSeconds() / 2, SECONDS);
+		setDefaultTimeout(TIMEOUT / 2, SECONDS);
 		setDefaultPollInterval(500, MILLISECONDS);
 		brokerPort = randomPort();
 		broker = newMqttServer(LOCALHOST, brokerPort);
@@ -186,16 +186,14 @@ class MqttTournamentListenerTest {
 		String playerName2 = "P2";
 		String playerName3 = "P3";
 		Game game = game(gameId, boardInfo, playerName1, playerName2, playerName3);
-		assertTimeoutPreemptively(timeout, () -> {
-			sut.gameStarted(game);
-			await().until(() -> payload(gameId + "/board/height"), is(String.valueOf(boardInfo.getRows())));
-			await().until(() -> payload(gameId + "/board/width"), is(String.valueOf(boardInfo.getColumns())));
-			await().until(() -> payload(gameId + "/players"), is("3"));
-			await().until(() -> payload(gameId + "/player/1"), is(playerName1));
-			await().until(() -> payload(gameId + "/player/2"), is(playerName2));
-			await().until(() -> payload(gameId + "/player/3"), is(playerName3));
-			await().until(() -> payload(gameId + "/state/start"), is(emptyPayload()));
-		});
+		sut.gameStarted(game);
+		await().until(() -> payload(gameId + "/board/height"), is(String.valueOf(boardInfo.getRows())));
+		await().until(() -> payload(gameId + "/board/width"), is(String.valueOf(boardInfo.getColumns())));
+		await().until(() -> payload(gameId + "/players"), is("3"));
+		await().until(() -> payload(gameId + "/player/1"), is(playerName1));
+		await().until(() -> payload(gameId + "/player/2"), is(playerName2));
+		await().until(() -> payload(gameId + "/player/3"), is(playerName3));
+		await().until(() -> payload(gameId + "/state/start"), is(emptyPayload()));
 	}
 
 	@Test
@@ -203,25 +201,21 @@ class MqttTournamentListenerTest {
 		String gameId = "someId";
 		GameState gameState = GameState.builder().score(WIN).token("someToken").reason("someReason").build();
 		Game game = game("someId", boardInfo, gameState);
-		assertTimeoutPreemptively(timeout, () -> {
-			sut.gameEnded(game);
-			await().until(() -> payload(gameId + "/state/end/score"), is(gameState.getScore().toString()));
-			await().until(() -> payload(gameId + "/state/end/reason"), is(gameState.getReason()));
-			await().until(() -> payload(gameId + "/state/end/token"), is(gameState.getToken()));
-		});
+		sut.gameEnded(game);
+		await().until(() -> payload(gameId + "/state/end/score"), is(gameState.getScore().toString()));
+		await().until(() -> payload(gameId + "/state/end/reason"), is(gameState.getReason()));
+		await().until(() -> payload(gameId + "/state/end/token"), is(gameState.getToken()));
 	}
 
 	@Test
 	void doesPublishInsertedTokens() {
 		String gameId = "someId";
 		Game game = game(gameId, boardInfo);
-		assertTimeoutPreemptively(timeout, () -> {
-			sut.newTokenAt(game, "X", 0);
-			sut.newTokenAt(game, "O", 1);
-			sut.newTokenAt(game, "X", -1);
-			await().until(() -> payloads(gameId + "/action/tokeninserted/X"), is(List.of("0", "-1")));
-			await().until(() -> payload(gameId + "/action/tokeninserted/O"), is("1"));
-		});
+		sut.newTokenAt(game, "X", 0);
+		sut.newTokenAt(game, "O", 1);
+		sut.newTokenAt(game, "X", -1);
+		await().until(() -> payloads(gameId + "/action/tokeninserted/X"), is(List.of("0", "-1")));
+		await().until(() -> payload(gameId + "/action/tokeninserted/O"), is("1"));
 	}
 
 	@Test
@@ -231,14 +225,12 @@ class MqttTournamentListenerTest {
 		String mqttFriendlyPlayerName = "***abc%20def%2Bghi!?***";
 		GameState gameState = GameState.builder().score(WIN).token(playerName).reason("someReason").build();
 		Game game = game(gameId, boardInfo, gameState, playerName);
-		assertTimeoutPreemptively(timeout, () -> {
-			sut.gameStarted(game);
-			await().until(() -> payload(gameId + "/player/1"), is(mqttFriendlyPlayerName));
-			sut.newTokenAt(game, playerName, 0);
-			await().until(() -> payload(gameId + "/action/tokeninserted/" + mqttFriendlyPlayerName), is("0"));
-			sut.gameEnded(game);
-			await().until(() -> payload(gameId + "/state/end/token"), is(mqttFriendlyPlayerName));
-		});
+		sut.gameStarted(game);
+		await().until(() -> payload(gameId + "/player/1"), is(mqttFriendlyPlayerName));
+		sut.newTokenAt(game, playerName, 0);
+		await().until(() -> payload(gameId + "/action/tokeninserted/" + mqttFriendlyPlayerName), is("0"));
+		sut.gameEnded(game);
+		await().until(() -> payload(gameId + "/state/end/token"), is(mqttFriendlyPlayerName));
 	}
 
 	private static String emptyPayload() {

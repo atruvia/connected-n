@@ -39,6 +39,9 @@ public class DefaultTournament implements Tournament {
 
 		private static final BoardInfo boardInfo = BoardInfo.builder().columns(0).rows(0).build();
 
+		private static final GameState gameState = GameState.builder().score(WIN).reason(COFFEE_BREAK_WIN_MESSAGE)
+				.build();
+
 		private final Player other;
 
 		@Getter
@@ -51,7 +54,7 @@ public class DefaultTournament implements Tournament {
 
 		@Override
 		public GameState gameState() {
-			return GameState.builder().score(WIN).token(other.getToken()).reason(COFFEE_BREAK_WIN_MESSAGE).build();
+			return gameState.withToken(other.getToken());
 		}
 
 		@Override

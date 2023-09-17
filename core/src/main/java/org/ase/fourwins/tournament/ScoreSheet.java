@@ -19,7 +19,7 @@ public class ScoreSheet {
 	}
 
 	public Double scoreOf(String name) {
-		return this.data.get(name);
+		return data.get(name);
 	}
 
 	@Override
@@ -37,10 +37,9 @@ public class ScoreSheet {
 	}
 
 	private String createFormat() {
-		int maxNameLen = this.data.keySet().stream().mapToInt(String::length).max().orElse(0);
-		int maxPosLen = String.valueOf(this.data.keySet().size() + 1).length();
-		int maxScoreLen = String.valueOf(this.data.values().stream().mapToDouble(Double::valueOf).max().orElse(0))
-				.length();
+		int maxNameLen = data.keySet().stream().mapToInt(String::length).max().orElse(0);
+		int maxPosLen = String.valueOf(data.keySet().size() + 1).length();
+		int maxScoreLen = String.valueOf(data.values().stream().mapToDouble(Double::valueOf).max().orElse(0)).length();
 		return "%" + maxPosLen + "d: %-" + maxNameLen + "s %" + maxScoreLen + ".1f";
 	}
 

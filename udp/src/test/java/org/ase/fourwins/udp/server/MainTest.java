@@ -1,7 +1,6 @@
 package org.ase.fourwins.udp.server;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.joining;
 import static org.ase.fourwins.udp.server.UdpServer.MAX_CLIENT_NAME_LENGTH;
 import static org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2.ENV_NAME_TO_BE_SET;
@@ -10,11 +9,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,15 +34,15 @@ import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled;
 import org.ase.fourwins.udp.server.listeners.TournamentListenerEnabled2;
 import org.ase.fourwins.udp.udphelper.UdpCommunicator;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+@Timeout(10)
 public class MainTest {
-
-	private static final Duration TIMEOUT = ofSeconds(10);
 
 	@Getter
 	@Setter
@@ -206,42 +203,34 @@ public class MainTest {
 	void clientCanConnectToServer() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			newClientWithName("1").assertReceived(welcomed("1"));
-			assertTournamentNotStartet();
-		});
+		newClientWithName("1").assertReceived(welcomed("1"));
+		assertTournamentNotStartet();
 	}
 
 	@Test
 	void acceptLongName() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			String longestAllowedName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
-			newClientWithName(longestAllowedName).assertReceived(welcomed(longestAllowedName));
-			assertTournamentNotStartet();
-		});
+		String longestAllowedName = nameOfLength(MAX_CLIENT_NAME_LENGTH);
+		newClientWithName(longestAllowedName).assertReceived(welcomed(longestAllowedName));
+		assertTournamentNotStartet();
 	}
 
 	@Test
 	void denyTooLongName() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			String tooLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
-			newClientWithName(tooLongName).assertReceived("NAME_TOO_LONG");
-			assertTournamentNotStartet();
-		});
+		String tooLongName = nameOfLength(MAX_CLIENT_NAME_LENGTH + 1);
+		newClientWithName(tooLongName).assertReceived("NAME_TOO_LONG");
+		assertTournamentNotStartet();
 	}
 
 	@Test
 	void denyEmptyName() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			newClientWithName(emptyName()).assertReceived("NO_NAME_GIVEN");
-			assertTournamentNotStartet();
-		});
+		newClientWithName(emptyName()).assertReceived("NO_NAME_GIVEN");
+		assertTournamentNotStartet();
 	}
 
 	private String emptyName() {
@@ -260,26 +249,22 @@ public class MainTest {
 	void afterSecondClientConnectsTheTournamentIsStarted() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			DummyClient client1 = newClientWithName("1");
-			DummyClient client2 = newClientWithName("2");
+		DummyClient client1 = newClientWithName("1");
+		DummyClient client2 = newClientWithName("2");
 
-			assertWelcomed(client1);
-			assertWelcomed(client2);
-			assertTournamentStartet();
-		});
+		assertWelcomed(client1);
+		assertWelcomed(client2);
+		assertTournamentStartet();
 	}
 
 	@Test
 	void whenMinPlayerIsOneAfterFirstClientConnectsTheTournamentIsStarted() throws IOException {
 		minPlayers = 1;
 		runMainInBackground();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			DummyClient client1 = newClientWithName("1");
+		DummyClient client1 = newClientWithName("1");
 
-			assertWelcomed(client1);
-			assertTournamentStartet();
-		});
+		assertWelcomed(client1);
+		assertTournamentStartet();
 	}
 
 	private void assertTournamentNotStartet() {
@@ -298,15 +283,13 @@ public class MainTest {
 	void seasonWillOnlyBeStartedIfMoreThanOnePlayerIsRegistered() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			newClientWithName("1");
-			newClientWithName("2");
+		newClientWithName("1");
+		newClientWithName("2");
 
-			assertTournamentStartet();
+		assertTournamentStartet();
 
-			// while season is running others can register
-			newClientWithName("3").assertReceived(welcomed("3"));
-		});
+		// while season is running others can register
+		newClientWithName("3").assertReceived(welcomed("3"));
 	}
 
 //	TODO joining with long runner
@@ -316,15 +299,13 @@ public class MainTest {
 	void aReRegisterdClientIsNotANewPlayer() throws IOException {
 		runMainInBackground();
 		setupInfiniteSeason();
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			String nameToReuse = "1";
-			DummyClient client = newClientWithName(nameToReuse);
-			client.assertReceived(welcomed(nameToReuse));
-			DummyClient newClientWithSameTokenFromSameIP = newClientWithName(nameToReuse);
-			newClientWithSameTokenFromSameIP.assertReceived(welcomed(nameToReuse));
+		String nameToReuse = "1";
+		DummyClient client = newClientWithName(nameToReuse);
+		client.assertReceived(welcomed(nameToReuse));
+		DummyClient newClientWithSameTokenFromSameIP = newClientWithName(nameToReuse);
+		newClientWithSameTokenFromSameIP.assertReceived(welcomed(nameToReuse));
 
-			assertTournamentNotStartet();
-		});
+		assertTournamentNotStartet();
 	}
 
 	@Test
@@ -383,11 +364,9 @@ public class MainTest {
 	}
 
 	private void assertAllReceived(String expectedMessage, DummyClient... clients) {
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			for (DummyClient client : clients) {
-				await().until(client::getReceived, hasItems(expectedMessage));
-			}
-		});
+		for (DummyClient client : clients) {
+			await().until(client::getReceived, hasItems(expectedMessage));
+		}
 	}
 
 	private void tournamentOfBoardWithState(Board board) {

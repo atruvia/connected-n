@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 public abstract class Board {
 
@@ -77,8 +78,11 @@ public abstract class Board {
 	@Builder(toBuilder = true)
 	public static class GameState {
 		Score score;
+		@With
 		Object token;
+		@With
 		String reason;
+		@With
 		List<WinningCombination> winningCombinations;
 
 		public List<WinningCombination> getWinningCombinations() {
@@ -115,7 +119,7 @@ public abstract class Board {
 		@Override
 		public Board insertToken(Move move, Object token) {
 			delegate = delegate.insertToken(move, token);
-			return this; 
+			return this;
 		}
 
 	}
@@ -163,8 +167,7 @@ public abstract class Board {
 
 		public WinnerBoard(Object token, List<WinningCombination> winningCombinatios, BoardInfo boardInfo) {
 			super(WIN, token, boardInfo);
-			this.gameState = gameState.toBuilder().reason("CONNECTED_LINE").winningCombinations(winningCombinatios)
-					.build();
+			this.gameState = gameState.withReason("CONNECTED_LINE").withWinningCombinations(winningCombinatios);
 		}
 
 	}
@@ -173,7 +176,7 @@ public abstract class Board {
 
 		public LoserBoard(Object token, String reason, BoardInfo boardInfo) {
 			super(LOSE, token, boardInfo);
-			this.gameState = gameState.toBuilder().reason(reason).build();
+			this.gameState = gameState.withReason(reason);
 		}
 
 	}

@@ -9,6 +9,7 @@ import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.ase.fourwins.board.Board.GameState;
@@ -33,12 +34,13 @@ class SysoutTournamentListenerTest {
 
 	@Test
 	void doesReset() throws Exception {
-		String sysout = null;
+		List<String> sysouts = new ArrayList<>();
 		int seasons = 2;
 		for (int i = 0; i < seasons; i++) {
-			sysout = playSeasonOfTwoGames();
+			sysouts.add(playSeasonOfTwoGames());
 		}
-		assertThat(sysout, is(String.format("Season ended, games won: Z=2, Y=1\n" //
+		assertThat(sysouts.size(), is(2));
+		assertThat(sysouts.get(sysouts.size() - 1), is(String.format("Season ended, games won: Z=2, Y=1\n" //
 				+ "1: Z %1.1f\n" //
 				+ "2: Y %1.1f\n" //
 				+ "3: X %1.1f\n", //

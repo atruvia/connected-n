@@ -1,9 +1,9 @@
 package org.ase.fourwins.udp.server;
 
-import static java.time.Duration.ofSeconds;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.ase.fourwins.board.Board.Score.LOSE;
+import static org.ase.fourwins.udp.server.UdpServer.UNREGISTER_AFTER_N_TIMEOUTS;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -11,12 +11,10 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,20 +31,21 @@ import org.ase.fourwins.tournament.listener.TournamentListener;
 import org.ase.fourwins.udp.server.MainTest.DummyClient;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import lombok.Getter;
 
+@Timeout(30)
 public class UdpServerRealTournamentIT {
 
-	private static final Duration TIMEOUT = ofSeconds(10);
-
 	private static final String SERVER = "localhost";
+	private static final int UDP_TIMEOUT_MILLIS = 400;
 	private final int serverPort = freePort();
 
 	private final class GameStateCollector implements TournamentListener {
 
 		@Getter
-		private List<GameState> gameStates = new CopyOnWriteArrayList<>();
+		private final List<GameState> gameStates = new CopyOnWriteArrayList<>();
 
 		@Override
 		public void gameEnded(Game game) {
@@ -58,7 +57,7 @@ public class UdpServerRealTournamentIT {
 	private final DefaultTournament tournament = new DefaultTournament();
 
 	private UdpServer udpServerInBackground() {
-		UdpServer udpServer = new UdpServer().setPort(serverPort);
+		UdpServer udpServer = new UdpServer().setPort(serverPort).setTimeoutMillis(UDP_TIMEOUT_MILLIS);
 		runInBackground(() -> udpServer.startServer(tournament));
 		return udpServer;
 	}
@@ -69,51 +68,45 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void canReRegister() throws IOException, InterruptedException {
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			udpServerInBackground();
-			assertWelcomed(playingClient("1", 0));
-			assertWelcomed(playingClient("1", 0));
-		});
+		udpServerInBackground();
+		assertWelcomed(playingClient("1", 0));
+		assertWelcomed(playingClient("1", 0));
 	}
 
 	@Test
 	void canPlay_2() throws IOException, InterruptedException {
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			udpServerInBackground();
-			SysoutTournamentListener scoreListener = new SysoutTournamentListener();
-			tournament.addTournamentListener(scoreListener);
-			GameStateCollector stateListener = new GameStateCollector();
-			tournament.addTournamentListener(stateListener);
+		udpServerInBackground();
+		SysoutTournamentListener scoreListener = new SysoutTournamentListener();
+		tournament.addTournamentListener(scoreListener);
+		GameStateCollector stateListener = new GameStateCollector();
+		tournament.addTournamentListener(stateListener);
 
-			DummyClient client1 = playingClient("1", 0);
-			DummyClient client2 = playingClient("2", 1);
+		DummyClient client1 = playingClient("1", 0);
+		DummyClient client2 = playingClient("2", 1);
 
-			assertWelcomed(client1);
-			assertWelcomed(client2);
+		assertWelcomed(client1);
+		assertWelcomed(client2);
 
-			/// ...let it run for a while
-			SECONDS.sleep(5);
+		/// ...let it run for a while
+		SECONDS.sleep(5);
 
-			ScoreSheet scoreSheet = scoreListener.getScoreSheet();
-			Double score1 = scoreSheet.scoreOf(client1.getName());
-			Double score2 = scoreSheet.scoreOf(client2.getName());
-			System.out.println("score 1 " + score1);
-			System.out.println("score 2 " + score2);
-			assertThat(score1, is(not(0)));
-			assertThat(score2, is(not(0)));
-			assertEquals(score1, score2, 1.0);
+		ScoreSheet scoreSheet = scoreListener.getScoreSheet();
+		Double score1 = scoreSheet.scoreOf(client1.getName());
+		Double score2 = scoreSheet.scoreOf(client2.getName());
+		System.out.println("score 1 " + score1);
+		System.out.println("score 2 " + score2);
+		assertThat(score1, is(not(0)));
+		assertThat(score2, is(not(0)));
+		assertEquals(score1, score2, 1.0);
 
-			List<String> results1 = getReceived(client1, s -> s.startsWith("RESULT;"));
-			List<String> results2 = getReceived(client2, s -> s.startsWith("RESULT;"));
-			assertThat(results1.size(), is(not(0)));
-			assertThat(results2.size(), is(not(0)));
-			assertThat(results1.size(), is(results2.size()));
-			System.out.println("results 1 " + results1);
-			System.out.println("results 2 " + results2);
+		List<String> results1 = getReceived(client1, s -> s.startsWith("RESULT;"));
+		List<String> results2 = getReceived(client2, s -> s.startsWith("RESULT;"));
+		assertThat(results1.size(), is(not(0)));
+		assertThat(results2.size(), is(not(0)));
+		await().timeout(1, SECONDS).untilAsserted(() -> assertThat(results1.size(), is(results2.size())));
 
-			assertHasTimeout(client1, stateListener, false);
-			assertHasTimeout(client2, stateListener, false);
-		});
+		assertHasTimeout(client1, stateListener, false);
+		assertHasTimeout(client2, stateListener, false);
 	}
 
 	private List<String> getReceived(DummyClient client, Predicate<String> predicate) {
@@ -141,25 +134,23 @@ public class UdpServerRealTournamentIT {
 	@Disabled
 	void canPlay_Multi() throws IOException, InterruptedException {
 		// TEST fails since is canceled after timeout has reached ;-)
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			udpServerInBackground();
-			tournament.addTournamentListener(new SysoutTournamentListener());
-			IntStream.range(0, 10).forEach(i -> {
-				try {
-					playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			});
-			uuidFaker();
-			sometimesNoResponse();
-
-			/// ...let it run for a long while
-			TimeUnit.MINUTES.sleep(60);
-
-			fail("add more assertions");
-
+		udpServerInBackground();
+		tournament.addTournamentListener(new SysoutTournamentListener());
+		IntStream.range(0, 10).forEach(i -> {
+			try {
+				playingClient(String.valueOf(i), i % tournament.getBoardInfo().getColumns());
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		});
+		uuidFaker();
+		sometimesNoResponse();
+
+		/// ...let it run for a long while
+		TimeUnit.MINUTES.sleep(60);
+
+		fail("add more assertions");
+
 	}
 
 	private PlayingClient uuidFaker() throws IOException {
@@ -195,7 +186,8 @@ public class UdpServerRealTournamentIT {
 			protected void messageReceived(String received) {
 				if (isMessageWithUuid(received) && shouldSwallow()) {
 					try {
-						TimeUnit.SECONDS.sleep(1);
+						TimeUnit.MILLISECONDS.sleep(UDP_TIMEOUT_MILLIS);
+						TimeUnit.MILLISECONDS.sleep(100);
 					} catch (InterruptedException e) {
 						throw new RuntimeException(e);
 					}
@@ -215,51 +207,45 @@ public class UdpServerRealTournamentIT {
 
 	@Test
 	void aClientThatDoNotRespondGetsDeregistered() throws IOException, InterruptedException {
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			udpServerInBackground();
-			GameStateCollector stateListener = new GameStateCollector();
-			tournament.addTournamentListener(stateListener);
+		udpServerInBackground();
+		GameStateCollector stateListener = new GameStateCollector();
+		tournament.addTournamentListener(stateListener);
 
-			playingClient("1", 0);
-			DummyClient onlyRespondToFirstJoinSeasonClient = onlyRespondToFirstJoinSeason("2");
+		playingClient("1", 0);
+		DummyClient onlyRespondToFirstJoinSeasonClient = onlyRespondToFirstJoinSeason("2");
 
-			/// ...let it run for a while
-			TimeUnit.SECONDS.sleep(5);
+		/// ...let it run for a while
+		TimeUnit.MILLISECONDS.sleep(UDP_TIMEOUT_MILLIS * (UNREGISTER_AFTER_N_TIMEOUTS + 5));
 
-			await().until(
-					() -> getReceived(onlyRespondToFirstJoinSeasonClient, s -> s.toLowerCase().contains("unregister"))
-							.size(),
-					greaterThan(0));
-		});
+		await().until(() -> getReceived(onlyRespondToFirstJoinSeasonClient, s -> s.toLowerCase().contains("unregister"))
+				.size(), greaterThan(0));
 	}
 
 	@Test
 	void aClientWithTimeout() throws IOException, InterruptedException {
-		assertTimeoutPreemptively(TIMEOUT, () -> {
-			udpServerInBackground();
-			GameStateCollector stateListener = new GameStateCollector();
-			tournament.addTournamentListener(stateListener);
+		udpServerInBackground();
+		GameStateCollector stateListener = new GameStateCollector();
+		tournament.addTournamentListener(stateListener);
 
-			DummyClient client1 = playingClient("1", 0);
-			DummyClient client2 = onlyRespondToFirstJoinSeason("2");
+		DummyClient client1 = playingClient("1", 0);
+		DummyClient client2 = onlyRespondToFirstJoinSeason("2");
 
-			/// ...let it run for a while
-			TimeUnit.SECONDS.sleep(5);
+		/// ...let it run for a while
+		TimeUnit.SECONDS.sleep(5);
 
-			await().until(client1.getReceived()::size, greaterThan(0));
-			await().until(client2.getReceived()::size, greaterThan(0));
+		await().until(client1.getReceived()::size, greaterThan(0));
+		await().until(client2.getReceived()::size, greaterThan(0));
 
-			assertHasTimeout(client1, stateListener, false);
-			assertHasTimeout(client2, stateListener, true);
+		assertHasTimeout(client1, stateListener, false);
+		assertHasTimeout(client2, stateListener, true);
 
-			List<String> newGames1 = newGames(client1);
-			List<String> newGames2 = newGames(client2);
+		List<String> newGames1 = newGames(client1);
+		List<String> newGames2 = newGames(client2);
 
-			System.out.println("new games 1 " + newGames1.size());
-			System.out.println("new games 2 " + newGames2.size());
+		System.out.println("new games 1 " + newGames1.size());
+		System.out.println("new games 2 " + newGames2.size());
 
-			assertEquals(newGames1.size(), newGames2.size(), 0.0);
-		});
+		assertEquals(newGames1.size(), newGames2.size(), 0.0);
 	}
 
 	private DummyClient onlyRespondToFirstJoinSeason(String name) throws IOException {

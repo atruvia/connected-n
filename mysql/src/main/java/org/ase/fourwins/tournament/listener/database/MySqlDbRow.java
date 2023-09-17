@@ -1,9 +1,13 @@
 package org.ase.fourwins.tournament.listener.database;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class MysqlDBRow {
+@NoArgsConstructor
+@AllArgsConstructor
+public class MySqlDbRow {
 
 	public static final String TABLE_NAME = "games";
 

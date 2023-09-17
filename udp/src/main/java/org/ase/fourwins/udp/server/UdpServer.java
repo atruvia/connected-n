@@ -45,6 +45,8 @@ public class UdpServer {
 
 	public static final int MAX_CLIENT_NAME_LENGTH = 30;
 
+	public static final int UNREGISTER_AFTER_N_TIMEOUTS = 10;
+	
 	@Setter
 	private int port = 4446;
 
@@ -88,7 +90,7 @@ public class UdpServer {
 				while (true) {
 					String response = responses.poll(timeoutAt - currentTimeMillis(), MILLISECONDS);
 					if (response == null) {
-						if (timeouts++ >= 10) {
+						if (timeouts++ >= UNREGISTER_AFTER_N_TIMEOUTS) {
 							System.out.println("Deregistering " + name + " because of too many timeouts in a row");
 							handleUnregisterCommand(this);
 						}

@@ -1,1 +1,1 @@
-org.ase.fourwins.tournament.listener.database.MysqlDBWithEnvListener
+org.ase.fourwins.tournament.listener.database.MySqlDbWithEnvListener
