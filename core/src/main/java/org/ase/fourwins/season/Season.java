@@ -10,6 +10,19 @@ import lombok.Getter;
 
 public class Season<T> {
 
+	private static final class ReversedRound<T> extends Round<T> {
+
+		private ReversedRound(List<T> teams) {
+			super(teams);
+		}
+
+		@Override
+		protected Matchday<T> matchday(List<T> teams) {
+			return new ReversedMatchday<T>(teams);
+		}
+
+	}
+
 	private static final class ReversedMatchday<T> extends Matchday<T> {
 
 		private ReversedMatchday(List<T> teams) {
@@ -18,23 +31,20 @@ public class Season<T> {
 
 		@Override
 		protected Match<T> makeMatch(int offset) {
-			Match<T> pair = super.makeMatch(offset);
-			return new Match<T>(pair.getTeam2(), pair.getTeam1());
+			Match<T> match = super.makeMatch(offset);
+			return new Match<T>(match.getTeam2(), match.getTeam1());
 		}
+
 	}
 
 	@Getter
 	private final Round<T> firstRound, secondRound;
 
 	public Season(List<T> teams) {
-		verifySizeIsEven(teams);
-		this.firstRound = new Round<T>(teams);
-		this.secondRound = new Round<T>(teams) {
-			@Override
-			protected Matchday<T> matchday(List<T> teams) {
-				return new ReversedMatchday<T>(teams);
-			}
-		};
+		List<T> unmodifableTeams = List.copyOf(teams);
+		verifySizeIsEven(unmodifableTeams);
+		this.firstRound = new Round<T>(unmodifableTeams);
+		this.secondRound = new ReversedRound<T>(unmodifableTeams);
 	}
 
 	private void verifySizeIsEven(Collection<T> teams) {
