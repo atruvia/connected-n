@@ -2,7 +2,8 @@ package org.ase.fourwins.season;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.IntStream.rangeClosed;
+import static java.util.stream.IntStream.range;
+import static net.jqwik.api.Arbitraries.integers;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -16,9 +17,7 @@ import java.util.stream.Stream;
 
 import org.ase.fourwins.util.CollectionUtil;
 
-import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
-import net.jqwik.api.Example;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
@@ -28,47 +27,8 @@ class SeasonTest {
 	static final String EVEN_TEAMS = "evenTeams";
 	static final String ODD_TEAMS = "oddTeams";
 
-	@Example
-	void seasonOfTwoTeams() {
-		verifyAllProperties(2);
-	}
-
-	@Example
-	void seasonOfFourTeams() {
-		verifyAllProperties(4);
-	}
-
-	@Example
-	void seasonOfSixTeams() {
-		verifyAllProperties(6);
-	}
-
-	@Example
-	void seasonOfThreeTeams() {
-		exceptionWhenAmountOfTeamsIsOdd(3);
-	}
-
-	@Example
-	void seasonOfFiveTeams() {
-		exceptionWhenAmountOfTeamsIsOdd(5);
-	}
-
-	@Example
-	void seasonOfSevenTeams() {
-		exceptionWhenAmountOfTeamsIsOdd(7);
-	}
-
 	static List<String> teams(int count) {
-		return rangeClosed(1, count).mapToObj(String::valueOf).map("Team "::concat).collect(toList());
-	}
-
-	void verifyAllProperties(int numberOfTeams) {
-		roundsHaveExpectedCountOfMatchdays(numberOfTeams);
-		noDuplicateTeams(numberOfTeams);
-		matchesInFirstRound(numberOfTeams);
-		matchesInSecondRound(numberOfTeams);
-		seasonMatchesAreFirstRoundPlusSecondRoundMatches(numberOfTeams);
-		secondRoundGamesAreReversedFirstRoundGames(numberOfTeams);
+		return range(0, count).mapToObj(String::valueOf).map("Team "::concat).collect(toList());
 	}
 
 	@Property
@@ -126,12 +86,12 @@ class SeasonTest {
 
 	@Provide(EVEN_TEAMS)
 	Arbitrary<Integer> evenTeamList() {
-		return Arbitraries.integers().between(1, 200 / 2).map(i -> i * 2);
+		return integers().between(1, 200 / 2).map(i -> i * 2);
 	}
 
 	@Provide(ODD_TEAMS)
 	Arbitrary<Integer> oddTeamList() {
-		return Arbitraries.integers().between(1, 1000 / 2).map(i -> i * 2 - 1);
+		return integers().between(1, 1000 / 2).map(i -> i * 2 - 1);
 	}
 
 	static <T> Stream<List<T>> teamsOf(Round<T> round) {
