@@ -193,7 +193,8 @@ public abstract class Board {
 			}
 
 			private String getTokenAt(int y) {
-				return content[y] == null ? null : String.valueOf(content[y]);
+				Object token = content[y];
+				return token == null ? null : String.valueOf(token);
 			}
 
 			public int insertToken(Object token) {
