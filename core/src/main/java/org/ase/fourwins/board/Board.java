@@ -44,19 +44,19 @@ public abstract class Board {
 		SOUTH(c -> c.mutateY(+1)), //
 		WEST(c -> c.mutateX(-1)), //
 		EAST(c -> c.mutateX(+1)), //
-		NORTHEAST(NORTH, EAST), //
-		SOUTHWEST(SOUTH, WEST), //
-		NORTHWEST(NORTH, WEST), //
-		SOUTHEAST(SOUTH, EAST);
+		NORTHEAST(NORTH.and(EAST)), //
+		SOUTHWEST(SOUTH.and(WEST)), //
+		NORTHWEST(NORTH.and(WEST)), //
+		SOUTHEAST(SOUTH.and(EAST));
 
 		private final Function<Coordinate, Coordinate> mutator;
 
-		private Direction(Direction direction1, Direction direction2) {
-			this(direction1.mutator.andThen(direction2.mutator));
+		private Function<Coordinate, Coordinate> and(Direction other) {
+			return this.mutator.andThen(other.mutator);
 		}
 
 		public Coordinate mutate(Coordinate coordinate) {
-			return mutator.apply(coordinate);
+			return this.mutator.apply(coordinate);
 		}
 
 	}
