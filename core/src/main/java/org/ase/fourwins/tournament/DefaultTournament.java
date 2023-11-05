@@ -25,27 +25,33 @@ import org.ase.fourwins.season.Season;
 import org.ase.fourwins.tournament.listener.TournamentListener;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 public class DefaultTournament implements Tournament {
 
 	@Getter
 	private BoardInfo boardInfo = BoardInfo.sevenColsSixRows;
 
-	@RequiredArgsConstructor
 	static final class CoffeebreakGame implements Game {
 
 		static final String COFFEE_BREAK_WIN_MESSAGE = "coffee break";
 
 		private static final BoardInfo boardInfo = BoardInfo.builder().columns(0).rows(0).build();
 
-		private static final GameState gameState = GameState.builder().score(WIN).reason(COFFEE_BREAK_WIN_MESSAGE)
+		private static final GameState gameStateTemplate = GameState.builder().score(WIN).reason(COFFEE_BREAK_WIN_MESSAGE)
 				.build();
-
-		private final Player other;
 
 		@Getter
 		private final GameId id;
+
+		private final GameState gameState;
+
+		private final List<Player> players;
+		
+		CoffeebreakGame(Player other, GameId id) {
+			this.id = id;
+			this.gameState = gameStateTemplate.withToken(other.getToken());
+			this.players = List.of(other);
+		}
 
 		@Override
 		public BoardInfo getBoardInfo() {
@@ -54,7 +60,7 @@ public class DefaultTournament implements Tournament {
 
 		@Override
 		public GameState gameState() {
-			return gameState.withToken(other.getToken());
+			return gameState;
 		}
 
 		@Override
@@ -64,7 +70,7 @@ public class DefaultTournament implements Tournament {
 
 		@Override
 		public List<Player> getPlayers() {
-			return List.of(other);
+			return players;
 		}
 	}
 

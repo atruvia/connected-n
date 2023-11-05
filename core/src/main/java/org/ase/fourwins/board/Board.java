@@ -1,10 +1,12 @@
 package org.ase.fourwins.board;
 
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.StreamSupport.stream;
 import static org.ase.fourwins.board.Board.Direction.EAST;
@@ -22,21 +24,21 @@ import static org.ase.fourwins.board.Board.Score.LOSE;
 import static org.ase.fourwins.board.Board.Score.WIN;
 import static org.ase.fourwins.board.Coordinate.xy;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.With;
 
 public abstract class Board {
 
+	@RequiredArgsConstructor
 	enum Direction {
 		NORTH(c -> c.mutateY(-1)), //
 		SOUTH(c -> c.mutateY(+1)), //
@@ -49,12 +51,8 @@ public abstract class Board {
 
 		private final Function<Coordinate, Coordinate> mutator;
 
-		private Direction(Direction d1, Direction d2) {
-			this(d1.mutator.andThen(d2.mutator));
-		}
-
-		private Direction(Function<Coordinate, Coordinate> mutator) {
-			this.mutator = mutator;
+		private Direction(Direction direction1, Direction direction2) {
+			this(direction1.mutator.andThen(direction2.mutator));
 		}
 
 		public Coordinate mutate(Coordinate coordinate) {
@@ -64,6 +62,7 @@ public abstract class Board {
 	}
 
 	@Value
+	// fails @RequiredArgsConstructor(staticName = "fromTo")
 	static class Line {
 
 		Direction from, to;
@@ -208,8 +207,12 @@ public abstract class Board {
 
 		}
 
-		private static final List<Line> lines = List.of(fromTo(NORTH, SOUTH), fromTo(WEST, EAST),
-				fromTo(SOUTHWEST, NORTHEAST), fromTo(NORTHWEST, SOUTHEAST));
+		private static final List<Line> lines = List.of( //
+				fromTo(NORTH, SOUTH), //
+				fromTo(WEST, EAST), //
+				fromTo(SOUTHWEST, NORTHEAST), //
+				fromTo(NORTHWEST, SOUTHEAST) //
+		);
 
 		private final BoardInfo boardInfo;
 		private final Column[] columns;
@@ -217,7 +220,8 @@ public abstract class Board {
 
 		private PlayableBoard(BoardInfo boardInfo) {
 			this.boardInfo = boardInfo;
-			this.columns = IntStream.range(0, boardInfo.getColumns()).mapToObj(i -> new Column(boardInfo.getRows()))
+			int rowCount = boardInfo.getRows();
+			this.columns = range(0, boardInfo.getColumns()).mapToObj(__ -> rowCount).map(Column::new)
 					.toArray(Column[]::new);
 		}
 
@@ -259,12 +263,12 @@ public abstract class Board {
 			return isDraw(column) ? new DrawBoard(boardInfo()) : this;
 		}
 
-		private boolean isDraw(Column column) {
-			return column.isFull() && allColumnsFull();
+		private boolean isDraw(Column tokenPlacedInColumn) {
+			return tokenPlacedInColumn.isFull() && allColumnsFull();
 		}
 
 		private boolean allColumnsFull() {
-			return Arrays.stream(columns).allMatch(Column::isFull);
+			return stream(columns).allMatch(Column::isFull);
 		}
 
 		private Stream<Coordinate> connectedTokens(Coordinate center, Object token, Line line) {
