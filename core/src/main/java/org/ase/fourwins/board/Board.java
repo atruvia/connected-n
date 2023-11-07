@@ -4,8 +4,8 @@ import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.generate;
 import static java.util.stream.Stream.iterate;
 import static org.ase.fourwins.board.Board.Direction.EAST;
 import static org.ase.fourwins.board.Board.Direction.NORTH;
@@ -216,8 +216,7 @@ public abstract class Board {
 
 		private PlayableBoard(BoardInfo boardInfo) {
 			this.boardInfo = boardInfo;
-			int rowCount = boardInfo.getRows();
-			this.columns = range(0, boardInfo.getColumns()).mapToObj(__ -> rowCount).map(Column::new)
+			this.columns = generate(() -> new Column(boardInfo.getRows())).limit(boardInfo.getColumns())
 					.toArray(Column[]::new);
 		}
 
