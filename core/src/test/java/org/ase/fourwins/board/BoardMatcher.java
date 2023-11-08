@@ -17,20 +17,18 @@ public class BoardMatcher extends TypeSafeMatcher<Board> {
 		return new BoardMatcher().score(IN_GAME);
 	}
 
-	public static BoardMatcher isDraw() {
-		return scoreIs(DRAW);
-	}
-
 	public static BoardMatcher winnerIs(Object token) {
 		return scoreIs(WIN).withToken(token).withReason("CONNECTED_LINE").withCombinations(1);
 	}
 
 	public static BoardMatcher loserIs(Object token) {
-		BoardMatcher r = scoreIs(LOSE);
-		r.matcher = r.matcher.withToken(token);
-		return r;
+		return scoreIs(LOSE).withToken(token);
 	}
 
+	public static BoardMatcher isDraw() {
+		return scoreIs(DRAW);
+	}
+	
 	public static BoardMatcher isGameError(String gameError) {
 		return new BoardMatcher().error(gameError);
 	}
