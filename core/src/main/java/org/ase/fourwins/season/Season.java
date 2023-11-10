@@ -13,7 +13,7 @@ public class Season<T> {
 
 	public Season(List<T> teams) {
 		firstRound = new DefaultRound<T>(ensureSizeIsEven(List.copyOf(teams)));
-		secondRound = () -> firstRound.getMatchdays().map(m -> () -> m.getMatches().map(Match::reverse));
+		secondRound = reverseEachMatch(firstRound);
 	}
 
 	private <C extends Collection<T>> C ensureSizeIsEven(C teams) {
@@ -21,6 +21,10 @@ public class Season<T> {
 			throw new IllegalArgumentException("Amount of teams must be even (was " + teams.size() + ")");
 		}
 		return teams;
+	}
+
+	private static <U> Round<U> reverseEachMatch(Round<U> round) {
+		return () -> round.getMatchdays().map(m -> () -> m.getMatches().map(Match::reverse));
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
