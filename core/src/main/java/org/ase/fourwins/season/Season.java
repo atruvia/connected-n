@@ -7,17 +7,31 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 public class Season<T> {
 
-	@RequiredArgsConstructor
-	private static final class ReversedMatchday<U> implements Matchday<U> {
-		private final Matchday<U> delegate;
+	@Value
+	private static final class ReversedRound<U> implements Round<U> {
 
-		public Stream<Match<U>> getMatches() {
-			return delegate.getMatches().map(Match::reverse);
+		@Value
+		private static final class ReversedMatchday<V> implements Matchday<V> {
+
+			Matchday<V> delegate;
+
+			public Stream<Match<V>> getMatches() {
+				return delegate.getMatches().map(Match::reverse);
+			}
+
 		}
+
+		Round<U> delegate;
+
+		@Override
+		public Stream<Matchday<U>> getMatchdays() {
+			return delegate.getMatchdays().map(ReversedMatchday<U>::new);
+		}
+
 	}
 
 	@Getter
@@ -26,16 +40,8 @@ public class Season<T> {
 	public Season(List<T> teams) {
 		List<T> unmodifableTeams = List.copyOf(teams);
 		verifySizeIsEven(unmodifableTeams);
-		this.firstRound = new Round<T>(unmodifableTeams, Season::matchday);
-		this.secondRound = new Round<T>(unmodifableTeams, Season::reversedMatchday);
-	}
-
-	private static <U> Matchday<U> matchday(List<U> teams) {
-		return new DefaultMatchday<U>(teams);
-	}
-
-	private static <U> Matchday<U> reversedMatchday(List<U> teams) {
-		return new ReversedMatchday<U>(matchday(teams));
+		this.firstRound = new DefaultRound<T>(unmodifableTeams);
+		this.secondRound = new ReversedRound<T>(this.firstRound);
 	}
 
 	private void verifySizeIsEven(Collection<T> teams) {
