@@ -5,10 +5,14 @@ import static java.util.stream.Stream.iterate;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.ase.fourwins.util.ListDelegate;
 
+import lombok.Value;
+
+@Value
 public class Round<T> {
 
 	/**
@@ -66,22 +70,20 @@ public class Round<T> {
 
 	}
 
-	private final List<T> teams;
+	List<T> teams;
+	Function<List<T>, Matchday<T>> matchdayMaker;
 
-	public Round(List<T> teams) {
+	public Round(List<T> teams, Function<List<T>, Matchday<T>> matchdayMaker) {
+		this.matchdayMaker = matchdayMaker;
 		this.teams = List.copyOf(teams);
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
-		return iterate(teams, RotatedLeagueList<T>::new).map(this::matchday).limit(matchdays(teams));
+		return iterate(teams, RotatedLeagueList<T>::new).limit(matchdays(teams)).map(matchdayMaker);
 	}
 
 	private static int matchdays(Collection<?> teams) {
 		return max(0, teams.size() - 1);
-	}
-
-	protected Matchday<T> matchday(List<T> teams) {
-		return new Matchday<T>(teams);
 	}
 
 }
