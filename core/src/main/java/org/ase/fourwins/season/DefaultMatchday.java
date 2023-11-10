@@ -6,12 +6,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
-@RequiredArgsConstructor
+@Value
 public class DefaultMatchday<T> implements Matchday<T> {
 
-	private final List<T> teams;
+	List<T> teams;
 
 	public Stream<Match<T>> getMatches() {
 		return range(0, matchCount(teams)).mapToObj(this::makeMatch);
