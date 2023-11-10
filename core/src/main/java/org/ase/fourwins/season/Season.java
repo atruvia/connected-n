@@ -12,16 +12,15 @@ public class Season<T> {
 	Round<T> firstRound, secondRound;
 
 	public Season(List<T> teams) {
-		List<T> unmodifableTeams = List.copyOf(teams);
-		verifySizeIsEven(unmodifableTeams);
-		firstRound = new DefaultRound<T>(unmodifableTeams);
+		firstRound = new DefaultRound<T>(ensureSizeIsEven(List.copyOf(teams)));
 		secondRound = () -> firstRound.getMatchdays().map(m -> () -> m.getMatches().map(Match::reverse));
 	}
 
-	private void verifySizeIsEven(Collection<T> teams) {
+	private <C extends Collection<T>> C ensureSizeIsEven(C teams) {
 		if (teams.size() % 2 != 0) {
 			throw new IllegalArgumentException("Amount of teams must be even (was " + teams.size() + ")");
 		}
+		return teams;
 	}
 
 	public Stream<Matchday<T>> getMatchdays() {
