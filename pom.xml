@@ -37,7 +37,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>3.5.2</version>
 				<configuration>
 					<!-- make it work using JDK16+ -->
 					<argLine>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
