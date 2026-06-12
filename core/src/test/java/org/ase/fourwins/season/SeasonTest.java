@@ -8,6 +8,7 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -55,6 +56,17 @@ class SeasonTest {
 		Season<String> season = new Season<>(teams);
 		assertNoDuplicateTeams(teams, season.getFirstRound());
 		assertNoDuplicateTeams(teams, season.getSecondRound());
+	}
+
+	@Property
+	void teamsOfEachMatchdayAreExactlyTheListOfTeams(@ForAll(EVEN_TEAMS) int numberOfTeams) {
+		List<String> teams = teams(numberOfTeams);
+		Season<String> season = new Season<>(teams);
+		season.getMatchdays().forEach(m -> {
+			List<String> teamsOfMatch = m.getMatches().flatMap(t -> Stream.of(t.getTeam1(), t.getTeam2())).sorted()
+					.collect(toList());
+			assertThat(teamsOfMatch, containsInAnyOrder(teams.toArray()));
+		});
 	}
 
 	@Property
