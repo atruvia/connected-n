@@ -2,9 +2,10 @@ package org.ase.fourwins.tournament;
 
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.concat;
 import static org.ase.fourwins.board.Board.Score.WIN;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,8 +38,8 @@ public class DefaultTournament implements Tournament {
 
 		private static final BoardInfo boardInfo = BoardInfo.builder().columns(0).rows(0).build();
 
-		private static final GameState gameStateTemplate = GameState.builder().score(WIN).reason(COFFEE_BREAK_WIN_MESSAGE)
-				.build();
+		private static final GameState gameStateTemplate = GameState.builder().score(WIN)
+				.reason(COFFEE_BREAK_WIN_MESSAGE).build();
 
 		@Getter
 		private final GameId id;
@@ -46,7 +47,7 @@ public class DefaultTournament implements Tournament {
 		private final GameState gameState;
 
 		private final List<Player> players;
-		
+
 		CoffeebreakGame(Player other, GameId id) {
 			this.id = id;
 			this.gameState = gameStateTemplate.withToken(other.getToken());
@@ -111,17 +112,14 @@ public class DefaultTournament implements Tournament {
 	}
 
 	private List<Player> ensureEvenQuantity(Collection<? extends Player> players) {
-		List<Player> listOfPlayers = new ArrayList<>(players);
-		return isEvenPlayerCount(listOfPlayers) ? listOfPlayers : addCoffeeBreakPlayer(listOfPlayers);
+		Stream<? extends Player> stream = sizeIsEven(players) //
+				? players.stream() //
+				: concat(players.stream(), Stream.of(coffeeBreakPlayer));
+		return stream.collect(toList());
 	}
 
-	private boolean isEvenPlayerCount(List<Player> players) {
-		return players.size() % 2 == 0;
-	}
-
-	private List<Player> addCoffeeBreakPlayer(List<Player> players) {
-		players.add(coffeeBreakPlayer);
-		return players;
+	private boolean sizeIsEven(Collection<?> collection) {
+		return collection.size() % 2 == 0;
 	}
 
 	private Game newGame(Match<Player> match) {
