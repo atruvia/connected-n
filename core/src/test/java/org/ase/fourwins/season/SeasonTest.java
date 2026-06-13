@@ -63,9 +63,12 @@ class SeasonTest {
 		List<String> teams = teams(numberOfTeams);
 		Season<String> season = new Season<>(teams);
 		season.getMatchdays().forEach(m -> {
-			List<String> teamsOfMatch = m.getMatches().flatMap(t -> Stream.of(t.getTeam1(), t.getTeam2())).sorted()
+			List<String> teamsOfMatches = m.getMatches() //
+					.map(SeasonTest::teamsOf) //
+					.flatMap(List::stream) //
+					.sorted() //
 					.collect(toList());
-			assertThat(teamsOfMatch, containsInAnyOrder(teams.toArray()));
+			assertThat(teamsOfMatches, containsInAnyOrder(teams.toArray()));
 		});
 	}
 
