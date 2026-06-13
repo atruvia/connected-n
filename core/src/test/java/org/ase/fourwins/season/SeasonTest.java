@@ -62,21 +62,16 @@ class SeasonTest {
 	void teamsOfEachMatchdayAreExactlyTheListOfTeams(@ForAll(EVEN_TEAMS) int numberOfTeams) {
 		List<String> teams = teams(numberOfTeams);
 		Season<String> season = new Season<>(teams);
-		season.getMatchdays().forEach(m -> {
-			List<String> teamsOfMatches = m.getMatches() //
-					.map(SeasonTest::teamsOf) //
-					.flatMap(List::stream) //
-					.sorted() //
-					.collect(toList());
-			assertThat(teamsOfMatches, containsInAnyOrder(teams.toArray()));
-		});
+		season.getMatchdays().forEach(m -> assertThat(teamsOf(m).flatMap(List::stream).collect(toList()),
+				containsInAnyOrder(teams.toArray())));
 	}
 
 	@Property
 	boolean roundsHaveExpectedCountOfMatchdays(@ForAll(EVEN_TEAMS) int numberOfTeams) {
 		Season<String> season = new Season<>(teams(numberOfTeams));
-		return season.getFirstRound().getMatchdays().count()
-				+ season.getSecondRound().getMatchdays().count() == matchesPerTeamPerSeason(numberOfTeams);
+		return season.getFirstRound().getMatchdays().count() //
+				+ season.getSecondRound().getMatchdays().count() //
+				== matchesPerTeamPerSeason(numberOfTeams);
 	}
 
 	@Property
@@ -107,6 +102,10 @@ class SeasonTest {
 	@Provide(ODD_TEAMS)
 	Arbitrary<Integer> oddTeamList() {
 		return integers().between(1, 1000 / 2).map(i -> i * 2 - 1);
+	}
+
+	static <T> Stream<List<T>> teamsOf(Matchday<T> matchday) {
+		return matchesOf(Stream.of(matchday)).map(SeasonTest::teamsOf);
 	}
 
 	static <T> Stream<List<T>> teamsOf(Round<T> round) {
